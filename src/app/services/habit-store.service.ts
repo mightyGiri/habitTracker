@@ -11,6 +11,12 @@ interface StorageData {
   selectedMonthYear: MonthKey;
 }
 
+type BackupData = {
+  habits: Array<{ id: string; name: string; goalDays: number }>;
+  checks: Record<string, HabitCompletion>;
+  appSettings?: { selectedYear?: number; selectedMonthIndex?: number };
+};
+
 @Injectable({
   providedIn: 'root'
 })
@@ -291,6 +297,118 @@ export class HabitStoreService {
 
   private monthKeyToStringFromParts(year: number, monthIndex: number): string {
     return `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+  }
+
+  getSnapshotForBackup(): StorageData {
+    return {
+      habits: this.habits$.value,
+      completions: this.completions$.value,
+      selectedMonthYear: this.selectedMonthYear$.value
+    };
+  }
+
+  restoreFromBackup(backup: BackupData, mode: 'replace' | 'merge' = 'replace'): void {
+    const normalizedHabits = (backup.habits || [])
+      .filter(habit => habit && typeof habit.id === 'string')
+      .map(habit => ({
+        id: habit.id,
+        name: String(habit.name || '').trim() || 'Habit',
+        goalDays: Math.max(1, Number(habit.goalDays) || 1)
+      }));
+
+    if (mode === 'merge') {
+      const habitMap = new Map<string, Habit>();
+      this.habits$.value.forEach(habit => habitMap.set(habit.id, habit));
+      normalizedHabits.forEach(habit => habitMap.set(habit.id, habit));
+      const mergedHabits = Array.from(habitMap.values());
+      const habitIds = new Set(mergedHabits.map(habit => habit.id));
+      const mergedCompletions: { [key: string]: HabitCompletion } = {};
+
+      Object.entries(this.completions$.value).forEach(([monthKey, monthData]) => {
+        const clonedMonth: HabitCompletion = {};
+        Object.entries(monthData || {}).forEach(([dayKey, dayChecks]) => {
+          if (Array.isArray(dayChecks) && dayChecks.length > 0) {
+            clonedMonth[Number(dayKey)] = [...dayChecks];
+          }
+        });
+        if (Object.keys(clonedMonth).length > 0) {
+          mergedCompletions[monthKey] = clonedMonth;
+        }
+      });
+
+      if (backup.checks && typeof backup.checks === 'object') {
+        Object.entries(backup.checks).forEach(([monthKey, monthData]) => {
+          if (!monthData || typeof monthData !== 'object') {
+            return;
+          }
+          const targetMonth = mergedCompletions[monthKey] || {};
+          Object.entries(monthData).forEach(([dayKey, dayChecks]) => {
+            if (!Array.isArray(dayChecks)) {
+              return;
+            }
+            const existing = targetMonth[Number(dayKey)] || [];
+            const mergedMap = new Map<string, DayCheck>();
+            existing.forEach(check => {
+              if (habitIds.has(check.habitId)) {
+                mergedMap.set(check.habitId, check);
+              }
+            });
+            dayChecks.forEach(check => {
+              if (habitIds.has(check.habitId)) {
+                mergedMap.set(check.habitId, { habitId: check.habitId, checked: true });
+              }
+            });
+            const mergedChecks = Array.from(mergedMap.values());
+            if (mergedChecks.length > 0) {
+              targetMonth[Number(dayKey)] = mergedChecks;
+            }
+          });
+          if (Object.keys(targetMonth).length > 0) {
+            mergedCompletions[monthKey] = targetMonth;
+          }
+        });
+      }
+
+      this.habits$.next(mergedHabits);
+      this.completions$.next(mergedCompletions);
+      this.saveToStorage();
+      return;
+    }
+
+    const habitIds = new Set(normalizedHabits.map(habit => habit.id));
+    const completions: { [key: string]: HabitCompletion } = {};
+
+    if (backup.checks && typeof backup.checks === 'object') {
+      Object.entries(backup.checks).forEach(([monthKey, monthData]) => {
+        if (!monthData || typeof monthData !== 'object') {
+          return;
+        }
+        const cleanedMonth: HabitCompletion = {};
+        Object.entries(monthData).forEach(([dayKey, dayChecks]) => {
+          if (!Array.isArray(dayChecks)) {
+            return;
+          }
+          const cleanedChecks = dayChecks.filter(check => habitIds.has(check.habitId));
+          if (cleanedChecks.length > 0) {
+            cleanedMonth[Number(dayKey)] = cleanedChecks;
+          }
+        });
+        if (Object.keys(cleanedMonth).length > 0) {
+          completions[monthKey] = cleanedMonth;
+        }
+      });
+    }
+
+    this.habits$.next(normalizedHabits);
+    this.completions$.next(completions);
+
+    const selectedYear = backup.appSettings?.selectedYear;
+    const selectedMonthIndex = backup.appSettings?.selectedMonthIndex;
+    if (typeof selectedYear === 'number' && typeof selectedMonthIndex === 'number' && selectedMonthIndex >= 0 && selectedMonthIndex <= 11) {
+      this.selectedMonthYear$.next({ year: selectedYear, month: selectedMonthIndex });
+    }
+
+    this.saveToStorage();
   }
 
   private saveToStorage(): void {
