@@ -1,0 +1,149 @@
+:host
+  display: flex
+  flex-direction: column
+  height: 100vh
+
+mat-toolbar
+  padding: var(--space-3) var(--space-4)
+  display: flex
+  height: inherit
+  flex-wrap: wrap
+  gap: var(--space-2)
+  align-items: center
+  background: var(--theme-nav-bg)
+  border-bottom: 1px solid var(--theme-border)
+  backdrop-filter: blur(14px)
+
+  .brand
+    font-weight: 600
+    letter-spacing: 0.03em
+    color: var(--theme-text)
+    text-shadow: 0 0 16px var(--theme-glow)
+
+  .spacer
+    flex: 1 1 auto
+
+  .toolbar-nav
+    display: flex
+    gap: var(--space-2)
+    flex-wrap: wrap
+    align-items: center
+    flex: 1 1 auto
+
+    a
+      border-radius: var(--radius-sm)
+      color: var(--theme-text)
+      text-shadow: 0 0 16px var(--theme-glow)
+      text-decoration: none
+      padding: 6px 12px
+      transition: color 160ms ease, background 160ms ease, transform 160ms ease
+
+    a.active
+      color: var(--theme-text)
+      text-shadow: 0 0 16px var(--theme-glow)
+      background: var(--theme-accent-soft)
+
+    a:hover
+      color: var(--theme-text)
+      text-shadow: 0 0 16px var(--theme-glow)
+      background: var(--theme-accent-soft)
+      transform: translateY(-1px)
+
+  .date-trigger
+    display: inline-flex
+    align-items: center
+    gap: 6px
+    padding: 4px 10px
+    border-radius: 999px
+    border: 1px solid var(--theme-border)
+    background: var(--theme-accent-soft)
+    color: var(--theme-text)
+    min-height: 32px
+    font-size: 0.85rem
+
+    .chevron
+      font-size: 18px
+
+  .toolbar-field
+    min-width: 120px
+    flex: 0 0 130px
+    margin-left: var(--space-2)
+
+  .theme-toggle
+    border: 1px solid var(--theme-border)
+    border-radius: var(--radius-sm)
+    color: var(--theme-text)
+    background: var(--theme-accent-soft)
+    transition: transform 160ms ease, box-shadow 160ms ease
+
+  .theme-toggle:hover
+    transform: translateY(-1px)
+    box-shadow: 0 0 16px var(--theme-glow)
+
+  .mat-mdc-text-field-wrapper
+    background: var(--theme-input-bg)
+    border-radius: var(--radius-sm)
+    padding: 0 6px
+
+  .mat-mdc-form-field
+    margin: 0
+
+  .mat-mdc-form-field-infix
+    min-height: 36px
+    padding-top: 6px
+    padding-bottom: 6px
+
+  .mat-mdc-select-value
+    padding-right: 8px
+
+  .mat-mdc-form-field-subscript-wrapper
+    display: none
+
+
+
+@media (max-width: 720px)
+  mat-toolbar
+    align-items: flex-start
+    padding: var(--space-2) var(--space-3)
+
+    .toolbar-nav
+      flex: 1 1 100%
+      order: 2
+      gap: 6px
+      overflow-x: auto
+      white-space: nowrap
+      padding-bottom: 4px
+
+      a
+        font-size: 0.85rem
+        padding: 4px 10px
+
+    .date-trigger
+      order: 3
+      margin-left: 0
+      padding: 4px 8px
+
+    .spacer
+      flex-basis: 100%
+      height: 0
+      order: 1
+
+    .theme-toggle
+      order: 4
+      width: 32px
+      height: 32px
+      min-width: 32px
+      min-height: 32px
+
+.main-container
+  flex: 1
+  overflow: auto
+  color: var(--theme-text)
+  .mat-mdc-form-field
+    margin-bottom: 0
+
+  .mat-mdc-form-field-infix
+    min-height: 48px
+
+  .mat-mdc-select-value
+    padding-right: 8px

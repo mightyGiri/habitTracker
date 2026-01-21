@@ -1,0 +1,91 @@
+.mobile-habits
+  display: grid
+  gap: var(--space-3)
+
+.mobile-card
+  overflow: hidden
+
+.day-meta
+  display: flex
+  align-items: center
+  justify-content: space-between
+  margin-bottom: var(--space-2)
+
+.day-scroller
+  display: flex
+  gap: var(--space-1)
+  overflow-x: auto
+  padding-bottom: 6px
+
+  &::-webkit-scrollbar
+    height: 6px
+
+  &::-webkit-scrollbar-thumb
+    background: var(--theme-accent-soft)
+    border-radius: 999px
+
+.day-chip
+  min-width: 56px
+  padding: 6px 8px
+  border-radius: 12px
+  border: 1px solid var(--theme-border)
+  color: var(--theme-text)
+  background: var(--theme-surface)
+  display: flex
+  flex-direction: column
+  align-items: center
+  gap: 2px
+
+  &.selected
+    background: var(--theme-accent-soft)
+    border-color: var(--theme-accent)
+
+.day-number
+  font-size: 0.85rem
+  font-weight: 700
+
+.actions-row
+  display: grid
+  grid-template-columns: repeat(2, minmax(0, 1fr))
+  gap: var(--space-2)
+
+.habit-list
+  display: grid
+  gap: var(--space-2)
+
+.habit-row
+  display: flex
+  align-items: center
+  justify-content: space-between
+  gap: var(--space-2)
+  padding: var(--space-2)
+  border-radius: 12px
+  border: 1px solid var(--theme-border)
+  background: var(--theme-surface-2)
+  min-height: 56px
+  cursor: pointer
+
+.habit-info
+  display: grid
+  gap: 2px
+  text-align: left
+  border: 0
+  background: transparent
+  padding: 0
+  cursor: pointer
+
+  &:focus-visible
+    outline: 2px solid var(--theme-accent-soft)
+    outline-offset: 2px
+
+.habit-name
+  font-size: 1rem
+
+.habit-actions
+  display: flex
+  align-items: center
+  gap: var(--space-2)
+
+.habit-progress
+  min-width: 36px
+  text-align: right

@@ -1,0 +1,103 @@
+.overview-grid
+  display: grid
+  grid-template-columns: repeat(2, minmax(280px, 1fr))
+  gap: var(--space-4)
+  margin-bottom: var(--space-5)
+
+.overview-card
+  min-height: 220px
+
+  .card-body
+    padding: var(--space-4)
+
+.weeks-grid
+  display: grid
+  grid-template-columns: repeat(2, minmax(320px, 1fr))
+  gap: var(--space-4)
+
+.week-card
+  min-height: 320px
+
+  .card-body
+    padding: var(--space-4)
+
+.summary-row
+  display: flex
+  justify-content: space-between
+  align-items: center
+  margin-bottom: var(--space-2)
+  color: var(--theme-text-muted)
+  gap: var(--space-2)
+
+  strong
+    display: inline-flex
+    align-items: center
+    gap: var(--space-1)
+    color: var(--theme-text)
+    font-weight: 700
+
+.progress-row
+  display: flex
+  align-items: center
+  gap: var(--space-2)
+  margin-top: var(--space-2)
+
+.percent-label
+  font-weight: 700
+  color: var(--theme-accent)
+
+.week-chips
+  display: flex
+  flex-wrap: wrap
+  gap: var(--space-1)
+  margin-bottom: var(--space-2)
+
+.chip-tag
+  padding: 4px 10px
+  border-radius: 999px
+  font-size: var(--text-muted)
+  background: var(--theme-accent-soft)
+  border: 1px solid var(--theme-border)
+  color: var(--theme-text)
+
+.chip-tag.is-empty
+  opacity: 0.5
+
+.week-counts
+  display: grid
+  grid-template-columns: repeat(7, minmax(0, 1fr))
+  gap: var(--space-1)
+  margin-bottom: var(--space-3)
+
+.count-cell
+  text-align: center
+  font-size: var(--text-muted)
+  color: var(--theme-text-muted)
+
+.count-pill
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  min-width: 28px
+  height: 24px
+  border-radius: 999px
+  background: var(--theme-success-soft)
+  border: 1px solid var(--theme-success)
+  color: var(--theme-text)
+  font-weight: 700
+
+.divider
+  height: 1px
+  background: var(--theme-border)
+  margin: var(--space-2) 0 var(--space-3)
+
+@media (max-width: 1024px)
+  .overview-grid
+    grid-template-columns: 1fr
+
+  .weeks-grid
+    grid-template-columns: repeat(2, minmax(260px, 1fr))
+
+@media (max-width: 720px)
+  .weeks-grid
+    grid-template-columns: 1fr
