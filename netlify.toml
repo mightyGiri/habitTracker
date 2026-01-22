@@ -6,6 +6,21 @@
 [functions]
   node_bundler = "esbuild"
   included_files = ["dist/habitTracker/browser/**", "dist/habitTracker/server/**"]
+  external_node_modules = [
+    "@angular/animations",
+    "@angular/common",
+    "@angular/compiler",
+    "@angular/core",
+    "@angular/platform-browser",
+    "@angular/platform-server",
+    "@angular/router",
+    "@angular/ssr",
+    "rxjs",
+    "tslib",
+    "zone.js",
+    "express",
+    "serverless-http"
+  ]
 
 [[redirects]]
   from = "/*"
