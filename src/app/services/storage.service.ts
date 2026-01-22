@@ -12,7 +12,7 @@ const LOCAL_STORAGE_KEY = 'habit_tracker_data';
 export type PersistedState = {
   schemaVersion: number;
   habits: Habit[];
-  completions: { [key: string]: HabitCompletion };
+  completions: HabitCompletion;
   selectedMonthYear: MonthKey;
   settings?: {
     theme?: AppTheme;
@@ -55,7 +55,7 @@ export class StorageService {
   private async getDb(): Promise<IDBPDatabase> {
     if (!this.dbPromise) {
       this.dbPromise = openDB(DB_NAME, DB_VERSION, {
-        upgrade(db) {
+        upgrade(db: IDBPDatabase) {
           if (!db.objectStoreNames.contains(STORE_NAME)) {
             db.createObjectStore(STORE_NAME);
           }
@@ -82,7 +82,7 @@ export class StorageService {
         return {
           schemaVersion: 1,
           habits: parsed.habits as Habit[],
-          completions: parsed.completions as { [key: string]: HabitCompletion },
+          completions: parsed.completions as HabitCompletion,
           selectedMonthYear: parsed.selectedMonthYear as MonthKey
         };
       }

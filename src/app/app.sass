@@ -4,15 +4,22 @@
   height: 100vh
 
 mat-toolbar
-  padding: var(--space-3) var(--space-4)
-  display: flex
-  height: inherit
-  flex-wrap: wrap
-  gap: var(--space-2)
-  align-items: center
+  padding: 0
+  display: block
+  height: auto
   background: var(--theme-nav-bg)
   border-bottom: 1px solid var(--theme-border)
   backdrop-filter: blur(14px)
+
+  .toolbar-container
+    max-width: 1360px
+    margin: 0 auto
+    padding: var(--space-3) var(--space-4)
+    display: flex
+    flex-wrap: wrap
+    gap: var(--space-2)
+    align-items: center
+    box-sizing: border-box
 
   .brand
     font-weight: 600
@@ -103,8 +110,9 @@ mat-toolbar
 
 @media (max-width: 720px)
   mat-toolbar
-    align-items: flex-start
-    padding: var(--space-2) var(--space-3)
+    .toolbar-container
+      align-items: flex-start
+      padding: var(--space-2) var(--space-3)
 
     .toolbar-nav
       flex: 1 1 100%
@@ -135,9 +143,14 @@ mat-toolbar
       min-width: 32px
       min-height: 32px
 
+@media (max-width: 768px)
+  .app-toolbar
+    display: none
+
 .main-container
   flex: 1
   overflow: auto
+  overflow-x: hidden
   color: var(--theme-text)
   .mat-mdc-form-field
     margin-bottom: 0
@@ -148,21 +161,3 @@ mat-toolbar
   .mat-mdc-select-value
     padding-right: 8px
 
-.install-banner
-  display: flex
-  align-items: center
-  justify-content: space-between
-  gap: var(--space-2)
-  padding: 8px 16px
-  background: var(--theme-surface-2)
-  border-bottom: 1px solid var(--theme-border)
-  color: var(--theme-text)
-  font-size: 13px
-  position: sticky
-  top: 64px
-  z-index: 900
-
-.install-actions
-  display: flex
-  align-items: center
-  gap: 6px

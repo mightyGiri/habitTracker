@@ -3,6 +3,9 @@ export interface Habit {
   name: string;
   goalDays: number;
   color?: string;
+  createdAt: number;
+  isActive: boolean;
+  sortOrder: number;
 }
 
 export interface MonthKey {
@@ -18,11 +21,7 @@ export interface DayCheck {
 }
 
 export interface HabitCompletion {
-  [day: number]: DayCheck[]; // day -> array of habit checks
-}
-
-export interface MonthData {
-  [monthKey: string]: HabitCompletion; // "2026-01" -> day checks
+  [dateKey: string]: Record<string, boolean>; // "YYYY-MM-DD" -> habitId -> completed
 }
 
 export interface MonthlyTotals {

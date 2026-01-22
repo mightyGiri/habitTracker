@@ -1,81 +1,182 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, Inject, PLATFORM_ID, HostListener } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatIconModule } from '@angular/material/icon';
 import { Subscription, combineLatest } from 'rxjs';
 import { HabitStoreService } from '../../services/habit-store.service';
-import { MonthKey, MonthlyTotals, TopHabit, MonthInsights } from '../../models/habit.model';
+import { MonthKey, MonthlyTotals, TopHabit, MonthInsights, Habit } from '../../models/habit.model';
 import type { ChartDataset } from 'chart.js';
 import Chart from 'chart.js/auto';
 import { ThemeService } from '../../services/theme.service';
 import { staggerFadeUp, noopAnimation } from '../../shared/list-animations';
+import { DateUtils } from '../../shared/date-utils';
+
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+};
+
+type DateChip = {
+  date: Date;
+  label: string;
+};
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, MatCardModule],
+  imports: [CommonModule, MatCardModule, MatButtonModule, MatProgressBarModule, MatIconModule],
   animations: [staggerFadeUp || noopAnimation],
   template: `
     <div class="page-container" [@.disabled]="reduceMotion">
-      <div class="kpi-grid" [@staggerFadeUp]="animationKey">
-        <mat-card class="aesthetic-card kpi-card">
-          <mat-card-content>
-            <div class="kpi-value text-value">{{ completedTodayDisplay }}</div>
-            <div class="kpi-label text-label">Daily Completion</div>
-          </mat-card-content>
-        </mat-card>
-        <mat-card class="aesthetic-card kpi-card">
-          <mat-card-content>
-            <div class="kpi-value text-value">{{ monthlyPercentDisplay }}%</div>
-            <div class="kpi-label text-label">Awakening Progress</div>
-          </mat-card-content>
-        </mat-card>
-        <mat-card class="aesthetic-card kpi-card">
-          <mat-card-content>
-            <div class="kpi-value text-value">{{ totalHabitsDisplay }}</div>
-            <div class="kpi-label text-label">Hunter Stats</div>
-          </mat-card-content>
-        </mat-card>
-        <mat-card class="aesthetic-card kpi-card">
-          <mat-card-content>
-            <div class="kpi-value text-value">{{ currentStreakDisplay }}</div>
-            <div class="kpi-label text-label">Current Streak</div>
-          </mat-card-content>
-        </mat-card>
+      <section class="today-header">
+        <div>
+          <h1 class="text-title">Today</h1>
+          <div class="text-muted today-date">
+            {{ isEditingToday ? todayLabel : ('Editing: ' + todayLabel) }}
+          </div>
+          <div class="text-label today-status">Complete your habits for today</div>
+        </div>
+        <div class="date-carousel">
+          <button class="carousel-arrow" type="button" aria-label="Previous week" (click)="shiftDateWindow(-7)">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <div class="carousel-track" role="listbox" aria-label="Select day">
+            <button
+              class="day-chip"
+              type="button"
+              *ngFor="let chip of dateChips"
+              [class.is-selected]="isSameDate(chip.date, selectedDate)"
+              (click)="setSelectedDate(chip.date)"
+              [attr.aria-selected]="isSameDate(chip.date, selectedDate)">
+              {{ chip.label }}
+            </button>
+          </div>
+          <button class="carousel-arrow" type="button" aria-label="Next week" (click)="shiftDateWindow(7)">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+          <button class="jump-today" type="button" *ngIf="!isEditingToday" (click)="goToday()">
+            Jump to Today
+          </button>
+        </div>
+      </section>
+
+      <mat-card class="aesthetic-card today-list-card" [@staggerFadeUp]="animationKey" #todaySection>
+        <div class="section-header text-section">Today Habits</div>
+        <mat-card-content>
+          <div class="selected-progress">
+            <span class="progress-text">{{ doneCount }}/{{ totalCount }} done • {{ selectedDayPercent }}%</span>
+            <mat-progress-bar mode="determinate" [value]="selectedDayPercent"></mat-progress-bar>
+          </div>
+          <div class="today-list">
+            <button
+              class="today-item"
+              type="button"
+              *ngFor="let habit of habits; trackBy: trackByHabitCard"
+              (click)="toggleHabitForSelectedDay(habit)"
+              (keydown.enter)="toggleHabitForSelectedDay(habit)"
+              (keydown.space)="toggleHabitForSelectedDay(habit); $event.preventDefault()"
+              [attr.aria-label]="'Toggle ' + habit.name + ' for today'">
+              <div class="today-item-info">
+                <div class="today-item-name">{{ habit.name }}</div>
+                <div class="today-item-sub text-muted">{{ habitProgressMap[habit.id] || 0 }}% this month</div>
+              </div>
+              <div class="today-item-meta">
+                <span class="today-item-percent text-label">{{ habitProgressMap[habit.id] || 0 }}%</span>
+                <input
+                  type="checkbox"
+                  class="today-checkbox"
+                  [checked]="isTodayChecked(habit.id)"
+                  (click)="$event.stopPropagation()"
+                  (change)="toggleHabitForSelectedDay(habit); $event.stopPropagation()"
+                  [attr.aria-label]="'Toggle ' + habit.name">
+              </div>
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="aesthetic-card quick-actions-card">
+        <div class="section-header text-section">Quick Actions</div>
+        <mat-card-content>
+          <div class="quick-actions">
+            <button mat-stroked-button (click)="markAllDone()">Mark all done</button>
+            <button mat-stroked-button (click)="clearAllDone()">Clear selected day</button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="aesthetic-card streak-card">
+        <div class="section-header text-section">Streak & Motivation</div>
+        <mat-card-content>
+          <div class="streak-row">
+            <div class="streak-value">{{ currentStreakDisplay }} days</div>
+            <div class="streak-message text-label">{{ motivationMessage }}</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="aesthetic-card insights-card">
+        <div class="insights-header">
+          <div class="section-header text-section">Insights</div>
+          <button class="charts-toggle" type="button" (click)="toggleInsights()">
+            {{ insightsOpen ? 'Hide Insights' : 'Show Insights' }}
+          </button>
+        </div>
+        <mat-card-content class="insights-body" [class.is-collapsed]="!insightsOpen">
+          <div class="dashboard-grid" [@staggerFadeUp]="animationKey">
+            <mat-card class="aesthetic-card chart-card">
+              <div class="section-header text-section">Daily Completion</div>
+              <mat-card-content>
+                <canvas #lineCanvas></canvas>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="aesthetic-card chart-card">
+              <div class="section-header text-section">Awakening Progress</div>
+              <mat-card-content>
+                <canvas #doughnutCanvas></canvas>
+                <p class="percent-text">{{ monthlyTotals.percent }}% Complete</p>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="aesthetic-card chart-card wide">
+              <div class="section-header text-section">Top Habits</div>
+              <mat-card-content>
+                <div class="habits-empty" *ngIf="topHabits.length === 0">
+                  No habits yet. Add your first habit.
+                </div>
+                <ul class="habits-list" *ngIf="topHabits.length > 0">
+                  <li *ngFor="let habit of topHabits; trackBy: trackByHabitId">
+                    <span>{{ habit.habit.name }}</span>
+                    <span class="habit-percent">{{ habit.completionPercent }}%</span>
+                  </li>
+                </ul>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <div class="today-footer" *ngIf="showTodayFooter">
+        <span>{{ doneCount }}/{{ totalCount }} done</span>
+        <button mat-stroked-button class="jump-top" (click)="scrollToToday()">Jump to top</button>
       </div>
 
-      <div class="dashboard-grid" [@staggerFadeUp]="animationKey">
-        <mat-card class="aesthetic-card chart-card">
-          <div class="section-header text-section">Daily Completion</div>
-          <mat-card-content>
-            <canvas #lineCanvas></canvas>
-          </mat-card-content>
-        </mat-card>
-
-        <mat-card class="aesthetic-card chart-card">
-          <div class="section-header text-section">Awakening Progress</div>
-          <mat-card-content>
-            <canvas #doughnutCanvas></canvas>
-            <p class="percent-text">{{ monthlyTotals.percent }}% Complete</p>
-          </mat-card-content>
-        </mat-card>
-
-        <mat-card class="aesthetic-card chart-card wide">
-          <div class="section-header text-section">Top Habits</div>
-          <mat-card-content>
-            <ul class="habits-list">
-              <li *ngFor="let habit of topHabits; trackBy: trackByHabitId">
-                <span>{{ habit.habit.name }}</span>
-                <span class="habit-percent">{{ habit.completionPercent }}%</span>
-              </li>
-            </ul>
-          </mat-card-content>
-        </mat-card>
+      <div class="install-banner install-banner-bottom" *ngIf="showInstallBanner">
+        <span>Install Daily Levelling</span>
+        <div class="install-actions">
+          <button mat-stroked-button (click)="installPwa()">Install</button>
+          <button mat-icon-button aria-label="Dismiss install banner" (click)="dismissInstallBanner()">✕</button>
+        </div>
       </div>
     </div>
   `,
   styleUrls: ['./dashboard.component.sass']
 })
 export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
+  @ViewChild('todaySection') todaySection?: ElementRef<HTMLElement>;
   @ViewChild('lineCanvas') lineCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild('doughnutCanvas') doughnutCanvas!: ElementRef<HTMLCanvasElement>;
   private lineChart?: Chart;
@@ -85,6 +186,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   monthlyTotals: MonthlyTotals = { completed: 0, goal: 0, left: 0, percent: 0 };
   dailyCounts: number[] = [];
   topHabits: TopHabit[] = [];
+  habits: Habit[] = [];
   habitsCount = 0;
   completedTodayDisplay = '--';
   monthlyPercentDisplay = 0;
@@ -94,6 +196,21 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   insights: MonthInsights = { bestDay: 0, worstDay: 0, currentStreak: 0, perfectDays: 0 };
   animationKey = 0;
   reduceMotion = false;
+  todayLabel = '';
+  isEditingToday = true;
+  motivationMessage = '';
+  habitProgressMap: Record<string, number> = {};
+  selectedDate = new Date();
+  insightsOpen = true;
+  isMobile = false;
+  showInstallBanner = false;
+  showTodayFooter = false;
+  doneCount = 0;
+  totalCount = 0;
+  dateChips: DateChip[] = [];
+  private deferredPrompt: BeforeInstallPromptEvent | null = null;
+  private installListener?: (event: Event) => void;
+  private resizeListener?: () => void;
   private lastMonthKey: string | null = null;
 
   private subscription: Subscription = new Subscription();
@@ -110,29 +227,48 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         this.habitStore.getSelectedMonthYear(),
         this.habitStore.getCompletions(),
         this.habitStore.getHabits()
-      ]).subscribe(([monthYear]) => {
+      ]).subscribe(([monthYear, , habits]) => {
         this.selectedMonthYear = monthYear;
-        this.habitsCount = this.habitStore.getHabitsSync().length;
+        this.habits = habits
+          .filter(habit => habit.isActive)
+          .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+        this.habitsCount = this.habits.length;
         this.updateData();
       })
     );
     this.subscription.add(
       this.themeService.getTheme().subscribe(() => {
-        if (isPlatformBrowser(this.platformId)) {
-          this.updateChartTheme();
-        }
-      })
-    );
+      if (isPlatformBrowser(this.platformId)) {
+        this.updateChartTheme();
+      }
+    })
+  );
     this.subscription.add(
       this.themeService.getReducedMotion().subscribe(reduce => {
         this.reduceMotion = reduce;
       })
     );
+
+    if (isPlatformBrowser(this.platformId)) {
+      const dismissed = window.localStorage?.getItem('pwa_install_banner_dismissed') === 'true';
+      this.installListener = (event: Event) => {
+        event.preventDefault();
+        this.deferredPrompt = event as BeforeInstallPromptEvent;
+        if (!dismissed && this.isMobileDevice()) {
+          this.showInstallBanner = true;
+        }
+      };
+      window.addEventListener('beforeinstallprompt', this.installListener);
+    }
   }
 
   ngAfterViewInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       this.createCharts();
+      this.updateViewport();
+      this.updateFooterVisibility();
+      this.resizeListener = () => this.updateViewport();
+      window.addEventListener('resize', this.resizeListener);
     }
   }
 
@@ -203,6 +339,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     if (isPlatformBrowser(this.platformId)) {
       this.lineChart?.destroy();
       this.doughnutChart?.destroy();
+      if (this.resizeListener) {
+        window.removeEventListener('resize', this.resizeListener);
+      }
+      if (this.installListener) {
+        window.removeEventListener('beforeinstallprompt', this.installListener);
+      }
     }
   }
 
@@ -211,7 +353,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       this.daysInMonth = this.habitStore.getDaysInMonth();
       this.monthlyTotals = this.habitStore.getMonthlyTotals();
       this.dailyCounts = this.habitStore.getDailyCompletedCounts();
-      this.topHabits = this.habitStore.getTopHabits(10);
+      this.topHabits = this.habitStore.getTopHabits(8);
       this.insights = this.habitStore.getMonthInsights(this.selectedMonthYear.year, this.selectedMonthYear.month);
       this.totalHabits = this.habitsCount;
       const completedToday = this.getCompletedTodayValue();
@@ -221,6 +363,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       this.lastMonthKey = monthKey;
       this.animateKpis(shouldAnimate);
       this.animationKey++;
+      this.syncSelectedDateToMonth();
+      this.updateTodayLabels();
+      this.updateDateChips();
+      this.updateHabitProgress();
+      this.updateMotivation();
 
       if (isPlatformBrowser(this.platformId)) {
         this.updateCharts();
@@ -229,15 +376,76 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private getCompletedTodayValue(): number | null {
-    const dayNumber = this.habitStore.getTodayDayNumberIfInSelectedMonth();
-    if (!dayNumber) {
-      return null;
+    const dateKey = this.toIsoDateLocal(this.selectedDate);
+    const dayMap = this.habitStore.getCompletionsSync()[dateKey] || {};
+    return Object.values(dayMap).filter(Boolean).length;
+  }
+
+  isTodayChecked(habitId: string): boolean {
+    return this.habitStore.isCompleted(habitId, this.selectedDate);
+  }
+
+  toggleTodayHabit(habitId: string): void {
+    setTimeout(() => {
+      const next = !this.habitStore.isCompleted(habitId, this.selectedDate);
+      this.habitStore.setCompleted(habitId, this.selectedDate, next);
+      this.updateTodayLabels();
+      this.updateHabitProgress();
+      this.updateMotivation();
+    }, 80);
+  }
+
+  toggleHabitForSelectedDay(habit: Habit): void {
+    this.toggleTodayHabit(habit.id);
+  }
+
+  markAllDone(): void {
+    const { year, monthIndex, dayNumber } = this.getSelectedDateParts();
+    this.habitStore.setAllForDayForDate(year, monthIndex, dayNumber, true);
+    this.updateTodayLabels();
+    this.updateHabitProgress();
+    this.updateMotivation();
+  }
+
+  clearAllDone(): void {
+    const { year, monthIndex, dayNumber } = this.getSelectedDateParts();
+    this.habitStore.setAllForDayForDate(year, monthIndex, dayNumber, false);
+    this.updateTodayLabels();
+    this.updateHabitProgress();
+    this.updateMotivation();
+  }
+
+  toggleInsights(): void {
+    this.insightsOpen = !this.insightsOpen;
+  }
+
+  installPwa(): void {
+    if (!this.deferredPrompt) {
+      return;
     }
-    return this.dailyCounts[dayNumber - 1] || 0;
+    void this.deferredPrompt.prompt();
+    void this.deferredPrompt.userChoice.then(choice => {
+      this.showInstallBanner = false;
+      this.deferredPrompt = null;
+      if (choice.outcome === 'dismissed') {
+        this.dismissInstallBanner();
+      }
+    });
+  }
+
+  dismissInstallBanner(): void {
+    this.showInstallBanner = false;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem('pwa_install_banner_dismissed', 'true');
+    }
   }
 
   trackByHabitId(index: number, habit: TopHabit): string {
     return habit.habit.id;
+  }
+
+  trackByHabitCard(index: number, habit: Habit): string {
+    return habit.id;
   }
 
   private updateCharts(): void {
@@ -284,8 +492,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     this.doughnutChart.data.datasets[0].backgroundColor = [accent, glow];
-    if (this.doughnutChart.options.plugins?.legend?.labels) {
-      this.doughnutChart.options.plugins.legend.labels.color = muted;
+    if (this.doughnutChart.options.plugins?.legend) {
+      this.doughnutChart.options.plugins.legend.display = !this.isMobile;
+      if (this.doughnutChart.options.plugins.legend.labels) {
+        this.doughnutChart.options.plugins.legend.labels.color = muted;
+      }
     }
   }
 
@@ -345,5 +556,200 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   getMonthName(monthIndex: number): string {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return months[monthIndex];
+  }
+
+  private getDefaultSelectedDate(): Date {
+    return new Date();
+  }
+
+  private getSelectedDateParts(): { year: number; monthIndex: number; dayNumber: number } {
+    return {
+      year: this.selectedDate.getFullYear(),
+      monthIndex: this.selectedDate.getMonth(),
+      dayNumber: this.selectedDate.getDate()
+    };
+  }
+
+  private updateTodayLabels(): void {
+    const date = this.selectedDate;
+    this.todayLabel = date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    });
+    const today = new Date();
+    this.isEditingToday = this.isSameDate(today, date);
+  }
+
+  private updateDateChips(): void {
+    this.dateChips = this.getDateChips();
+  }
+
+  get selectedDayPercent(): number {
+    if (!this.totalCount) {
+      return 0;
+    }
+    return Math.round((this.doneCount / this.totalCount) * 100);
+  }
+
+  private updateHabitProgress(): void {
+    if (!this.selectedMonthYear) {
+      this.habitProgressMap = {};
+      return;
+    }
+    const { year, month } = this.selectedMonthYear;
+    this.habitProgressMap = this.habits.reduce((acc, habit) => {
+      acc[habit.id] = this.habitStore.getHabitCompletionPercent(habit.id, year, month);
+      return acc;
+    }, {} as Record<string, number>);
+  }
+
+  private updateMotivation(): void {
+    const { year, monthIndex, dayNumber } = this.getSelectedDateParts();
+    const completions = this.habitStore.getCompletionsSync();
+    const dateKey = this.toIsoDateLocal(new Date(year, monthIndex, dayNumber));
+    const dayMap = completions[dateKey] || {};
+    const completedCount = Object.values(dayMap).filter(Boolean).length;
+    const remaining = Math.max(this.habitsCount - completedCount, 0);
+    this.currentStreakDisplay = this.computeStreak();
+    this.doneCount = completedCount;
+    this.totalCount = this.habitsCount;
+    if (this.habitsCount > 0 && remaining === 0) {
+      this.motivationMessage = 'Perfect day. Streak secured 🔥';
+    } else {
+      this.motivationMessage = `${remaining} habits left to keep your streak alive`;
+    }
+  }
+
+  private computeStreak(): number {
+    const completions = this.habitStore.getCompletionsSync();
+    let streak = 0;
+    const date = new Date();
+    for (let i = 0; i < 365; i++) {
+      const dateKey = this.toIsoDateLocal(date);
+      const dayMap = completions[dateKey] || {};
+      const count = Object.values(dayMap).filter(Boolean).length;
+      if (count > 0) {
+        streak++;
+      } else {
+        break;
+      }
+      date.setDate(date.getDate() - 1);
+    }
+    return streak;
+  }
+
+  private updateViewport(): void {
+    this.isMobile = window.innerWidth < 1024;
+    this.insightsOpen = !this.isMobile;
+    if (isPlatformBrowser(this.platformId)) {
+      this.updateChartTheme();
+    }
+  }
+
+  private isMobileDevice(): boolean {
+    return window.matchMedia?.('(max-width: 1023px)').matches ?? window.innerWidth < 1024;
+  }
+
+  @HostListener('window:scroll')
+  onWindowScroll(): void {
+    this.updateFooterVisibility();
+  }
+
+  scrollToToday(): void {
+    const target = this.todaySection?.nativeElement;
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  private updateFooterVisibility(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    if (!this.isMobile || !this.todaySection) {
+      this.showTodayFooter = false;
+      return;
+    }
+    const rect = this.todaySection.nativeElement.getBoundingClientRect();
+    this.showTodayFooter = rect.bottom < 0;
+  }
+
+  goPrevDay(): void {
+    const date = new Date(this.selectedDate);
+    date.setDate(date.getDate() - 1);
+    this.setSelectedDate(date);
+  }
+
+  goNextDay(): void {
+    const date = new Date(this.selectedDate);
+    date.setDate(date.getDate() + 1);
+    this.setSelectedDate(date);
+  }
+
+  goToday(): void {
+    this.setSelectedDate(new Date());
+  }
+
+  shiftDateWindow(days: number): void {
+    const date = new Date(this.selectedDate);
+    date.setDate(date.getDate() + days);
+    this.setSelectedDate(date);
+  }
+
+  setSelectedDate(date: Date): void {
+    this.selectedDate = date;
+    this.habitStore.setSelectedMonthYear(date.getFullYear(), date.getMonth());
+    this.syncSelectedDateToMonth();
+    this.updateTodayLabels();
+    this.updateDateChips();
+    this.updateHabitProgress();
+    this.updateMotivation();
+  }
+
+  private syncSelectedDateToMonth(): void {
+    if (!this.selectedMonthYear) {
+      return;
+    }
+    const { year, month } = this.selectedMonthYear;
+    const daysInMonth = DateUtils.daysInMonth(year, month);
+    const currentDay = this.selectedDate.getDate();
+
+    if (this.selectedDate.getFullYear() !== year || this.selectedDate.getMonth() !== month) {
+      this.selectedDate = new Date(year, month, Math.min(currentDay, daysInMonth));
+      return;
+    }
+
+    if (currentDay > daysInMonth) {
+      this.selectedDate = new Date(year, month, daysInMonth);
+    }
+  }
+
+  private getDateChips(): DateChip[] {
+    const chips: DateChip[] = [];
+    for (let offset = -3; offset <= 3; offset++) {
+      const date = new Date(this.selectedDate);
+      date.setDate(date.getDate() + offset);
+      chips.push({
+        date,
+        label: date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })
+      });
+    }
+    return chips;
+  }
+
+  private toIsoDateLocal(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  isSameDate(a: Date, b: Date): boolean {
+    return a.getFullYear() === b.getFullYear()
+      && a.getMonth() === b.getMonth()
+      && a.getDate() === b.getDate();
   }
 }
