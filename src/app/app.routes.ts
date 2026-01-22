@@ -22,6 +22,11 @@ export const routes: Routes = [
     data: { animation: 'habits' }
   },
   {
+    path: 'about',
+    loadComponent: () => import('./pages/about/about.component').then(m => m.AboutComponent),
+    data: { animation: 'about' }
+  },
+  {
     path: '**',
     redirectTo: 'dashboard'
   }

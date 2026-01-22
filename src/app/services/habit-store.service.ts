@@ -7,13 +7,13 @@ import { ThemeService } from './theme.service';
 
 interface StorageData {
   habits: Habit[];
-  completions: { [key: string]: HabitCompletion };
+  completions: HabitCompletion;
   selectedMonthYear: MonthKey;
 }
 
 type BackupData = {
   habits: Array<{ id: string; name: string; goalDays: number }>;
-  checks: Record<string, HabitCompletion>;
+  checks: HabitCompletion;
   appSettings?: { selectedYear?: number; selectedMonthIndex?: number };
 };
 
@@ -22,7 +22,7 @@ type BackupData = {
 })
 export class HabitStoreService {
   private habits$ = new BehaviorSubject<Habit[]>([]);
-  private completions$ = new BehaviorSubject<{ [key: string]: HabitCompletion }>({});
+  private completions$ = new BehaviorSubject<HabitCompletion>({});
   private selectedMonthYear$ = new BehaviorSubject<MonthKey>({ year: 2026, month: 0 });
   private isHydrated = false;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -36,8 +36,8 @@ export class HabitStoreService {
   private async initialize(): Promise<void> {
     const state = await this.storageService.loadState();
     if (state) {
-      this.habits$.next(state.habits || []);
-      this.completions$.next(state.completions || {});
+      this.habits$.next(this.normalizeHabits(state.habits || []));
+      this.completions$.next(this.normalizeCompletions(state.completions || {}));
       if (state.selectedMonthYear) {
         this.selectedMonthYear$.next(state.selectedMonthYear);
       }
@@ -54,19 +54,20 @@ export class HabitStoreService {
   }
 
   private seedHabits(): void {
+    const now = Date.now();
     const habits: Habit[] = [
-      { id: '1', name: 'Drink Water', goalDays: 30, color: '#4A90E2' },
-      { id: '2', name: 'Exercise', goalDays: 21, color: '#7B68EE' },
-      { id: '3', name: 'Meditation', goalDays: 30, color: '#50C878' },
-      { id: '4', name: 'Read', goalDays: 20, color: '#FFB347' },
-      { id: '5', name: 'Sleep 8h', goalDays: 30, color: '#98D8C8' },
-      { id: '6', name: 'Coding', goalDays: 25, color: '#F7DC6F' },
-      { id: '7', name: 'Walk', goalDays: 28, color: '#BB8FCE' },
-      { id: '8', name: 'Journal', goalDays: 15, color: '#85C1E2' },
-      { id: '9', name: 'Stretch', goalDays: 30, color: '#F8B88B' },
-      { id: '10', name: 'Learn', goalDays: 20, color: '#ABEBC6' },
-      { id: '11', name: 'Healthy Eating', goalDays: 25, color: '#F1948A' },
-      { id: '12', name: 'No Phone', goalDays: 14, color: '#D7BDE2' },
+      { id: '1', name: 'Drink Water', goalDays: 30, color: '#4A90E2', createdAt: now, isActive: true, sortOrder: 0 },
+      { id: '2', name: 'Exercise', goalDays: 21, color: '#7B68EE', createdAt: now + 1, isActive: true, sortOrder: 1 },
+      { id: '3', name: 'Meditation', goalDays: 30, color: '#50C878', createdAt: now + 2, isActive: true, sortOrder: 2 },
+      { id: '4', name: 'Read', goalDays: 20, color: '#FFB347', createdAt: now + 3, isActive: true, sortOrder: 3 },
+      { id: '5', name: 'Sleep 8h', goalDays: 30, color: '#98D8C8', createdAt: now + 4, isActive: true, sortOrder: 4 },
+      { id: '6', name: 'Coding', goalDays: 25, color: '#F7DC6F', createdAt: now + 5, isActive: true, sortOrder: 5 },
+      { id: '7', name: 'Walk', goalDays: 28, color: '#BB8FCE', createdAt: now + 6, isActive: true, sortOrder: 6 },
+      { id: '8', name: 'Journal', goalDays: 15, color: '#85C1E2', createdAt: now + 7, isActive: true, sortOrder: 7 },
+      { id: '9', name: 'Stretch', goalDays: 30, color: '#F8B88B', createdAt: now + 8, isActive: true, sortOrder: 8 },
+      { id: '10', name: 'Learn', goalDays: 20, color: '#ABEBC6', createdAt: now + 9, isActive: true, sortOrder: 9 },
+      { id: '11', name: 'Healthy Eating', goalDays: 25, color: '#F1948A', createdAt: now + 10, isActive: true, sortOrder: 10 },
+      { id: '12', name: 'No Phone', goalDays: 14, color: '#D7BDE2', createdAt: now + 11, isActive: true, sortOrder: 11 },
     ];
     this.habits$.next(habits);
   }
@@ -92,92 +93,211 @@ export class HabitStoreService {
     return this.habits$.value;
   }
 
-  getCompletions(): Observable<{ [key: string]: HabitCompletion }> {
+  getCompletions(): Observable<HabitCompletion> {
     return this.completions$.asObservable();
   }
 
-  addHabit(name: string, goalDays: number): void {
+  getCompletionsSync(): HabitCompletion {
+    return this.completions$.value;
+  }
+
+  addHabit(name: string, goalDays = 30): void {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      return;
+    }
     const habits = this.habits$.value;
-    const id = Date.now().toString();
-    this.habits$.next([...habits, { id, name, goalDays }]);
+    const duplicate = habits.some(habit => habit.name.toLowerCase() === trimmed.toLowerCase());
+    if (duplicate) {
+      return;
+    }
+    const id = this.createId();
+    const sortOrder = habits.length > 0 ? Math.max(...habits.map(h => h.sortOrder ?? 0)) + 1 : 0;
+    const createdAt = Date.now();
+    const nextHabits = [...habits, { id, name: trimmed, goalDays, createdAt, isActive: true, sortOrder }];
+    this.habits$.next(this.sortHabits(nextHabits));
     this.saveToStorage();
   }
 
   deleteHabit(habitId: string): void {
     const habits = this.habits$.value.filter(h => h.id !== habitId);
-    this.habits$.next(habits);
+    const completions = this.removeHabitFromCompletions(habitId, this.completions$.value);
+    this.habits$.next(this.sortHabits(habits));
+    this.completions$.next(completions);
     this.saveToStorage();
   }
 
   renameHabit(habitId: string, newName: string): void {
-    const habits = this.habits$.value.map(h => h.id === habitId ? { ...h, name: newName } : h);
-    this.habits$.next(habits);
+    const trimmed = newName.trim();
+    if (!trimmed) {
+      return;
+    }
+    const duplicate = this.habits$.value.some(h => h.id !== habitId && h.name.toLowerCase() === trimmed.toLowerCase());
+    if (duplicate) {
+      return;
+    }
+    const habits = this.habits$.value.map(h => h.id === habitId ? { ...h, name: trimmed } : h);
+    this.habits$.next(this.sortHabits(habits));
     this.saveToStorage();
   }
 
   updateGoalDays(habitId: string, goalDays: number): void {
     const habits = this.habits$.value.map(h => h.id === habitId ? { ...h, goalDays } : h);
-    this.habits$.next(habits);
+    this.habits$.next(this.sortHabits(habits));
+    this.saveToStorage();
+  }
+
+  updateHabit(habitId: string, patch: Partial<Pick<Habit, 'name' | 'isActive' | 'sortOrder' | 'goalDays'>>): void {
+    const habits = this.habits$.value.map(habit => {
+      if (habit.id !== habitId) {
+        return habit;
+      }
+      const nextName = patch.name ? patch.name.trim() : habit.name;
+      return {
+        ...habit,
+        ...patch,
+        name: nextName || habit.name
+      };
+    });
+    this.habits$.next(this.sortHabits(habits));
+    this.saveToStorage();
+  }
+
+  toggleHabitActive(habitId: string): void {
+    const habits = this.habits$.value.map(habit =>
+      habit.id === habitId ? { ...habit, isActive: !habit.isActive } : habit
+    );
+    this.habits$.next(this.sortHabits(habits));
+    this.saveToStorage();
+  }
+
+  reorderHabits(fromIndex: number, toIndex: number): void {
+    const habits = [...this.habits$.value];
+    if (fromIndex < 0 || toIndex < 0 || fromIndex >= habits.length || toIndex >= habits.length) {
+      return;
+    }
+    const [moved] = habits.splice(fromIndex, 1);
+    habits.splice(toIndex, 0, moved);
+    const reordered = habits.map((habit, index) => ({ ...habit, sortOrder: index }));
+    this.habits$.next(reordered);
     this.saveToStorage();
   }
 
   setAllForDay(dayNumber: number, checked: boolean): void {
-    const monthKey = this.selectedMonthYear$.value;
-    const key = this.monthKeyToString(monthKey);
-    const completions = { ...this.completions$.value };
-    if (!completions[key]) {
-      completions[key] = {};
+    const { year, month, day } = this.getSelectedMonthDayParts(dayNumber);
+    if (!year || !month || !day) {
+      return;
     }
-
-    if (checked) {
-      completions[key][dayNumber] = this.habits$.value.map(habit => ({
-        habitId: habit.id,
-        checked: true
-      }));
-    } else {
-      delete completions[key][dayNumber];
-    }
-
-    this.completions$.next(completions);
+    const date = new Date(year, month, day);
+    this.setAllForDate(date, checked);
     this.saveToStorage();
   }
 
   toggleCheck(dayNumber: number, habitId: string): void {
-    const monthKey = this.selectedMonthYear$.value;
-    const key = this.monthKeyToString(monthKey);
-    const completions = { ...this.completions$.value };
-
-    if (!completions[key]) {
-      completions[key] = {};
+    const { year, month, day } = this.getSelectedMonthDayParts(dayNumber);
+    if (!year || !month || !day) {
+      return;
     }
-
-    if (!completions[key][dayNumber]) {
-      completions[key][dayNumber] = [];
-    }
-
-    const dayChecks = completions[key][dayNumber];
-    const existing = dayChecks.findIndex(c => c.habitId === habitId);
-
-    if (existing !== -1) {
-      dayChecks.splice(existing, 1);
-    } else {
-      dayChecks.push({ habitId, checked: true });
-    }
-
-    this.completions$.next(completions);
+    const date = new Date(year, month, day);
+    this.toggleHabitForDate(habitId, date);
     this.saveToStorage();
   }
 
   isChecked(dayNumber: number, habitId: string): boolean {
-    const monthKey = this.selectedMonthYear$.value;
-    const key = this.monthKeyToString(monthKey);
-    const completions = this.completions$.value;
-
-    if (!completions[key] || !completions[key][dayNumber]) {
+    const { year, month, day } = this.getSelectedMonthDayParts(dayNumber);
+    if (!year || !month || !day) {
       return false;
     }
+    const date = new Date(year, month, day);
+    return this.isCheckedForDate(year, month, day, habitId);
+  }
 
-    return completions[key][dayNumber].some(c => c.habitId === habitId);
+  toDateKey(date: Date): string {
+    return this.toIsoDateLocal(date);
+  }
+
+  isCompleted(habitId: string, date: Date): boolean {
+    const dateKey = this.toIsoDateLocal(date);
+    return this.completions$.value[dateKey]?.[habitId] === true;
+  }
+
+  setCompleted(habitId: string, date: Date, completed: boolean): void {
+    const dateKey = this.toIsoDateLocal(date);
+    const completions = { ...this.completions$.value };
+    const dayMap = { ...(completions[dateKey] || {}) };
+    if (completed) {
+      dayMap[habitId] = true;
+      completions[dateKey] = dayMap;
+    } else {
+      if (dayMap[habitId]) {
+        delete dayMap[habitId];
+      }
+      if (Object.keys(dayMap).length === 0) {
+        delete completions[dateKey];
+      } else {
+        completions[dateKey] = dayMap;
+      }
+    }
+    this.completions$.next(completions);
+    this.saveToStorage();
+  }
+
+  isCheckedForDate(year: number, monthIndex: number, dayNumber: number, habitId: string): boolean {
+    const date = new Date(year, monthIndex, dayNumber);
+    return this.isCompleted(habitId, date);
+  }
+
+  toggleCheckForDate(year: number, monthIndex: number, dayNumber: number, habitId: string): void {
+    const date = new Date(year, monthIndex, dayNumber);
+    const next = !this.isCompleted(habitId, date);
+    this.setCompleted(habitId, date, next);
+  }
+
+  setAllForDayForDate(year: number, monthIndex: number, dayNumber: number, checked: boolean): void {
+    const dateKey = this.toIsoDateLocal(new Date(year, monthIndex, dayNumber));
+    const completions = { ...this.completions$.value };
+    if (checked) {
+      const dayMap: Record<string, boolean> = {};
+      this.habits$.value.filter(habit => habit.isActive).forEach(habit => {
+        dayMap[habit.id] = true;
+      });
+      completions[dateKey] = dayMap;
+    } else {
+      delete completions[dateKey];
+    }
+    this.completions$.next(completions);
+    this.saveToStorage();
+  }
+
+  getHabitsForDate(date: Date): Array<{ habit: Habit; checked: boolean }> {
+    const habits = this.habits$.value.filter(habit => habit.isActive).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    const dateKey = this.toIsoDateLocal(date);
+    const dayMap = this.completions$.value[dateKey] || {};
+    return habits.map(habit => ({
+      habit,
+      checked: dayMap[habit.id] === true
+    }));
+  }
+
+  toggleHabitForDate(habitId: string, date: Date): void {
+    const next = !this.isCompleted(habitId, date);
+    this.setCompleted(habitId, date, next);
+  }
+
+  setAllForDate(date: Date, checked: boolean): void {
+    const dateKey = this.toIsoDateLocal(date);
+    const completions = { ...this.completions$.value };
+    if (checked) {
+      const dayMap: Record<string, boolean> = {};
+      this.habits$.value.filter(habit => habit.isActive).forEach(habit => {
+        dayMap[habit.id] = true;
+      });
+      completions[dateKey] = dayMap;
+    } else {
+      delete completions[dateKey];
+    }
+    this.completions$.next(completions);
+    this.saveToStorage();
   }
 
   getDaysInMonth(): number {
@@ -187,13 +307,15 @@ export class HabitStoreService {
 
   getDailyCompletedCounts(): number[] {
     const monthKey = this.selectedMonthYear$.value;
-    const key = this.monthKeyToString(monthKey);
     const completions = this.completions$.value;
     const daysInMonth = this.getDaysInMonth();
     const counts: number[] = [];
 
     for (let day = 1; day <= daysInMonth; day++) {
-      counts.push(completions[key]?.[day]?.length || 0);
+      const date = new Date(monthKey.year, monthKey.month, day);
+      const dateKey = this.toIsoDateLocal(date);
+      const dayMap = completions[dateKey] || {};
+      counts.push(Object.values(dayMap).filter(Boolean).length);
     }
 
     return counts;
@@ -201,12 +323,12 @@ export class HabitStoreService {
 
   getHabitCompletionPercent(habitId: string, year: number, monthIndex: number): number {
     const daysInMonth = DateUtils.daysInMonth(year, monthIndex);
-    const key = this.monthKeyToStringFromParts(year, monthIndex);
     const completions = this.completions$.value;
     let completedDays = 0;
 
     for (let day = 1; day <= daysInMonth; day++) {
-      if (completions[key]?.[day]?.some(c => c.habitId === habitId)) {
+      const dateKey = this.toIsoDateLocal(new Date(year, monthIndex, day));
+      if (completions[dateKey]?.[habitId]) {
         completedDays++;
       }
     }
@@ -216,8 +338,7 @@ export class HabitStoreService {
 
   getMonthInsights(year: number, monthIndex: number): MonthInsights {
     const daysInMonth = DateUtils.daysInMonth(year, monthIndex);
-    const key = this.monthKeyToStringFromParts(year, monthIndex);
-    const completions = this.completions$.value[key] || {};
+    const completions = this.completions$.value;
     const habitsCount = this.habits$.value.length;
     const today = new Date();
     let lastDayIndex = daysInMonth;
@@ -239,7 +360,9 @@ export class HabitStoreService {
     let perfectDays = 0;
 
     for (let day = 1; day <= lastDayIndex; day++) {
-      const count = completions[day]?.length || 0;
+      const dateKey = this.toIsoDateLocal(new Date(year, monthIndex, day));
+      const dayMap = completions[dateKey] || {};
+      const count = Object.values(dayMap).filter(Boolean).length;
       if (count > bestCount) {
         bestCount = count;
         bestDay = day;
@@ -255,7 +378,9 @@ export class HabitStoreService {
 
     let currentStreak = 0;
     for (let day = lastDayIndex; day >= 1; day--) {
-      if ((completions[day]?.length || 0) > 0) {
+      const dateKey = this.toIsoDateLocal(new Date(year, monthIndex, day));
+      const dayMap = completions[dateKey] || {};
+      if (Object.values(dayMap).filter(Boolean).length > 0) {
         currentStreak++;
       } else {
         break;
@@ -280,7 +405,7 @@ export class HabitStoreService {
   }
 
   getMonthlyTotals(): MonthlyTotals {
-    const habits = this.habits$.value;
+    const habits = this.habits$.value.filter(habit => habit.isActive);
     const daysInMonth = this.getDaysInMonth();
     const goal = habits.reduce((sum, h) => sum + h.goalDays, 0);
     const completed = this.getDailyCompletedCounts().reduce((sum, count) => sum + count, 0);
@@ -291,16 +416,15 @@ export class HabitStoreService {
   }
 
   getTopHabits(limit: number): TopHabit[] {
-    const habits = this.habits$.value;
+    const habits = this.habits$.value.filter(habit => habit.isActive);
     const daysInMonth = this.getDaysInMonth();
-    const monthKey = this.selectedMonthYear$.value;
-    const key = this.monthKeyToString(monthKey);
     const completions = this.completions$.value;
 
     const topHabits: TopHabit[] = habits.map(habit => {
       let checkedDays = 0;
       for (let day = 1; day <= daysInMonth; day++) {
-        if (completions[key]?.[day]?.some(c => c.habitId === habit.id)) {
+        const dateKey = this.toIsoDateLocal(new Date(this.selectedMonthYear$.value.year, this.selectedMonthYear$.value.month, day));
+        if (completions[dateKey]?.[habit.id]) {
           checkedDays++;
         }
       }
@@ -308,7 +432,16 @@ export class HabitStoreService {
       return { habit, completionPercent };
     });
 
-    return topHabits.sort((a, b) => b.completionPercent - a.completionPercent).slice(0, limit);
+    const allZero = topHabits.every(item => item.completionPercent === 0);
+    if (allZero) {
+      return topHabits
+        .sort((a, b) => a.habit.name.localeCompare(b.habit.name))
+        .slice(0, limit);
+    }
+
+    return topHabits
+      .sort((a, b) => b.completionPercent - a.completionPercent)
+      .slice(0, limit);
   }
 
   private monthKeyToString(monthKey: MonthKey): string {
@@ -333,61 +466,37 @@ export class HabitStoreService {
       .map(habit => ({
         id: habit.id,
         name: String(habit.name || '').trim() || 'Habit',
-        goalDays: Math.max(1, Number(habit.goalDays) || 1)
+        goalDays: Math.max(1, Number(habit.goalDays) || 1),
+        createdAt: Number((habit as Habit).createdAt) || Date.now(),
+        isActive: (habit as Habit).isActive ?? true,
+        sortOrder: Number((habit as Habit).sortOrder) || 0
       }));
+
+    const incomingChecks = this.normalizeCompletions(backup.checks || {});
 
     if (mode === 'merge') {
       const habitMap = new Map<string, Habit>();
       this.habits$.value.forEach(habit => habitMap.set(habit.id, habit));
       normalizedHabits.forEach(habit => habitMap.set(habit.id, habit));
-      const mergedHabits = Array.from(habitMap.values());
+      const mergedHabits = this.sortHabits(Array.from(habitMap.values()));
       const habitIds = new Set(mergedHabits.map(habit => habit.id));
-      const mergedCompletions: { [key: string]: HabitCompletion } = {};
+      const mergedCompletions: HabitCompletion = { ...this.completions$.value };
 
-      Object.entries(this.completions$.value).forEach(([monthKey, monthData]) => {
-        const clonedMonth: HabitCompletion = {};
-        Object.entries(monthData || {}).forEach(([dayKey, dayChecks]) => {
-          if (Array.isArray(dayChecks) && dayChecks.length > 0) {
-            clonedMonth[Number(dayKey)] = [...dayChecks];
+      Object.entries(incomingChecks).forEach(([dateKey, dayMap]) => {
+        if (!dayMap || typeof dayMap !== 'object' || Array.isArray(dayMap)) {
+          return;
+        }
+        const existing = mergedCompletions[dateKey] || {};
+        const nextMap: Record<string, boolean> = { ...existing };
+        Object.entries(dayMap).forEach(([habitId, completed]) => {
+          if (completed && habitIds.has(habitId)) {
+            nextMap[habitId] = true;
           }
         });
-        if (Object.keys(clonedMonth).length > 0) {
-          mergedCompletions[monthKey] = clonedMonth;
+        if (Object.keys(nextMap).length > 0) {
+          mergedCompletions[dateKey] = nextMap;
         }
       });
-
-      if (backup.checks && typeof backup.checks === 'object') {
-        Object.entries(backup.checks).forEach(([monthKey, monthData]) => {
-          if (!monthData || typeof monthData !== 'object') {
-            return;
-          }
-          const targetMonth = mergedCompletions[monthKey] || {};
-          Object.entries(monthData).forEach(([dayKey, dayChecks]) => {
-            if (!Array.isArray(dayChecks)) {
-              return;
-            }
-            const existing = targetMonth[Number(dayKey)] || [];
-            const mergedMap = new Map<string, DayCheck>();
-            existing.forEach(check => {
-              if (habitIds.has(check.habitId)) {
-                mergedMap.set(check.habitId, check);
-              }
-            });
-            dayChecks.forEach(check => {
-              if (habitIds.has(check.habitId)) {
-                mergedMap.set(check.habitId, { habitId: check.habitId, checked: true });
-              }
-            });
-            const mergedChecks = Array.from(mergedMap.values());
-            if (mergedChecks.length > 0) {
-              targetMonth[Number(dayKey)] = mergedChecks;
-            }
-          });
-          if (Object.keys(targetMonth).length > 0) {
-            mergedCompletions[monthKey] = targetMonth;
-          }
-        });
-      }
 
       this.habits$.next(mergedHabits);
       this.completions$.next(mergedCompletions);
@@ -396,31 +505,24 @@ export class HabitStoreService {
     }
 
     const habitIds = new Set(normalizedHabits.map(habit => habit.id));
-    const completions: { [key: string]: HabitCompletion } = {};
-
-    if (backup.checks && typeof backup.checks === 'object') {
-      Object.entries(backup.checks).forEach(([monthKey, monthData]) => {
-        if (!monthData || typeof monthData !== 'object') {
-          return;
-        }
-        const cleanedMonth: HabitCompletion = {};
-        Object.entries(monthData).forEach(([dayKey, dayChecks]) => {
-          if (!Array.isArray(dayChecks)) {
-            return;
-          }
-          const cleanedChecks = dayChecks.filter(check => habitIds.has(check.habitId));
-          if (cleanedChecks.length > 0) {
-            cleanedMonth[Number(dayKey)] = cleanedChecks;
-          }
-        });
-        if (Object.keys(cleanedMonth).length > 0) {
-          completions[monthKey] = cleanedMonth;
+    const cleanedCompletions: HabitCompletion = {};
+    Object.entries(incomingChecks).forEach(([dateKey, dayMap]) => {
+      if (!dayMap || typeof dayMap !== 'object' || Array.isArray(dayMap)) {
+        return;
+      }
+      const cleanedMap: Record<string, boolean> = {};
+      Object.entries(dayMap).forEach(([habitId, completed]) => {
+        if (completed && habitIds.has(habitId)) {
+          cleanedMap[habitId] = true;
         }
       });
-    }
+      if (Object.keys(cleanedMap).length > 0) {
+        cleanedCompletions[dateKey] = cleanedMap;
+      }
+    });
 
-    this.habits$.next(normalizedHabits);
-    this.completions$.next(completions);
+    this.habits$.next(this.sortHabits(normalizedHabits));
+    this.completions$.next(cleanedCompletions);
 
     const selectedYear = backup.appSettings?.selectedYear;
     const selectedMonthIndex = backup.appSettings?.selectedMonthIndex;
@@ -457,5 +559,111 @@ export class HabitStoreService {
         void this.storageService.saveState(nextState);
       }
     }, 500);
+  }
+
+  private sortHabits(habits: Habit[]): Habit[] {
+    return [...habits].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  }
+
+  private normalizeHabits(habits: Habit[]): Habit[] {
+    return habits.map((habit, index) => ({
+      ...habit,
+      name: habit.name?.trim() || `Habit ${index + 1}`,
+      goalDays: habit.goalDays ?? 30,
+      createdAt: habit.createdAt ?? Date.now() + index,
+      isActive: habit.isActive ?? true,
+      sortOrder: habit.sortOrder ?? index
+    })).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  }
+
+  private createId(): string {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+      return crypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+
+  private removeHabitFromCompletions(habitId: string, completions: HabitCompletion): HabitCompletion {
+    const cleaned: HabitCompletion = {};
+    Object.entries(completions).forEach(([dateKey, dayMap]) => {
+      if (!dayMap || typeof dayMap !== 'object' || Array.isArray(dayMap)) {
+        return;
+      }
+      const nextMap = { ...(dayMap as Record<string, boolean>) };
+      delete nextMap[habitId];
+      if (Object.keys(nextMap).length > 0) {
+        cleaned[dateKey] = nextMap;
+      }
+    });
+    return cleaned;
+  }
+
+  private normalizeCompletions(completions: HabitCompletion): HabitCompletion {
+    const normalized: HabitCompletion = {};
+    Object.entries(completions).forEach(([key, value]) => {
+      if (/^\d{4}-\d{2}$/.test(key) && value && typeof value === 'object' && !Array.isArray(value)) {
+        const legacyMonth = value as unknown as Record<string, DayCheck[] | Record<string, boolean>>;
+        Object.entries(legacyMonth).forEach(([dayKey, dayValue]) => {
+          const day = Number(dayKey);
+          if (Number.isNaN(day)) {
+            return;
+          }
+          const [yearStr, monthStr] = key.split('-');
+          const year = Number(yearStr);
+          const monthIndex = Number(monthStr) - 1;
+          const dateKey = this.toIsoDateLocal(new Date(year, monthIndex, day));
+          if (Array.isArray(dayValue)) {
+            normalized[dateKey] = this.dayChecksToMap(dayValue);
+            return;
+          }
+          if (dayValue && typeof dayValue === 'object') {
+            normalized[dateKey] = this.booleanMapOnly(dayValue as Record<string, boolean>);
+          }
+        });
+        return;
+      }
+      if (/^\d{4}-\d{2}-\d{2}$/.test(key)) {
+        if (Array.isArray(value)) {
+          normalized[key] = this.dayChecksToMap(value);
+          return;
+        }
+        if (value && typeof value === 'object') {
+          normalized[key] = this.booleanMapOnly(value as Record<string, boolean>);
+        }
+      }
+    });
+    return normalized;
+  }
+
+  private dayChecksToMap(dayChecks: DayCheck[]): Record<string, boolean> {
+    const dayMap: Record<string, boolean> = {};
+    dayChecks.forEach(check => {
+      if (check?.habitId) {
+        dayMap[check.habitId] = true;
+      }
+    });
+    return dayMap;
+  }
+
+  private booleanMapOnly(dayMap: Record<string, boolean>): Record<string, boolean> {
+    const cleaned: Record<string, boolean> = {};
+    Object.entries(dayMap).forEach(([habitId, value]) => {
+      if (value) {
+        cleaned[habitId] = true;
+      }
+    });
+    return cleaned;
+  }
+
+  private getSelectedMonthDayParts(dayNumber: number): { year: number; month: number; day: number } {
+    const { year, month } = this.selectedMonthYear$.value;
+    return { year, month, day: dayNumber };
+  }
+
+  private toIsoDateLocal(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }

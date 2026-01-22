@@ -14,11 +14,7 @@ import { Subscription } from 'rxjs';
 import { HabitStoreService } from './services/habit-store.service';
 import { ThemeService } from './services/theme.service';
 import { routeAnimations } from './shared/route-animations';
-
-type BeforeInstallPromptEvent = Event & {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-};
+import { BottomNavComponent } from './shared/bottom-nav/bottom-nav.component';
 
 @Component({
   selector: 'app-root',
@@ -35,6 +31,7 @@ type BeforeInstallPromptEvent = Event & {
     MatButtonModule,
     MatIconModule,
     MatMenuModule,
+    BottomNavComponent,
     CommonModule,
     FormsModule
   ],
@@ -64,9 +61,6 @@ export class App implements OnInit, OnDestroy {
 
   currentTheme: 'dark' | 'light' = 'dark';
   reduceMotion = false;
-  showInstallBanner = false;
-  private deferredPrompt: BeforeInstallPromptEvent | null = null;
-  private installListener?: (event: Event) => void;
 
   private subscription: Subscription = new Subscription();
 
@@ -89,25 +83,10 @@ export class App implements OnInit, OnDestroy {
         this.reduceMotion = reduce;
       })
     );
-
-    if (typeof window !== 'undefined') {
-      const dismissed = window.localStorage?.getItem('pwa_install_banner_dismissed') === 'true';
-      this.installListener = (event: Event) => {
-        event.preventDefault();
-        this.deferredPrompt = event as BeforeInstallPromptEvent;
-        if (!dismissed && this.isMobileDevice()) {
-          this.showInstallBanner = true;
-        }
-      };
-      window.addEventListener('beforeinstallprompt', this.installListener);
-    }
   }
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
-    if (typeof window !== 'undefined' && this.installListener) {
-      window.removeEventListener('beforeinstallprompt', this.installListener);
-    }
   }
 
   onYearChange(): void {
@@ -122,35 +101,7 @@ export class App implements OnInit, OnDestroy {
     this.themeService.toggleTheme();
   }
 
-  installPwa(): void {
-    if (!this.deferredPrompt) {
-      return;
-    }
-    void this.deferredPrompt.prompt();
-    void this.deferredPrompt.userChoice.then(choice => {
-      this.showInstallBanner = false;
-      this.deferredPrompt = null;
-      if (choice.outcome === 'dismissed') {
-        this.dismissInstallBanner();
-      }
-    });
-  }
-
-  dismissInstallBanner(): void {
-    this.showInstallBanner = false;
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.setItem('pwa_install_banner_dismissed', 'true');
-    }
-  }
-
   prepareRoute(outlet: RouterOutlet): string {
     return outlet?.activatedRouteData?.['animation'] || '';
-  }
-
-  private isMobileDevice(): boolean {
-    if (typeof window === 'undefined') {
-      return false;
-    }
-    return window.matchMedia?.('(max-width: 768px)').matches ?? window.innerWidth <= 768;
   }
 }

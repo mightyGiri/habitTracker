@@ -14,7 +14,7 @@ type BackupPayload = {
     selectedMonthIndex?: number;
   };
   habits: Array<{ id: string; name: string; goalDays: number }>;
-  checks: Record<string, HabitCompletion>;
+  checks: HabitCompletion;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -47,22 +47,17 @@ export class BackupService {
     const snapshot = this.habitStore.getSnapshotForBackup();
     const totalHabits = snapshot.habits.length;
     const lines: string[] = ['Year,Month,Day,CompletedHabitsCount,TotalHabits'];
+    const monthKeys = this.getMonthKeys(snapshot.completions);
 
-    Object.keys(snapshot.completions)
-      .sort()
-      .forEach(monthKey => {
-        const parsed = this.parseMonthKey(monthKey);
-        if (!parsed) {
-          return;
-        }
-        const { year, monthIndex } = parsed;
-        const daysInMonth = DateUtils.daysInMonth(year, monthIndex);
-        const monthData = snapshot.completions[monthKey] || {};
-        for (let day = 1; day <= daysInMonth; day++) {
-          const completedCount = monthData[day]?.length || 0;
-          lines.push(`${year},${monthIndex + 1},${day},${completedCount},${totalHabits}`);
-        }
-      });
+    monthKeys.forEach(({ year, monthIndex }) => {
+      const daysInMonth = DateUtils.daysInMonth(year, monthIndex);
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateKey = this.toIsoDateLocal(new Date(year, monthIndex, day));
+        const dayMap = snapshot.completions[dateKey] || {};
+        const completedCount = Object.values(dayMap).filter(Boolean).length;
+        lines.push(`${year},${monthIndex + 1},${day},${completedCount},${totalHabits}`);
+      }
+    });
 
     const csv = lines.join('\n');
     this.downloadFile(csv, `habit-tracker-dailycounts-${this.getDateStamp()}.csv`, 'text/csv');
@@ -71,27 +66,15 @@ export class BackupService {
   exportHabitChecksCsv(): void {
     const snapshot = this.habitStore.getSnapshotForBackup();
     const lines: string[] = ['Year,Month,Day,HabitId,Checked'];
-
-    Object.keys(snapshot.completions)
-      .sort()
-      .forEach(monthKey => {
-        const parsed = this.parseMonthKey(monthKey);
-        if (!parsed) {
-          return;
-        }
-        const { year, monthIndex } = parsed;
-        const monthData = snapshot.completions[monthKey] || {};
-        Object.keys(monthData).forEach(dayKey => {
-          const day = Number(dayKey);
-          const checks = monthData[day];
-          if (!Array.isArray(checks)) {
-            return;
-          }
-          checks.forEach(check => {
-            lines.push(`${year},${monthIndex + 1},${day},${check.habitId},${check.checked ? 'true' : 'false'}`);
-          });
-        });
+    Object.entries(snapshot.completions).forEach(([dateKey, dayMap]) => {
+      const parsed = this.parseDateKey(dateKey);
+      if (!parsed || !dayMap || typeof dayMap !== 'object' || Array.isArray(dayMap)) {
+        return;
+      }
+      Object.entries(dayMap).forEach(([habitId, completed]) => {
+        lines.push(`${parsed.year},${parsed.monthIndex + 1},${parsed.day},${habitId},${completed ? 'true' : 'false'}`);
       });
+    });
 
     const csv = lines.join('\n');
     this.downloadFile(csv, `habit-tracker-habitchecks-${this.getDateStamp()}.csv`, 'text/csv');
@@ -100,7 +83,7 @@ export class BackupService {
   exportXlsx(): void {
     const snapshot = this.habitStore.getSnapshotForBackup();
     const totalHabits = snapshot.habits.length;
-    const monthKeys = Object.keys(snapshot.completions).sort();
+    const monthKeys = this.getMonthKeys(snapshot.completions);
     const summaryRows: Array<Array<string | number>> = [
       ['Year', 'Month', 'TotalHabits', 'CompletedChecks', 'GoalChecks', 'Percent']
     ];
@@ -111,22 +94,18 @@ export class BackupService {
       ['Year', 'Month', 'Day', 'HabitId', 'Checked']
     ];
 
-    monthKeys.forEach(monthKey => {
-      const parsed = this.parseMonthKey(monthKey);
-      if (!parsed) {
-        return;
-      }
-      const { year, monthIndex } = parsed;
+    monthKeys.forEach(({ year, monthIndex }) => {
       const daysInMonth = DateUtils.daysInMonth(year, monthIndex);
-      const monthData = snapshot.completions[monthKey] || {};
       let completedChecks = 0;
 
       for (let day = 1; day <= daysInMonth; day++) {
-        const checks = monthData[day] || [];
-        completedChecks += checks.length;
-        dailyCountRows.push([year, monthIndex + 1, day, checks.length, totalHabits]);
-        checks.forEach(check => {
-          habitCheckRows.push([year, monthIndex + 1, day, check.habitId, check.checked ? 'true' : 'false']);
+        const dateKey = this.toIsoDateLocal(new Date(year, monthIndex, day));
+        const dayMap = snapshot.completions[dateKey] || {};
+        const dayCount = Object.values(dayMap).filter(Boolean).length;
+        completedChecks += dayCount;
+        dailyCountRows.push([year, monthIndex + 1, day, dayCount, totalHabits]);
+        Object.entries(dayMap).forEach(([habitId, completed]) => {
+          habitCheckRows.push([year, monthIndex + 1, day, habitId, completed ? 'true' : 'false']);
         });
       }
 
@@ -161,21 +140,42 @@ export class BackupService {
     URL.revokeObjectURL(url);
   }
 
-  private parseMonthKey(monthKey: string): { year: number; monthIndex: number } | null {
-    const parts = monthKey.split('-');
-    if (parts.length !== 2) {
+  private getMonthKeys(completions: HabitCompletion): Array<{ year: number; monthIndex: number }> {
+    const keys = new Map<string, { year: number; monthIndex: number }>();
+    Object.keys(completions).forEach(dateKey => {
+      const parsed = this.parseDateKey(dateKey);
+      if (!parsed) {
+        return;
+      }
+      const key = `${parsed.year}-${parsed.monthIndex}`;
+      keys.set(key, { year: parsed.year, monthIndex: parsed.monthIndex });
+    });
+    return Array.from(keys.values()).sort((a, b) => (a.year - b.year) || (a.monthIndex - b.monthIndex));
+  }
+
+  private parseDateKey(dateKey: string): { year: number; monthIndex: number; day: number } | null {
+    const parts = dateKey.split('-');
+    if (parts.length !== 3) {
       return null;
     }
     const year = Number(parts[0]);
     const month = Number(parts[1]);
-    if (!Number.isFinite(year) || !Number.isFinite(month)) {
+    const day = Number(parts[2]);
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
       return null;
     }
     const monthIndex = month - 1;
     if (monthIndex < 0 || monthIndex > 11) {
       return null;
     }
-    return { year, monthIndex };
+    return { year, monthIndex, day };
+  }
+
+  private toIsoDateLocal(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   private getDateStamp(): string {
