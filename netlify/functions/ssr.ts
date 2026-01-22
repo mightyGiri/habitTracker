@@ -2,43 +2,30 @@ import { Handler } from '@netlify/functions';
 import express from 'express';
 import serverless from 'serverless-http';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
-const app = express();
-const browserDistFolder = join(process.cwd(), 'dist/habitTracker/browser');
-const manifestPath = join(process.cwd(), 'dist/habitTracker/server/angular-app-engine-manifest.mjs');
+const serverEntry = join(process.cwd(), 'dist/habitTracker/server/server.mjs');
 
-let angularApp: any;
-let writeResponseToNodeResponse: any;
-let initPromise: Promise<void> | null = null;
+let cachedHandler: Handler | null = null;
 
-const initAngularApp = (): Promise<void> => {
-  if (initPromise) {
-    return initPromise;
+const getHandler = async (): Promise<Handler> => {
+  if (cachedHandler) {
+    return cachedHandler;
   }
-  initPromise = (async () => {
-    process.env['ANGULAR_APP_ENGINE_MANIFEST'] = manifestPath;
-    const ssr = await import('@angular/ssr/node');
-    angularApp = new ssr.AngularNodeAppEngine();
-    writeResponseToNodeResponse = ssr.writeResponseToNodeResponse;
-  })();
-  return initPromise;
+
+  const serverModule = await import(pathToFileURL(serverEntry).href);
+  const reqHandler = serverModule.reqHandler as (req: any, res: any) => void;
+
+  const app = express();
+  app.use((req, res) => reqHandler(req, res));
+
+  cachedHandler = serverless(app);
+  return cachedHandler;
 };
 
-app.use(
-  express.static(browserDistFolder, {
-    maxAge: '1y',
-    index: false,
-    redirect: false
-  })
-);
-
-app.use((req, res, next) => {
-  initAngularApp()
-    .then(() => angularApp.handle(req))
-    .then((response: any) => (response ? writeResponseToNodeResponse(response, res) : next()))
-    .catch(next);
-});
-
-const handler: Handler = serverless(app);
+const handler: Handler = async (event, context) => {
+  const resolvedHandler = await getHandler();
+  return resolvedHandler(event, context);
+};
 
 export { handler };
