@@ -5,8 +5,11 @@ import { AngularNodeAppEngine, writeResponseToNodeResponse } from '@angular/ssr/
 import { join } from 'node:path';
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
 const browserDistFolder = join(process.cwd(), 'dist/habitTracker/browser');
+const manifestPath = join(process.cwd(), 'dist/habitTracker/server/angular-app-engine-manifest.mjs');
+
+process.env['ANGULAR_APP_ENGINE_MANIFEST'] = manifestPath;
+const angularApp = new AngularNodeAppEngine();
 
 app.use(
   express.static(browserDistFolder, {
