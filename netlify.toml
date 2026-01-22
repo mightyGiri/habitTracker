@@ -1,0 +1,13 @@
+[build]
+  command = "ng build --configuration production"
+  publish = "dist/habitTracker/browser"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+  included_files = ["dist/habitTracker/browser/**", "dist/habitTracker/server/**"]
+
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/ssr"
+  status = 200
