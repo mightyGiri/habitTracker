@@ -24,6 +24,9 @@ export class StorageService {
   private dbPromise: Promise<IDBPDatabase> | null = null;
 
   async loadState(): Promise<PersistedState | null> {
+    if (!this.isIndexedDbAvailable()) {
+      return this.loadFromLocalStorage();
+    }
     try {
       const db = await this.getDb();
       const state = await db.get(STORE_NAME, STATE_KEY);
@@ -37,12 +40,14 @@ export class StorageService {
   }
 
   async saveState(state: PersistedState): Promise<void> {
-    try {
-      const db = await this.getDb();
-      await db.put(STORE_NAME, state, STATE_KEY);
-      return;
-    } catch (error) {
-      console.warn('IndexedDB save failed, falling back to localStorage.', error);
+    if (this.isIndexedDbAvailable()) {
+      try {
+        const db = await this.getDb();
+        await db.put(STORE_NAME, state, STATE_KEY);
+        return;
+      } catch (error) {
+        console.warn('IndexedDB save failed, falling back to localStorage.', error);
+      }
     }
     this.saveToLocalStorage(state);
   }
@@ -96,5 +101,9 @@ export class StorageService {
     } catch (error) {
       console.warn('Failed to save state to localStorage.', error);
     }
+  }
+
+  private isIndexedDbAvailable(): boolean {
+    return typeof indexedDB !== 'undefined';
   }
 }
