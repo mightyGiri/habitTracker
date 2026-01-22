@@ -10,20 +10,23 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { Subscription, combineLatest } from 'rxjs';
 import { HabitStoreService } from '../../services/habit-store.service';
 import { Habit, MonthKey, MonthSlot } from '../../models/habit.model';
 import { DateUtils } from '../../shared/date-utils';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/confirm-dialog.component';
+import { ImportConfirmDialogComponent, ImportConfirmDialogData } from '../../shared/import-confirm-dialog.component';
 import { ThemeService } from '../../services/theme.service';
+import { BackupService } from '../../services/backup.service';
 import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-animations';
 import { MobileHabitsViewComponent } from './mobile-habits-view.component';
 
 @Component({
   selector: 'app-habits',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatCheckboxModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MatSelectModule, MatProgressBarModule, MatDialogModule, MatSlideToggleModule, FormsModule, MobileHabitsViewComponent],
+  imports: [CommonModule, MatCardModule, MatCheckboxModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MatSelectModule, MatProgressBarModule, MatDialogModule, MatSlideToggleModule, MatSnackBarModule, FormsModule, MobileHabitsViewComponent],
   animations: [staggerFadeUp || noopAnimation, fadeSlideInOut || noopAnimation],
   template: `
     <div class="page-container" [@.disabled]="reduceMotion">
@@ -70,6 +73,26 @@ import { MobileHabitsViewComponent } from './mobile-habits-view.component';
               Collapse week headers
             </mat-slide-toggle>
           </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="aesthetic-card backup-card">
+        <div class="section-header text-section">Backup & Restore</div>
+        <mat-card-content>
+          <div class="backup-actions">
+            <button mat-stroked-button (click)="exportJson()">Export JSON</button>
+            <button mat-stroked-button (click)="triggerImportJson(importInput)">Import JSON</button>
+            <button mat-stroked-button (click)="exportXlsx()" [disabled]="exportingXlsx">
+              {{ exportingXlsx ? 'Exporting...' : 'Export Excel (XLSX)' }}
+            </button>
+            <button mat-stroked-button (click)="exportCsv()">Export CSV</button>
+          </div>
+          <input
+            #importInput
+            type="file"
+            class="visually-hidden"
+            accept=".json,application/json"
+            (change)="onImportJson($event)">
         </mat-card-content>
       </mat-card>
 
@@ -190,6 +213,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
   animationKey = 0;
   reduceMotion = false;
   isMobile = false;
+  exportingXlsx = false;
   private lastMonthKey: string | null = null;
   private resizeListener?: () => void;
 
@@ -199,6 +223,8 @@ export class HabitsComponent implements OnInit, OnDestroy {
     private habitStore: HabitStoreService,
     private dialog: MatDialog,
     private themeService: ThemeService,
+    private snackBar: MatSnackBar,
+    private backupService: BackupService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -262,6 +288,115 @@ export class HabitsComponent implements OnInit, OnDestroy {
     if (this.todayDayNumber) {
       this.habitStore.setAllForDay(this.todayDayNumber, false);
     }
+  }
+
+  exportJson(): void {
+    try {
+      this.backupService.exportJsonBackup();
+      this.snackBar.open('Export completed', 'Close', { duration: 2000 });
+    } catch (error) {
+      console.error('Export failed', error);
+      this.snackBar.open('Export failed', 'Close', { duration: 2000 });
+    }
+  }
+
+  exportCsv(): void {
+    try {
+      this.backupService.exportDailyCountsCsv();
+      this.snackBar.open('Export completed', 'Close', { duration: 2000 });
+    } catch (error) {
+      console.error('Export failed', error);
+      this.snackBar.open('Export failed', 'Close', { duration: 2000 });
+    }
+  }
+
+  exportXlsx(): void {
+    this.exportingXlsx = true;
+    try {
+      this.backupService.exportXlsx();
+      this.snackBar.open('Export completed', 'Close', { duration: 2000 });
+    } catch (error) {
+      console.error('Export failed', error);
+      this.snackBar.open('Export failed', 'Close', { duration: 2000 });
+    } finally {
+      this.exportingXlsx = false;
+    }
+  }
+
+  triggerImportJson(input: HTMLInputElement): void {
+    input.click();
+  }
+
+  onImportJson(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    const file = target.files && target.files[0];
+    if (!file) {
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const raw = String(reader.result || '');
+        const parsed = JSON.parse(raw);
+        const validation = this.validateBackup(parsed);
+        if (!validation.valid) {
+          this.snackBar.open(validation.message, 'Close', { duration: 2500 });
+          return;
+        }
+
+        const dialogRef = this.dialog.open<ImportConfirmDialogComponent, ImportConfirmDialogData, 'replace' | 'merge' | undefined>(
+          ImportConfirmDialogComponent,
+          {
+            data: {
+              title: 'Import backup?',
+              message: 'This will replace your current data or merge it with the backup.'
+            }
+          }
+        );
+
+        dialogRef.afterClosed().subscribe(result => {
+          if (!result) {
+            return;
+          }
+          this.habitStore.restoreFromBackup(parsed, result);
+          if (parsed.appSettings?.theme === 'dark' || parsed.appSettings?.theme === 'light') {
+            this.themeService.setTheme(parsed.appSettings.theme);
+          }
+          if (Array.isArray(parsed.habits) && parsed.habits.length === 0) {
+            this.snackBar.open('Import completed (no habits found)', 'Close', { duration: 2500 });
+          } else {
+            this.snackBar.open(result === 'merge' ? 'Import completed (merged)' : 'Import completed', 'Close', { duration: 2000 });
+          }
+        });
+      } catch (error) {
+        console.error('Import failed', error);
+        this.snackBar.open('Invalid JSON file', 'Close', { duration: 2500 });
+      }
+    };
+    reader.onerror = () => {
+      this.snackBar.open('Failed to read file', 'Close', { duration: 2500 });
+    };
+    reader.readAsText(file);
+    target.value = '';
+  }
+
+  private validateBackup(data: any): { valid: boolean; message: string } {
+    if (!data || typeof data !== 'object') {
+      return { valid: false, message: 'Invalid backup file' };
+    }
+    if (data.schemaVersion !== 1) {
+      return { valid: false, message: 'Unsupported schema version' };
+    }
+    if (!data.exportedAt || typeof data.exportedAt !== 'string') {
+      return { valid: false, message: 'Missing exportedAt' };
+    }
+    if (!Array.isArray(data.habits)) {
+      return { valid: false, message: 'Missing habits list' };
+    }
+    if (!data.checks || typeof data.checks !== 'object') {
+      return { valid: false, message: 'Missing checks data' };
+    }
+    return { valid: true, message: 'OK' };
   }
 
   fillCurrentWeek(habitId: string): void {
