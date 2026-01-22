@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Habit, MonthKey, HabitCompletion, DayCheck, MonthlyTotals, TopHabit, MonthInsights } from '../models/habit.model';
 import { DateUtils } from '../shared/date-utils';
-
-const STORAGE_KEY = 'habit_tracker_data';
+import { StorageService, PersistedState } from './storage.service';
+import { ThemeService } from './theme.service';
 
 interface StorageData {
   habits: Habit[];
@@ -24,12 +24,33 @@ export class HabitStoreService {
   private habits$ = new BehaviorSubject<Habit[]>([]);
   private completions$ = new BehaviorSubject<{ [key: string]: HabitCompletion }>({});
   private selectedMonthYear$ = new BehaviorSubject<MonthKey>({ year: 2026, month: 0 });
+  private isHydrated = false;
+  private saveTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingState: PersistedState | null = null;
 
-  constructor() {
-    this.loadFromStorage();
-    if (this.habits$.value.length === 0) {
-      this.seedHabits();
+  constructor(private storageService: StorageService, private themeService: ThemeService) {
+    void this.initialize();
+    this.themeService.getTheme().subscribe(() => this.saveToStorage());
+  }
+
+  private async initialize(): Promise<void> {
+    const state = await this.storageService.loadState();
+    if (state) {
+      this.habits$.next(state.habits || []);
+      this.completions$.next(state.completions || {});
+      if (state.selectedMonthYear) {
+        this.selectedMonthYear$.next(state.selectedMonthYear);
+      }
+      if (state.settings?.theme) {
+        this.themeService.setTheme(state.settings.theme);
+      }
+      this.isHydrated = true;
+      return;
     }
+
+    this.seedHabits();
+    this.isHydrated = true;
+    this.saveToStorage();
   }
 
   private seedHabits(): void {
@@ -48,7 +69,6 @@ export class HabitStoreService {
       { id: '12', name: 'No Phone', goalDays: 14, color: '#D7BDE2' },
     ];
     this.habits$.next(habits);
-    this.saveToStorage();
   }
 
   setSelectedMonthYear(year: number, monthIndex: number): void {
@@ -412,29 +432,30 @@ export class HabitStoreService {
   }
 
   private saveToStorage(): void {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const data: StorageData = {
-        habits: this.habits$.value,
-        completions: this.completions$.value,
-        selectedMonthYear: this.selectedMonthYear$.value,
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    if (!this.isHydrated) {
+      return;
     }
-  }
-
-  private loadFromStorage(): void {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const data = localStorage.getItem(STORAGE_KEY);
-      if (data) {
-        try {
-          const parsed: StorageData = JSON.parse(data);
-          this.habits$.next(parsed.habits);
-          this.completions$.next(parsed.completions);
-          this.selectedMonthYear$.next(parsed.selectedMonthYear);
-        } catch (e) {
-          console.error('Failed to load from storage', e);
-        }
+    const data: PersistedState = {
+      schemaVersion: 1,
+      habits: this.habits$.value,
+      completions: this.completions$.value,
+      selectedMonthYear: this.selectedMonthYear$.value,
+      settings: {
+        theme: this.themeService.getThemeSync()
       }
+    };
+
+    this.pendingState = data;
+    if (this.saveTimer) {
+      return;
     }
+    this.saveTimer = setTimeout(() => {
+      const nextState = this.pendingState;
+      this.pendingState = null;
+      this.saveTimer = null;
+      if (nextState) {
+        void this.storageService.saveState(nextState);
+      }
+    }, 500);
   }
 }

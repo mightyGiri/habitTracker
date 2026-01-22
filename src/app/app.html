@@ -30,6 +30,16 @@
   </button>
 </mat-toolbar>
 
+<div class="install-banner" *ngIf="showInstallBanner">
+  <span>Install Daily Levelling</span>
+  <div class="install-actions">
+    <button mat-stroked-button (click)="installPwa()">Install</button>
+    <button mat-icon-button aria-label="Dismiss install banner" (click)="dismissInstallBanner()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+</div>
+
 <main class="main-container" [@routeAnimations]="prepareRoute(outlet)" [@.disabled]="reduceMotion">
   <router-outlet #outlet="outlet"></router-outlet>
 </main>
