@@ -3,11 +3,11 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'dashboard',
+    redirectTo: 'today',
     pathMatch: 'full'
   },
   {
-    path: 'dashboard',
+    path: 'today',
     loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent),
     data: { animation: 'dashboard' }
   },
@@ -22,12 +22,17 @@ export const routes: Routes = [
     data: { animation: 'habits' }
   },
   {
+    path: 'profile',
+    loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent),
+    data: { animation: 'profile' }
+  },
+  {
     path: 'about',
     loadComponent: () => import('./pages/about/about.component').then(m => m.AboutComponent),
     data: { animation: 'about' }
   },
   {
     path: '**',
-    redirectTo: 'dashboard'
+    redirectTo: 'today'
   }
 ];

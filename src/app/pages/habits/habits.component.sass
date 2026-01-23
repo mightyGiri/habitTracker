@@ -3,6 +3,11 @@
 
 .add-habit-btn
   margin-bottom: var(--space-2)
+  color: var(--theme-accent)
+  border-color: var(--theme-accent)
+
+  &:hover
+    background: var(--theme-accent-soft)
 
 .habit-form
   display: grid
@@ -49,23 +54,11 @@
   align-items: center
   gap: 4px
 
-  .mat-mdc-icon-button
+  .btn-icon
     min-width: 44px
     min-height: 44px
     width: 44px
     height: 44px
-    color: var(--theme-text)
-    background: rgba(0, 0, 0, 0.08)
-    border-radius: 50%
-    transition: transform 160ms ease, box-shadow 160ms ease, color 160ms ease
-
-  .mat-mdc-icon-button:hover
-    color: var(--theme-text)
-    box-shadow: 0 0 10px var(--theme-glow)
-    transform: translateY(-1px)
-
-  .mat-mdc-icon-button:active
-    transform: translateY(0)
 
 .backup-card
   margin-bottom: var(--space-3)

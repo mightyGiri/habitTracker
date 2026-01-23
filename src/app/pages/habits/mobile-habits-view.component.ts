@@ -1,7 +1,6 @@
 import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatBottomSheet, MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -15,7 +14,7 @@ type DayOption = { dayNumber: number; dayLabel: string };
 @Component({
   selector: 'app-mobile-habits-view',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonModule, MatCheckboxModule, MatBottomSheetModule, MatDialogModule, MatIconModule],
+  imports: [CommonModule, MatCardModule, MatCheckboxModule, MatBottomSheetModule, MatDialogModule, MatIconModule],
   template: `
     <section class="mobile-habits">
       <mat-card class="aesthetic-card mobile-card">
@@ -25,16 +24,16 @@ type DayOption = { dayNumber: number; dayLabel: string };
             <span class="text-label">{{ monthLabel }} {{ year }}</span>
             <button
               *ngIf="todayDayNumber"
-              mat-stroked-button
-              class="today-btn"
+              class="btn btn-outline btn-sm today-btn"
+              type="button"
               (click)="jumpToToday()">
               Today
             </button>
           </div>
           <div class="day-scroller" role="listbox" aria-label="Select day">
             <button
-              mat-button
               class="day-chip"
+              type="button"
               *ngFor="let day of dayOptions; trackBy: trackByDay"
               [class.selected]="day.dayNumber === selectedDayNumber"
               (click)="selectDay(day.dayNumber)">
@@ -47,8 +46,8 @@ type DayOption = { dayNumber: number; dayLabel: string };
       <mat-card class="aesthetic-card mobile-card">
         <div class="card-header text-section">Quick Actions</div>
         <mat-card-content class="card-body actions-row">
-          <button mat-stroked-button (click)="markAll()" [disabled]="!selectedDayNumber">Mark All</button>
-          <button mat-stroked-button (click)="clearAll()" [disabled]="!selectedDayNumber">Clear All</button>
+          <button class="btn btn-outline btn-sm" type="button" (click)="markAll()" [disabled]="!selectedDayNumber">Mark All</button>
+          <button class="btn btn-outline btn-sm" type="button" (click)="clearAll()" [disabled]="!selectedDayNumber">Clear All</button>
         </mat-card-content>
       </mat-card>
 

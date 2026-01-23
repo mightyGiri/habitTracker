@@ -7,7 +7,6 @@ import { MonthKey, MonthSlot } from '../../models/habit.model';
 import { DateUtils } from '../../shared/date-utils';
 import { ThemeService } from '../../services/theme.service';
 import { staggerFadeUp, noopAnimation } from '../../shared/list-animations';
-import { Router } from '@angular/router';
 
 type CalendarCell = {
   dayNumber: number | null;
@@ -36,7 +35,7 @@ type WeekSummary = {
   imports: [CommonModule, MatCardModule],
   animations: [staggerFadeUp || noopAnimation],
   template: `
-    <div class="page-container" [@.disabled]="reduceMotion">
+    <div class="page-container" [@.disabled]="reduceMotion" [class.reduce-motion]="reduceMotion">
       <mat-card class="aesthetic-card kpi-strip" [@staggerFadeUp]="animationKey">
         <div class="kpi-item">
           <span class="kpi-label">Completion</span>
@@ -68,6 +67,7 @@ type WeekSummary = {
                 class="calendar-cell {{ cell.intensityClass }}"
                 [class.is-selected]="cell.isSelected"
                 [class.is-perfect]="cell.isPerfect"
+                [class.perfect-day]="cell.isPerfect"
                 (click)="selectDay(cell)"
                 [attr.aria-label]="'Select ' + cell.dayNumber">
                 <span class="cell-date">
@@ -128,8 +128,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
 
   constructor(
     private habitStore: HabitStoreService,
-    private themeService: ThemeService,
-    private router: Router
+    private themeService: ThemeService
   ) {}
 
   ngOnInit(): void {
@@ -266,8 +265,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
     }
     this.habitStore.setSelectedDate(cell.date);
     this.habitStore.setSelectedMonthYear(this.selectedMonthYear.year, this.selectedMonthYear.month);
-    void this.router.navigate(['/dashboard']);
-  }
+    }
 
   trackByWeek(index: number, week: WeekSummary): number {
     return week.weekIndex;

@@ -1,20 +1,21 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { HabitStoreService } from './services/habit-store.service';
 import { ThemeService } from './services/theme.service';
 import { routeAnimations } from './shared/route-animations';
 import { BottomNavComponent } from './shared/bottom-nav/bottom-nav.component';
+import { SettingsService } from './services/settings.service';
 
 @Component({
   selector: 'app-root',
@@ -28,7 +29,6 @@ import { BottomNavComponent } from './shared/bottom-nav/bottom-nav.component';
     MatTabsModule,
     MatCardModule,
     MatFormFieldModule,
-    MatButtonModule,
     MatIconModule,
     MatMenuModule,
     BottomNavComponent,
@@ -61,10 +61,16 @@ export class App implements OnInit, OnDestroy {
 
   currentTheme: 'dark' | 'light' = 'dark';
   reduceMotion = false;
+  pageTitle = 'Today';
 
   private subscription: Subscription = new Subscription();
 
-  constructor(private habitStore: HabitStoreService, private themeService: ThemeService) {}
+  constructor(
+    private habitStore: HabitStoreService,
+    private themeService: ThemeService,
+    private settingsService: SettingsService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.subscription.add(
@@ -83,6 +89,12 @@ export class App implements OnInit, OnDestroy {
         this.reduceMotion = reduce;
       })
     );
+    this.subscription.add(
+      this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
+        this.pageTitle = this.getTitleFromUrl(this.router.url);
+      })
+    );
+    this.pageTitle = this.getTitleFromUrl(this.router.url);
   }
 
   ngOnDestroy(): void {
@@ -98,10 +110,18 @@ export class App implements OnInit, OnDestroy {
   }
 
   toggleTheme(): void {
-    this.themeService.toggleTheme();
+    const nextTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
+    this.settingsService.updateSettings({ themeMode: nextTheme });
   }
 
   prepareRoute(outlet: RouterOutlet): string {
     return outlet?.activatedRouteData?.['animation'] || '';
+  }
+
+  private getTitleFromUrl(url: string): string {
+    if (url.startsWith('/overview')) return 'Overview';
+    if (url.startsWith('/habits')) return 'Habits';
+    if (url.startsWith('/profile')) return 'Profile';
+    return 'Today';
   }
 }

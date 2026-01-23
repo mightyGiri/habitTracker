@@ -1,8 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@400;500;600&family=Poppins:wght@400;500;600&family=Roboto:wght@400;500;600&display=swap')
+
 /* Global styles */
 :root
   --theme-bg: #0b0f1a
   --theme-bg-2: #141a2b
-  --theme-bg-spot-1: rgba(242, 122, 42, 0.18)
+  --theme-bg-spot-1: var(--accent-20)
   --theme-bg-spot-2: rgba(63, 181, 122, 0.12)
   --theme-pattern: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 14px)
   --theme-surface: #1a1c28
@@ -37,17 +39,39 @@
   --space-4: 24px
   --space-5: 32px
   --font-base: 15px
+  --font-scale: 1
+  --app-font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif
+  --app-font-size: 16px
+  --app-font: var(--app-font-family)
   --text-title: 24px
   --text-section: 13px
   --text-value: 26px
   --text-body: 15px
   --text-label: 13px
   --text-muted: 12px
+  --bg: var(--theme-bg)
+  --surface: var(--theme-surface)
+  --surface-2: var(--theme-surface-2)
+  --text: var(--theme-text)
+  --muted: var(--theme-text-muted)
+  --border: var(--theme-border)
+  --accent: var(--theme-accent)
+  --accent-2: var(--theme-accent-soft)
+  --accent-glow: var(--theme-glow)
+  --accent-contrast: var(--theme-text-inverse)
+  --radius: var(--radius-md)
+  --shadow: var(--theme-shadow)
+  --accent-10: rgba(242, 122, 42, 0.12)
+  --accent-20: rgba(242, 122, 42, 0.2)
+  --accent-28: rgba(242, 122, 42, 0.28)
+  --accent-35: rgba(242, 122, 42, 0.35)
+  --accent-45: rgba(242, 122, 42, 0.45)
+  --accent-60: rgba(242, 122, 42, 0.6)
 
 :root[data-theme='light']
   --theme-bg: #f6f3eb
   --theme-bg-2: #efe7d9
-  --theme-bg-spot-1: rgba(242, 122, 42, 0.16)
+  --theme-bg-spot-1: var(--accent-20)
   --theme-bg-spot-2: rgba(63, 181, 122, 0.1)
   --theme-pattern: repeating-linear-gradient(135deg, rgba(0, 0, 0, 0.04) 0 1px, transparent 1px 16px)
   --theme-surface: #ffffff
@@ -89,6 +113,136 @@
   --text-label: 13px
   --text-muted: 12px
 
+:root[data-accent='orange']
+  --theme-accent: #f27a2a
+  --theme-accent-soft: rgba(242, 122, 42, 0.18)
+  --theme-glow: rgba(242, 122, 42, 0.25)
+  --theme-input-border: rgba(242, 122, 42, 0.35)
+  --theme-input-border-hover: rgba(242, 122, 42, 0.55)
+  --accent-10: rgba(242, 122, 42, 0.12)
+  --accent-20: rgba(242, 122, 42, 0.2)
+  --accent-28: rgba(242, 122, 42, 0.28)
+  --accent-35: rgba(242, 122, 42, 0.35)
+  --accent-45: rgba(242, 122, 42, 0.45)
+  --accent-60: rgba(242, 122, 42, 0.6)
+
+:root[data-accent='purple']
+  --theme-accent: #7b68ee
+  --theme-accent-soft: rgba(123, 104, 238, 0.2)
+  --theme-glow: rgba(123, 104, 238, 0.3)
+  --theme-input-border: rgba(123, 104, 238, 0.35)
+  --theme-input-border-hover: rgba(123, 104, 238, 0.55)
+  --accent-10: rgba(123, 104, 238, 0.12)
+  --accent-20: rgba(123, 104, 238, 0.2)
+  --accent-28: rgba(123, 104, 238, 0.28)
+  --accent-35: rgba(123, 104, 238, 0.35)
+  --accent-45: rgba(123, 104, 238, 0.45)
+  --accent-60: rgba(123, 104, 238, 0.6)
+
+:root[data-accent='green']
+  --theme-accent: #3fb57a
+  --theme-accent-soft: rgba(63, 181, 122, 0.18)
+  --theme-glow: rgba(63, 181, 122, 0.28)
+  --theme-input-border: rgba(63, 181, 122, 0.35)
+  --theme-input-border-hover: rgba(63, 181, 122, 0.55)
+  --accent-10: rgba(63, 181, 122, 0.12)
+  --accent-20: rgba(63, 181, 122, 0.2)
+  --accent-28: rgba(63, 181, 122, 0.28)
+  --accent-35: rgba(63, 181, 122, 0.35)
+  --accent-45: rgba(63, 181, 122, 0.45)
+  --accent-60: rgba(63, 181, 122, 0.6)
+
+:root[data-accent='teal']
+  --theme-accent: #3fb57a
+  --theme-accent-soft: rgba(63, 181, 122, 0.18)
+  --theme-glow: rgba(63, 181, 122, 0.28)
+  --theme-input-border: rgba(63, 181, 122, 0.35)
+  --theme-input-border-hover: rgba(63, 181, 122, 0.55)
+  --accent-10: rgba(63, 181, 122, 0.12)
+  --accent-20: rgba(63, 181, 122, 0.2)
+  --accent-28: rgba(63, 181, 122, 0.28)
+  --accent-35: rgba(63, 181, 122, 0.35)
+  --accent-45: rgba(63, 181, 122, 0.45)
+  --accent-60: rgba(63, 181, 122, 0.6)
+
+:root[data-accent='blue']
+  --theme-accent: #4a90e2
+  --theme-accent-soft: rgba(74, 144, 226, 0.2)
+  --theme-glow: rgba(74, 144, 226, 0.3)
+  --theme-input-border: rgba(74, 144, 226, 0.35)
+  --theme-input-border-hover: rgba(74, 144, 226, 0.55)
+  --accent-10: rgba(74, 144, 226, 0.12)
+  --accent-20: rgba(74, 144, 226, 0.2)
+  --accent-28: rgba(74, 144, 226, 0.28)
+  --accent-35: rgba(74, 144, 226, 0.35)
+  --accent-45: rgba(74, 144, 226, 0.45)
+  --accent-60: rgba(74, 144, 226, 0.6)
+
+:root[data-accent='pink']
+  --theme-accent: #ff6b9a
+  --theme-accent-soft: rgba(255, 107, 154, 0.2)
+  --theme-glow: rgba(255, 107, 154, 0.3)
+  --theme-input-border: rgba(255, 107, 154, 0.35)
+  --theme-input-border-hover: rgba(255, 107, 154, 0.55)
+  --accent-10: rgba(255, 107, 154, 0.12)
+  --accent-20: rgba(255, 107, 154, 0.2)
+  --accent-28: rgba(255, 107, 154, 0.28)
+  --accent-35: rgba(255, 107, 154, 0.35)
+  --accent-45: rgba(255, 107, 154, 0.45)
+  --accent-60: rgba(255, 107, 154, 0.6)
+
+:root[data-accent='red']
+  --theme-accent: #ef4444
+  --theme-accent-soft: rgba(239, 68, 68, 0.2)
+  --theme-glow: rgba(239, 68, 68, 0.3)
+  --theme-input-border: rgba(239, 68, 68, 0.35)
+  --theme-input-border-hover: rgba(239, 68, 68, 0.55)
+  --accent-10: rgba(239, 68, 68, 0.12)
+  --accent-20: rgba(239, 68, 68, 0.2)
+  --accent-28: rgba(239, 68, 68, 0.28)
+  --accent-35: rgba(239, 68, 68, 0.35)
+  --accent-45: rgba(239, 68, 68, 0.45)
+  --accent-60: rgba(239, 68, 68, 0.6)
+
+:root[data-accent='yellow']
+  --theme-accent: #f4b23a
+  --theme-accent-soft: rgba(244, 178, 58, 0.2)
+  --theme-glow: rgba(244, 178, 58, 0.3)
+  --theme-input-border: rgba(244, 178, 58, 0.35)
+  --theme-input-border-hover: rgba(244, 178, 58, 0.55)
+  --accent-10: rgba(244, 178, 58, 0.12)
+  --accent-20: rgba(244, 178, 58, 0.2)
+  --accent-28: rgba(244, 178, 58, 0.28)
+  --accent-35: rgba(244, 178, 58, 0.35)
+  --accent-45: rgba(244, 178, 58, 0.45)
+  --accent-60: rgba(244, 178, 58, 0.6)
+
+:root[data-accent='cyan']
+  --theme-accent: #22d3ee
+  --theme-accent-soft: rgba(34, 211, 238, 0.2)
+  --theme-glow: rgba(34, 211, 238, 0.3)
+  --theme-input-border: rgba(34, 211, 238, 0.35)
+  --theme-input-border-hover: rgba(34, 211, 238, 0.55)
+  --accent-10: rgba(34, 211, 238, 0.12)
+  --accent-20: rgba(34, 211, 238, 0.2)
+  --accent-28: rgba(34, 211, 238, 0.28)
+  --accent-35: rgba(34, 211, 238, 0.35)
+  --accent-45: rgba(34, 211, 238, 0.45)
+  --accent-60: rgba(34, 211, 238, 0.6)
+
+:root[data-accent='violet']
+  --theme-accent: #8b5cf6
+  --theme-accent-soft: rgba(139, 92, 246, 0.2)
+  --theme-glow: rgba(139, 92, 246, 0.3)
+  --theme-input-border: rgba(139, 92, 246, 0.35)
+  --theme-input-border-hover: rgba(139, 92, 246, 0.55)
+  --accent-10: rgba(139, 92, 246, 0.12)
+  --accent-20: rgba(139, 92, 246, 0.2)
+  --accent-28: rgba(139, 92, 246, 0.28)
+  --accent-35: rgba(139, 92, 246, 0.35)
+  --accent-45: rgba(139, 92, 246, 0.45)
+  --accent-60: rgba(139, 92, 246, 0.6)
+
 *,
 *::before,
 *::after
@@ -96,8 +250,9 @@
 
 body
   margin: 0
-  font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif
-  font-size: var(--font-base)
+  font-family: var(--app-font-family) !important
+  font-size: var(--app-font-size) !important
+  color: var(--theme-text)
   line-height: 1.5
   background: radial-gradient(circle at 10% 0%, var(--theme-bg-spot-1), transparent 45%), radial-gradient(circle at 90% 10%, var(--theme-bg-spot-2), transparent 45%), linear-gradient(145deg, var(--theme-bg), var(--theme-bg-2))
   color: var(--theme-text)
@@ -107,6 +262,94 @@ body
 html
   width: 100%
   overflow-x: hidden
+  font-size: var(--app-font-size) !important
+
+button,
+input,
+select,
+textarea,
+.mat-mdc-button,
+.mat-mdc-button-base,
+.mat-mdc-tab,
+.mat-mdc-select,
+.mat-mdc-option,
+.mat-mdc-chip,
+.mat-mdc-icon-button
+  font-family: inherit
+  font-size: inherit
+  font-weight: inherit
+
+.btn
+  appearance: none
+  font-family: inherit
+  font-size: inherit
+  font-weight: 600
+  border-radius: 999px
+  padding: 10px 18px
+  border: 1px solid var(--theme-border)
+  color: var(--theme-text)
+  background: transparent
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25)
+  cursor: pointer
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, background 120ms ease
+
+  &:hover
+    transform: translateY(-1px)
+    border-color: var(--theme-accent)
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--accent-35) inset
+
+  &:active
+    transform: translateY(0)
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22)
+
+  &:focus-visible
+    outline: none
+    box-shadow: 0 0 0 3px var(--theme-accent-soft), 0 18px 44px rgba(0, 0, 0, 0.35)
+
+  &:disabled
+    opacity: 0.6
+    cursor: not-allowed
+    box-shadow: none
+
+.btn-sm
+  padding: 8px 14px
+  font-size: 0.9em
+
+.btn-block
+  width: 100%
+
+.btn-outline
+  border-color: var(--theme-accent)
+  background: rgba(255, 255, 255, 0.02)
+  color: var(--theme-accent)
+
+.btn-primary
+  background: linear-gradient(180deg, var(--theme-accent), color-mix(in srgb, var(--theme-accent) 70%, black))
+  border-color: transparent
+  color: var(--accent-contrast)
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset, 0 16px 40px var(--theme-glow)
+
+.btn-ghost
+  border-color: transparent
+  background: transparent
+  color: var(--theme-text)
+
+.btn-icon
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  width: 40px
+  height: 40px
+  padding: 0
+  border-radius: 50%
+  border: 1px solid var(--theme-border)
+  background: var(--theme-surface-2)
+  color: var(--theme-text)
+  box-shadow: none
+
+  &:hover
+    border-color: var(--theme-accent)
+    box-shadow: 0 0 12px var(--theme-glow)
 
 app-root
   display: block
@@ -157,7 +400,7 @@ mat-card
   font-weight: 600
   text-transform: uppercase
   letter-spacing: 0.08em
-  font-size: var(--text-section)
+  font-size: calc(var(--text-section) * var(--font-scale))
   line-height: 1.3
   color: var(--theme-text)
   background: var(--theme-surface-2)
@@ -168,31 +411,31 @@ mat-card
   background: var(--theme-surface)
 
 .text-title
-  font-size: var(--text-title)
+  font-size: calc(var(--text-title) * var(--font-scale))
   font-weight: 700
   line-height: 1.3
   color: var(--theme-text)
 
 .text-section
-  font-size: var(--text-section)
+  font-size: calc(var(--text-section) * var(--font-scale))
   font-weight: 600
   letter-spacing: 0.08em
   text-transform: uppercase
   color: var(--theme-text)
 
 .text-value
-  font-size: var(--text-value)
+  font-size: calc(var(--text-value) * var(--font-scale))
   font-weight: 700
   line-height: 1.3
   color: var(--theme-text)
 
 .text-label
-  font-size: var(--text-label)
+  font-size: calc(var(--text-label) * var(--font-scale))
   font-weight: 500
   color: var(--theme-text-muted)
 
 .text-muted
-  font-size: var(--text-muted)
+  font-size: calc(var(--text-muted) * var(--font-scale))
   font-weight: 500
   color: var(--theme-text-muted)
 
@@ -253,21 +496,28 @@ mat-card
 .mat-mdc-option.mdc-list-item--selected
   background: var(--theme-accent-soft)
 
-.mat-mdc-raised-button.mat-primary
-  background: var(--theme-accent)
-  color: var(--theme-text-inverse)
-  box-shadow: 0 12px 24px var(--theme-glow)
+.btn
+  font-family: inherit
+  font-size: inherit
+  font-weight: 600
   border-radius: var(--radius-sm)
+  transition: background 160ms ease, box-shadow 160ms ease, color 160ms ease, border-color 160ms ease
 
-.mat-mdc-raised-button.mat-primary:hover
-  box-shadow: 0 16px 32px var(--theme-glow)
+.btn-outline
+  border: 1px solid var(--theme-accent)
+  color: var(--theme-accent)
+  background: transparent
 
-.mat-mdc-stroked-button
-  border-color: var(--theme-border)
-  color: var(--theme-text)
+  &:hover
+    background: var(--theme-accent-soft)
 
-.mat-mdc-icon-button
-  color: var(--theme-text)
+.btn-primary
+  background: var(--theme-accent)
+  color: var(--accent-contrast)
+  border: 1px solid var(--theme-accent)
+
+  &:hover
+    box-shadow: 0 0 16px var(--theme-glow)
 
 .mat-mdc-tab-group
   --mdc-tab-indicator-active-indicator-color: var(--theme-accent)
@@ -369,10 +619,6 @@ mat-card
   animation-delay: 0.18s
 
 .mat-mdc-button-base:focus-visible,
-.mat-mdc-icon-button:focus-visible
-  outline: 3px solid var(--theme-glow)
-  outline-offset: 2px
-
 .mat-mdc-progress-bar
   --mdc-linear-progress-active-indicator-color: var(--theme-accent)
   --mdc-linear-progress-track-color: var(--theme-accent-soft)
@@ -417,6 +663,14 @@ mat-card
 .rank-d
   background: var(--theme-danger-soft)
   border-color: var(--theme-danger)
+
+.visually-hidden
+  position: absolute !important
+  height: 1px
+  width: 1px
+  overflow: hidden
+  clip: rect(1px, 1px, 1px, 1px)
+  white-space: nowrap
 
 @keyframes pageFade
   from
