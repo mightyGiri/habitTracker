@@ -1,0 +1,14 @@
+<button
+  type="button"
+  class="app-toggle"
+  [class.is-checked]="checked"
+  [class.is-disabled]="disabled"
+  [class.is-sm]="size === 'sm'"
+  role="switch"
+  [attr.aria-checked]="checked"
+  [attr.aria-disabled]="disabled"
+  (click)="toggle()"
+  (keydown)="onKeydown($event)">
+  <span class="track"></span>
+  <span class="thumb"></span>
+</button>

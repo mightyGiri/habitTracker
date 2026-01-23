@@ -1,14 +1,14 @@
 <mat-toolbar class="sticky-toolbar app-toolbar">
   <div class="toolbar-container">
-    <span class="brand">Habit Tracker</span>
+    <span class="brand">{{ pageTitle }}</span>
     <nav class="toolbar-nav" aria-label="Primary">
-      <a mat-button routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-      <a mat-button routerLink="/overview" routerLinkActive="active">Overview</a>
-      <a mat-button routerLink="/habits" routerLinkActive="active">Habits</a>
-      <a mat-button routerLink="/about" routerLinkActive="active">About</a>
+      <a class="nav-link" routerLink="/today" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Today</a>
+      <a class="nav-link" routerLink="/overview" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Overview</a>
+      <a class="nav-link" routerLink="/habits" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Habits</a>
+      <a class="nav-link" routerLink="/profile" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Profile</a>
     </nav>
     <span class="spacer"></span>
-    <button mat-button class="date-trigger" [matMenuTriggerFor]="dateMenu" aria-label="Select month and year">
+    <button class="btn btn-outline btn-sm date-trigger" [matMenuTriggerFor]="dateMenu" aria-label="Select month and year">
       <mat-icon>event</mat-icon>
       <span>{{ months[selectedMonth]?.label }} {{ selectedYear }}</span>
       <mat-icon class="chevron">expand_more</mat-icon>
@@ -27,7 +27,7 @@
         </mat-form-field>
       </div>
     </mat-menu>
-    <button mat-icon-button class="theme-toggle" (click)="toggleTheme()" [attr.aria-label]="currentTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
+    <button class="btn btn-icon theme-toggle" (click)="toggleTheme()" [attr.aria-label]="currentTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
       <mat-icon>{{ currentTheme === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
     </button>
   </div>

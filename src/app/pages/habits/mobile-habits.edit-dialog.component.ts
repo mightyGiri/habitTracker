@@ -1,7 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
@@ -17,7 +16,7 @@ export type HabitEditDialogData = {
 @Component({
   selector: 'app-habit-edit-dialog',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, FormsModule],
+  imports: [CommonModule, MatDialogModule, MatFormFieldModule, MatInputModule, FormsModule],
   template: `
     <h2 mat-dialog-title>{{ data.title }}</h2>
     <mat-dialog-content>
@@ -33,10 +32,10 @@ export type HabitEditDialogData = {
       </mat-form-field>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button mat-button (click)="dialogRef.close()">Cancel</button>
+      <button class="btn btn-outline btn-sm" type="button" (click)="dialogRef.close()">Cancel</button>
       <button
-        mat-raised-button
-        color="primary"
+        class="btn btn-primary btn-sm"
+        type="button"
         [disabled]="!isValid()"
         (click)="save()">
         Save

@@ -68,21 +68,22 @@
   &.is-selected
     box-shadow: 0 0 0 2px var(--theme-accent), 0 0 16px var(--theme-glow)
 
-  &.is-perfect
-    border-color: rgba(242, 122, 42, 0.6)
+  &.is-perfect,
+  &.perfect-day
+    border-color: var(--accent-60)
     animation: perfectPulse 2.5s ease-in-out infinite
 
   &.is-zero
-    background: rgba(12, 14, 20, 0.4)
+    background: var(--theme-surface)
 
   &.is-low
-    background: rgba(242, 122, 42, 0.12)
+    background: var(--accent-10)
 
   &.is-mid
-    background: rgba(242, 122, 42, 0.2)
+    background: var(--accent-20)
 
   &.is-high
-    background: rgba(242, 122, 42, 0.28)
+    background: var(--accent-28)
 
 .cell-date
   font-size: 0.85rem
@@ -150,9 +151,13 @@
 
 @keyframes perfectPulse
   0%, 100%
-    box-shadow: 0 0 10px rgba(242, 122, 42, 0.25)
+    box-shadow: 0 0 10px var(--accent-20)
   50%
-    box-shadow: 0 0 18px rgba(242, 122, 42, 0.45)
+    box-shadow: 0 0 18px var(--accent-45)
+
+.reduce-motion
+  .perfect-day
+    animation: none
 
 @media (max-width: 1024px)
   .kpi-strip

@@ -1,7 +1,6 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, Inject, PLATFORM_ID, HostListener } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { Subscription, combineLatest } from 'rxjs';
@@ -21,26 +20,38 @@ type BeforeInstallPromptEvent = Event & {
 type DateChip = {
   date: Date;
   label: string;
+  isPerfect: boolean;
+};
+
+type ConfettiPiece = {
+  id: number;
+  x: number;
+  drift: number;
+  rotate: number;
+  size: number;
+  delay: number;
+  duration: number;
 };
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonModule, MatProgressBarModule, MatIconModule],
+  imports: [CommonModule, MatCardModule, MatProgressBarModule, MatIconModule],
   animations: [staggerFadeUp || noopAnimation],
   template: `
-    <div class="page-container" [@.disabled]="reduceMotion">
+    <div class="page-container" [@.disabled]="reduceMotion" [class.reduce-motion]="reduceMotion">
       <section class="today-header">
         <div>
-          <h1 class="text-title">Today</h1>
+          <h1 class="text-title">Level-Up</h1>
           <div class="text-muted today-date">
             {{ isEditingToday ? todayLabel : ('Editing: ' + todayLabel) }}
           </div>
           <div class="text-label today-status">Complete your habits for today</div>
+          <div class="perfect-chip" *ngIf="isSelectedDayPerfect" [class.celebrate]="celebrateBadge">Perfect Day &#x1F525;</div>
           <div class="streak-badge" *ngIf="streakCount > 0">
-            <div class="streak-count">🔥 {{ streakCount }} days</div>
+            <div class="streak-count">&#x1F525; {{ streakCount }} days</div>
             <div class="streak-status text-label">
-              {{ remainingCount === 0 && totalCount > 0 ? 'Perfect day. Streak secured 🔥' : (remainingCount + ' habits left to keep your streak alive') }}
+              {{ todayRemainingCount === 0 && totalCount > 0 ? 'Perfect day. Streak secured' : (todayRemainingCount + ' habits left to keep your streak alive') }}
             </div>
           </div>
           <div class="streak-hint text-muted" *ngIf="streakCount === 0">Start your streak today</div>
@@ -54,6 +65,7 @@ type DateChip = {
               class="day-chip"
               type="button"
               *ngFor="let chip of dateChips"
+              [class.perfect-day]="chip.isPerfect"
               [class.is-selected]="isSameDate(chip.date, selectedDate)"
               (click)="setSelectedDate(chip.date)"
               [attr.aria-selected]="isSameDate(chip.date, selectedDate)">
@@ -71,10 +83,36 @@ type DateChip = {
 
       <mat-card class="aesthetic-card today-list-card" [@staggerFadeUp]="animationKey" #todaySection>
         <div class="section-header text-section">Today Habits</div>
+        <div class="confetti-layer" *ngIf="confettiPieces.length > 0">
+          <span
+            class="confetti-piece"
+            *ngFor="let piece of confettiPieces; trackBy: trackByConfetti"
+            [style.left.%]="piece.x"
+            [style.animationDelay.ms]="piece.delay"
+            [style.animationDuration.ms]="piece.duration"
+            [style.width.px]="piece.size"
+            [style.height.px]="piece.size"
+            [style.--confetti-drift.px]="piece.drift"
+            [style.--confetti-rotate]="piece.rotate + 'deg'">
+          </span>
+        </div>
         <mat-card-content>
           <div class="selected-progress">
-            <span class="progress-text">{{ doneCount }}/{{ totalCount }} done • {{ selectedDayPercent }}%</span>
+            <span class="progress-text">{{ doneCount }}/{{ totalCount }} done | {{ selectedDayPercent }}%</span>
             <mat-progress-bar mode="determinate" [value]="selectedDayPercent"></mat-progress-bar>
+          </div>
+          <div class="select-all-row">
+            <div class="select-all-label">
+              <span>Select all</span>
+              <span class="select-all-count" *ngIf="totalCount">({{ totalCount }})</span>
+            </div>
+            <input
+              type="checkbox"
+              class="select-all-checkbox"
+              [checked]="selectAllChecked"
+              [indeterminate]="selectAllIndeterminate"
+              (change)="toggleAllForSelectedDay($event.target.checked)"
+              [attr.aria-label]="'Select all habits for ' + todayLabel">
           </div>
           <div class="today-list">
             <button
@@ -104,16 +142,6 @@ type DateChip = {
         </mat-card-content>
       </mat-card>
 
-      <mat-card class="aesthetic-card quick-actions-card">
-        <div class="section-header text-section">Quick Actions</div>
-        <mat-card-content>
-          <div class="quick-actions">
-            <button mat-stroked-button (click)="markAllDone()">Mark all done</button>
-            <button mat-stroked-button (click)="clearAllDone()">Clear selected day</button>
-          </div>
-        </mat-card-content>
-      </mat-card>
-
       <mat-card class="aesthetic-card streak-card">
         <div class="section-header text-section">Streak & Motivation</div>
         <mat-card-content>
@@ -126,11 +154,11 @@ type DateChip = {
 
       <mat-card class="aesthetic-card insights-card">
         <div class="insights-header">
-          <div class="section-header text-section">Insights</div>
-          <button class="charts-toggle" type="button" (click)="toggleInsights()">
-            {{ insightsOpen ? 'Hide Insights' : 'Show Insights' }}
-          </button>
-        </div>
+          <span class="insights-chip text-section">Insights</span>
+        <button class="btn btn-outline btn-sm charts-toggle" type="button" (click)="toggleInsights()">
+          {{ insightsOpen ? 'Hide Insights' : 'Show Insights' }}
+        </button>
+      </div>
         <mat-card-content class="insights-body" [class.is-collapsed]="!insightsOpen">
           <div class="dashboard-grid" [@staggerFadeUp]="animationKey">
             <mat-card class="aesthetic-card chart-card">
@@ -168,14 +196,14 @@ type DateChip = {
 
       <div class="today-footer" *ngIf="showTodayFooter">
         <span>{{ doneCount }}/{{ totalCount }} done</span>
-        <button mat-stroked-button class="jump-top" (click)="scrollToToday()">Jump to top</button>
+        <button class="btn btn-outline btn-sm jump-top" type="button" (click)="scrollToToday()">Jump to top</button>
       </div>
 
       <div class="install-banner install-banner-bottom" *ngIf="showInstallBanner">
         <span>Install Daily Levelling</span>
         <div class="install-actions">
-          <button mat-stroked-button (click)="installPwa()">Install</button>
-          <button mat-icon-button aria-label="Dismiss install banner" (click)="dismissInstallBanner()">✕</button>
+          <button class="btn btn-primary btn-sm" type="button" (click)="installPwa()">Install</button>
+          <button class="btn btn-icon btn-sm" type="button" aria-label="Dismiss install banner" (click)="dismissInstallBanner()">&#x2715;</button>
         </div>
       </div>
     </div>
@@ -217,7 +245,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   totalCount = 0;
   streakCount = 0;
   remainingCount = 0;
+  todayRemainingCount = 0;
+  todayIsPerfect = false;
   dateChips: DateChip[] = [];
+  isSelectedDayPerfect = false;
+  private wasSelectedDayPerfect = false;
+  celebrateBadge = false;
+  confettiPieces: ConfettiPiece[] = [];
+  private confettiTimer?: ReturnType<typeof setTimeout>;
   private deferredPrompt: BeforeInstallPromptEvent | null = null;
   private installListener?: (event: Event) => void;
   private resizeListener?: () => void;
@@ -335,7 +370,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       });
     }
-
     if (this.doughnutCanvas && !this.doughnutChart) {
       this.doughnutChart = new Chart(this.doughnutCanvas.nativeElement, {
         type: 'doughnut',
@@ -415,11 +449,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   toggleTodayHabit(habitId: string): void {
     setTimeout(() => {
+      this.wasSelectedDayPerfect = this.isSelectedDayPerfect;
       const next = !this.habitStore.isCompleted(habitId, this.selectedDate);
       this.habitStore.setCompleted(habitId, this.selectedDate, next);
       this.updateTodayLabels();
       this.updateHabitProgress();
       this.updateMotivation();
+      if (!this.wasSelectedDayPerfect && this.isSelectedDayPerfect) {
+        this.triggerPerfectDayCelebrate();
+      }
     }, 80);
   }
 
@@ -427,17 +465,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.toggleTodayHabit(habit.id);
   }
 
-  markAllDone(): void {
+  toggleAllForSelectedDay(checked: boolean): void {
     const { year, monthIndex, dayNumber } = this.getSelectedDateParts();
-    this.habitStore.setAllForDayForDate(year, monthIndex, dayNumber, true);
-    this.updateTodayLabels();
-    this.updateHabitProgress();
-    this.updateMotivation();
-  }
-
-  clearAllDone(): void {
-    const { year, monthIndex, dayNumber } = this.getSelectedDateParts();
-    this.habitStore.setAllForDayForDate(year, monthIndex, dayNumber, false);
+    this.habitStore.setAllForDayForDate(year, monthIndex, dayNumber, checked);
     this.updateTodayLabels();
     this.updateHabitProgress();
     this.updateMotivation();
@@ -500,6 +530,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     const glow = this.getCssVar('--theme-accent-soft');
     const muted = this.getCssVar('--theme-chart-text');
     const grid = this.getCssVar('--theme-chart-grid');
+    const fontFamily = this.getCssVar('--app-font-family');
+    if (fontFamily) {
+      Chart.defaults.font.family = fontFamily;
+    }
 
     const lineDataset = this.lineChart.data.datasets[0] as ChartDataset<'line'>;
     lineDataset.borderColor = accent;
@@ -518,6 +552,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.lineChart.options.scales?.['x']?.grid) {
       this.lineChart.options.scales['x'].grid.color = grid;
     }
+    this.lineChart.options.font = { family: fontFamily || Chart.defaults.font.family };
 
     this.doughnutChart.data.datasets[0].backgroundColor = [accent, glow];
     if (this.doughnutChart.options.plugins?.legend) {
@@ -526,6 +561,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         this.doughnutChart.options.plugins.legend.labels.color = muted;
       }
     }
+    this.doughnutChart.options.font = { family: fontFamily || Chart.defaults.font.family };
   }
 
   private getCssVar(name: string): string {
@@ -620,6 +656,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     return Math.round((this.doneCount / this.totalCount) * 100);
   }
 
+  get selectAllChecked(): boolean {
+    return this.totalCount > 0 && this.doneCount === this.totalCount;
+  }
+
+  get selectAllIndeterminate(): boolean {
+    return this.doneCount > 0 && this.doneCount < this.totalCount;
+  }
+
   private updateHabitProgress(): void {
     if (!this.selectedMonthYear) {
       this.habitProgressMap = {};
@@ -633,16 +677,20 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private updateMotivation(): void {
-    const remaining = this.habitStore.getRemainingCount(this.selectedDate);
+    const remainingSelected = this.habitStore.getRemainingCount(this.selectedDate);
+    const todayDate = this.normalizeDate(new Date());
+    this.isSelectedDayPerfect = this.habitStore.isPerfectDay(this.selectedDate);
+    this.todayIsPerfect = this.habitStore.isPerfectDay(todayDate);
+    this.todayRemainingCount = this.habitStore.getRemainingCount(todayDate);
     this.streakCount = this.habitStore.getCurrentStreak(this.todayDateKey);
     this.currentStreakDisplay = this.streakCount;
     this.totalCount = this.habitsCount;
-    this.doneCount = Math.max(this.totalCount - remaining, 0);
-    this.remainingCount = remaining;
-    if (this.habitsCount > 0 && remaining === 0) {
-      this.motivationMessage = 'Perfect day. Streak secured 🔥';
+    this.doneCount = Math.max(this.totalCount - remainingSelected, 0);
+    this.remainingCount = remainingSelected;
+    if (this.habitsCount > 0 && this.todayRemainingCount === 0) {
+      this.motivationMessage = 'Perfect day. Streak secured';
     } else {
-      this.motivationMessage = `${remaining} habits left to keep your streak alive`;
+      this.motivationMessage = `${this.todayRemainingCount} habits left to keep your streak alive`;
     }
   }
 
@@ -715,6 +763,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.updateDateChips();
     this.updateHabitProgress();
     this.updateMotivation();
+    this.wasSelectedDayPerfect = this.isSelectedDayPerfect;
   }
 
   private syncSelectedDateToMonth(): void {
@@ -742,7 +791,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       date.setDate(date.getDate() + offset);
       chips.push({
         date,
-        label: date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })
+        label: date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
+        isPerfect: this.habitStore.isPerfectDay(date)
       });
     }
     return chips;
@@ -759,6 +809,34 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     return a.getFullYear() === b.getFullYear()
       && a.getMonth() === b.getMonth()
       && a.getDate() === b.getDate();
+  }
+
+  triggerPerfectDayCelebrate(): void {
+    if (this.reduceMotion) {
+      return;
+    }
+    if (this.confettiTimer) {
+      clearTimeout(this.confettiTimer);
+    }
+    this.celebrateBadge = true;
+    const count = 22;
+    this.confettiPieces = Array.from({ length: count }, (_, index) => ({
+      id: index,
+      x: 35 + Math.random() * 30,
+      drift: (Math.random() - 0.5) * 60,
+      rotate: Math.random() * 360,
+      size: 6 + Math.random() * 6,
+      delay: Math.random() * 120,
+      duration: 900 + Math.random() * 300
+    }));
+    this.confettiTimer = setTimeout(() => {
+      this.celebrateBadge = false;
+      this.confettiPieces = [];
+    }, 1200);
+  }
+
+  trackByConfetti(index: number, piece: ConfettiPiece): number {
+    return piece.id;
   }
 
   private normalizeDate(date: Date): Date {
@@ -781,3 +859,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.normalizeDate(new Date(year, monthIndex, day));
   }
 }
+
+
+
+
+
+
+

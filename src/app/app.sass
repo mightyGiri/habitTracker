@@ -37,7 +37,7 @@ mat-toolbar
     align-items: center
     flex: 1 1 auto
 
-    a
+    .nav-link
       border-radius: var(--radius-sm)
       color: var(--theme-text)
       text-shadow: 0 0 16px var(--theme-glow)
@@ -45,12 +45,12 @@ mat-toolbar
       padding: 6px 12px
       transition: color 160ms ease, background 160ms ease, transform 160ms ease
 
-    a.active
+    .nav-link.active
       color: var(--theme-text)
       text-shadow: 0 0 16px var(--theme-glow)
       background: var(--theme-accent-soft)
 
-    a:hover
+    .nav-link:hover
       color: var(--theme-text)
       text-shadow: 0 0 16px var(--theme-glow)
       background: var(--theme-accent-soft)
@@ -61,10 +61,6 @@ mat-toolbar
     align-items: center
     gap: 6px
     padding: 4px 10px
-    border-radius: 999px
-    border: 1px solid var(--theme-border)
-    background: var(--theme-accent-soft)
-    color: var(--theme-text)
     min-height: 32px
     font-size: 0.85rem
 
@@ -77,10 +73,6 @@ mat-toolbar
     margin-left: var(--space-2)
 
   .theme-toggle
-    border: 1px solid var(--theme-border)
-    border-radius: var(--radius-sm)
-    color: var(--theme-text)
-    background: var(--theme-accent-soft)
     transition: transform 160ms ease, box-shadow 160ms ease
 
   .theme-toggle:hover
