@@ -277,6 +277,19 @@ export class HabitStoreService {
     return Math.max(activeHabits.length - completedCount, 0);
   }
 
+  getDaySummary(date: Date): { doneCount: number; totalCount: number; percent: number } {
+    const activeHabits = this.habits$.value.filter(habit => habit.isActive);
+    const totalCount = activeHabits.length;
+    if (totalCount === 0) {
+      return { doneCount: 0, totalCount: 0, percent: 0 };
+    }
+    const dateKey = this.toIsoDateLocal(date);
+    const dayMap = this.completions$.value[dateKey] || {};
+    const doneCount = activeHabits.reduce((sum, habit) => sum + (dayMap[habit.id] ? 1 : 0), 0);
+    const percent = Math.round((doneCount / totalCount) * 100);
+    return { doneCount, totalCount, percent };
+  }
+
   getStreakCount(endingDate: Date): number {
     const activeHabits = this.habits$.value.filter(habit => habit.isActive);
     if (activeHabits.length === 0) {

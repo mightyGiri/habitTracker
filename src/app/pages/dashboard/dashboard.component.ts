@@ -3,6 +3,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Subscription, combineLatest } from 'rxjs';
 import { HabitStoreService } from '../../services/habit-store.service';
 import { MonthKey, MonthlyTotals, TopHabit, MonthInsights, Habit } from '../../models/habit.model';
@@ -36,19 +37,19 @@ type ConfettiPiece = {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatProgressBarModule, MatIconModule],
+  imports: [CommonModule, MatCardModule, MatProgressBarModule, MatIconModule, MatSnackBarModule],
   animations: [staggerFadeUp || noopAnimation],
   template: `
     <div class="page-container" [@.disabled]="reduceMotion" [class.reduce-motion]="reduceMotion">
-      <section class="today-header">
+      <section class="today-header" [class.perfect-day]="isPerfectTodaySelected">
         <div>
           <h1 class="text-title">Level-Up</h1>
           <div class="text-muted today-date">
             {{ isEditingToday ? todayLabel : ('Editing: ' + todayLabel) }}
           </div>
           <div class="text-label today-status">Complete your habits for today</div>
-          <div class="perfect-chip" *ngIf="isSelectedDayPerfect" [class.celebrate]="celebrateBadge">Perfect Day &#x1F525;</div>
-          <div class="streak-badge" *ngIf="streakCount > 0">
+          <div class="perfect-chip" *ngIf="selectedIsPerfect" [class.celebrate]="celebrateBadge">Perfect Day &#x1F525;</div>
+          <div class="streak-badge" *ngIf="streakCount > 0" [class.streak-pop]="streakCelebrating">
             <div class="streak-count">&#x1F525; {{ streakCount }} days</div>
             <div class="streak-status text-label">
               {{ todayRemainingCount === 0 && totalCount > 0 ? 'Perfect day. Streak secured' : (todayRemainingCount + ' habits left to keep your streak alive') }}
@@ -81,7 +82,7 @@ type ConfettiPiece = {
         </div>
       </section>
 
-      <mat-card class="aesthetic-card today-list-card" [@staggerFadeUp]="animationKey" #todaySection>
+      <mat-card class="aesthetic-card today-list-card" [@staggerFadeUp]="animationKey" #todaySection [class.perfect-day]="isPerfectTodaySelected">
         <div class="section-header text-section">Today Habits</div>
         <div class="confetti-layer" *ngIf="confettiPieces.length > 0">
           <span
@@ -114,11 +115,12 @@ type ConfettiPiece = {
               (change)="toggleAllForSelectedDay($event.target.checked)"
               [attr.aria-label]="'Select all habits for ' + todayLabel">
           </div>
-          <div class="today-list">
+          <div class="today-list" [class.perfect-day]="isPerfectTodaySelected">
             <button
               class="today-item"
               type="button"
               *ngFor="let habit of habits; trackBy: trackByHabitCard"
+              [class.is-completed]="isTodayChecked(habit.id)"
               (click)="toggleHabitForSelectedDay(habit)"
               (keydown.enter)="toggleHabitForSelectedDay(habit)"
               (keydown.space)="toggleHabitForSelectedDay(habit); $event.preventDefault()"
@@ -236,6 +238,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   motivationMessage = '';
   habitProgressMap: Record<string, number> = {};
   selectedDate = new Date();
+  todayDate = this.normalizeDate(new Date());
   todayDateKey = '';
   insightsOpen = true;
   isMobile = false;
@@ -246,28 +249,39 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   streakCount = 0;
   remainingCount = 0;
   todayRemainingCount = 0;
+  todaySummary = { doneCount: 0, totalCount: 0, percent: 0 };
+  selectedSummary = { doneCount: 0, totalCount: 0, percent: 0 };
   todayIsPerfect = false;
   dateChips: DateChip[] = [];
-  isSelectedDayPerfect = false;
-  private wasSelectedDayPerfect = false;
+  selectedIsPerfect = false;
   celebrateBadge = false;
   confettiPieces: ConfettiPiece[] = [];
   private confettiTimer?: ReturnType<typeof setTimeout>;
+  streakCelebrating = false;
+  private streakCelebrationTimer?: ReturnType<typeof setTimeout>;
+  private previousStreakCount = 0;
   private deferredPrompt: BeforeInstallPromptEvent | null = null;
   private installListener?: (event: Event) => void;
   private resizeListener?: () => void;
   private lastMonthKey: string | null = null;
+  private rewardStageMap: Record<string, number> = {};
+
+  get isPerfectTodaySelected(): boolean {
+    return this.isSameDate(this.selectedDate, this.todayDate) && this.todayIsPerfect;
+  }
 
   private subscription: Subscription = new Subscription();
 
   constructor(
     private habitStore: HabitStoreService,
     private themeService: ThemeService,
+    private snackBar: MatSnackBar,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   ngOnInit(): void {
-    this.todayDateKey = this.toIsoDateLocal(this.normalizeDate(new Date()));
+    this.todayDate = this.normalizeDate(new Date());
+    this.todayDateKey = this.toIsoDateLocal(this.todayDate);
     this.subscription.add(
       this.habitStore.getSelectedDateKey().subscribe(dateKey => {
         const parsed = this.dateFromKey(dateKey);
@@ -280,7 +294,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         this.updateTodayLabels();
         this.updateDateChips();
         this.updateHabitProgress();
-        this.updateMotivation();
+        this.recomputeDashboardState();
       })
     );
     this.subscription.add(
@@ -312,6 +326,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
     if (isPlatformBrowser(this.platformId)) {
       const dismissed = window.localStorage?.getItem('pwa_install_banner_dismissed') === 'true';
+      this.rewardStageMap = this.loadRewardStageMap();
       this.installListener = (event: Event) => {
         event.preventDefault();
         this.deferredPrompt = event as BeforeInstallPromptEvent;
@@ -427,7 +442,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       this.updateTodayLabels();
       this.updateDateChips();
       this.updateHabitProgress();
-      this.updateMotivation();
+      this.recomputeDashboardState();
 
       if (isPlatformBrowser(this.platformId)) {
         this.updateCharts();
@@ -448,17 +463,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   toggleTodayHabit(habitId: string): void {
-    setTimeout(() => {
-      this.wasSelectedDayPerfect = this.isSelectedDayPerfect;
-      const next = !this.habitStore.isCompleted(habitId, this.selectedDate);
-      this.habitStore.setCompleted(habitId, this.selectedDate, next);
-      this.updateTodayLabels();
-      this.updateHabitProgress();
-      this.updateMotivation();
-      if (!this.wasSelectedDayPerfect && this.isSelectedDayPerfect) {
-        this.triggerPerfectDayCelebrate();
-      }
-    }, 80);
+    const summaryBefore = this.habitStore.getDaySummary(this.selectedDate);
+    const next = !this.habitStore.isCompleted(habitId, this.selectedDate);
+    this.habitStore.setCompleted(habitId, this.selectedDate, next);
+    const summaryAfter = this.habitStore.getDaySummary(this.selectedDate);
+    this.updateTodayLabels();
+    this.updateHabitProgress();
+    this.recomputeDashboardState();
+    this.handleRewards(summaryBefore, summaryAfter);
   }
 
   toggleHabitForSelectedDay(habit: Habit): void {
@@ -470,7 +482,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.habitStore.setAllForDayForDate(year, monthIndex, dayNumber, checked);
     this.updateTodayLabels();
     this.updateHabitProgress();
-    this.updateMotivation();
+    this.recomputeDashboardState();
   }
 
   toggleInsights(): void {
@@ -676,17 +688,25 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     }, {} as Record<string, number>);
   }
 
-  private updateMotivation(): void {
-    const remainingSelected = this.habitStore.getRemainingCount(this.selectedDate);
-    const todayDate = this.normalizeDate(new Date());
-    this.isSelectedDayPerfect = this.habitStore.isPerfectDay(this.selectedDate);
-    this.todayIsPerfect = this.habitStore.isPerfectDay(todayDate);
-    this.todayRemainingCount = this.habitStore.getRemainingCount(todayDate);
-    this.streakCount = this.habitStore.getCurrentStreak(this.todayDateKey);
+  private recomputeDashboardState(): void {
+    this.selectedSummary = this.habitStore.getDaySummary(this.selectedDate);
+    this.todaySummary = this.habitStore.getDaySummary(this.todayDate);
+    this.selectedIsPerfect = this.habitStore.isPerfectDay(this.selectedDate);
+    this.todayIsPerfect = this.habitStore.isPerfectDay(this.todayDate);
+
+    this.doneCount = this.selectedSummary.doneCount;
+    this.totalCount = this.selectedSummary.totalCount;
+    this.remainingCount = Math.max(this.selectedSummary.totalCount - this.selectedSummary.doneCount, 0);
+    this.todayRemainingCount = Math.max(this.todaySummary.totalCount - this.todaySummary.doneCount, 0);
+
+    const newStreak = this.habitStore.getCurrentStreak(this.todayDateKey);
+    if (this.isSameDate(this.selectedDate, this.todayDate) && newStreak > this.previousStreakCount) {
+      this.triggerStreakCelebration();
+    }
+    this.streakCount = newStreak;
+    this.previousStreakCount = newStreak;
     this.currentStreakDisplay = this.streakCount;
-    this.totalCount = this.habitsCount;
-    this.doneCount = Math.max(this.totalCount - remainingSelected, 0);
-    this.remainingCount = remainingSelected;
+
     if (this.habitsCount > 0 && this.todayRemainingCount === 0) {
       this.motivationMessage = 'Perfect day. Streak secured';
     } else {
@@ -762,8 +782,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.updateTodayLabels();
     this.updateDateChips();
     this.updateHabitProgress();
-    this.updateMotivation();
-    this.wasSelectedDayPerfect = this.isSelectedDayPerfect;
+    this.recomputeDashboardState();
   }
 
   private syncSelectedDateToMonth(): void {
@@ -843,6 +862,73 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     const normalized = new Date(date);
     normalized.setHours(0, 0, 0, 0);
     return normalized;
+  }
+
+  private triggerStreakCelebration(): void {
+    if (this.reduceMotion) {
+      return;
+    }
+    if (this.streakCelebrationTimer) {
+      clearTimeout(this.streakCelebrationTimer);
+    }
+    this.streakCelebrating = true;
+    this.streakCelebrationTimer = setTimeout(() => {
+      this.streakCelebrating = false;
+    }, 900);
+  }
+
+  private handleRewards(
+    before: { doneCount: number; totalCount: number; percent: number },
+    after: { doneCount: number; totalCount: number; percent: number }
+  ): void {
+    if (!this.isSameDate(this.selectedDate, this.todayDate)) {
+      return;
+    }
+    if (after.totalCount === 0) {
+      return;
+    }
+    const dateKey = this.todayDateKey;
+    const stage = this.rewardStageMap[dateKey] || 0;
+    if (before.doneCount === 0 && after.doneCount === 1 && stage < 1) {
+      this.showToast('Nice start');
+      this.rewardStageMap[dateKey] = 1;
+    }
+    if (before.percent < 50 && after.percent >= 50 && stage < 2) {
+      this.showToast('Halfway there');
+      this.rewardStageMap[dateKey] = 2;
+    }
+    if (before.percent < 100 && after.percent === 100 && stage < 3) {
+      this.showToast('Perfect Day');
+      this.rewardStageMap[dateKey] = 3;
+      if (!this.reduceMotion) {
+        this.triggerPerfectDayCelebrate();
+      }
+    }
+    this.saveRewardStageMap();
+  }
+
+  private showToast(message: string): void {
+    this.snackBar.open(message, 'Close', { duration: 1600, panelClass: ['reward-toast'] });
+  }
+
+  private loadRewardStageMap(): Record<string, number> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return {};
+    }
+    try {
+      const raw = window.localStorage?.getItem('habit_rewards') || '';
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private saveRewardStageMap(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    window.localStorage?.setItem('habit_rewards', JSON.stringify(this.rewardStageMap));
   }
 
   private dateFromKey(dateKey: string): Date | null {
