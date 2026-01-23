@@ -1,103 +1,180 @@
-.overview-grid
+.kpi-strip
   display: grid
-  grid-template-columns: repeat(2, minmax(280px, 1fr))
-  gap: var(--space-4)
-  margin-bottom: var(--space-5)
+  grid-template-columns: repeat(4, minmax(0, 1fr))
+  gap: 12px
+  padding: 12px 16px
+  min-height: 78px
+  margin-bottom: var(--space-4)
 
-.overview-card
-  min-height: 220px
-
-  .card-body
-    padding: var(--space-4)
-
-.weeks-grid
-  display: grid
-  grid-template-columns: repeat(2, minmax(320px, 1fr))
-  gap: var(--space-4)
-
-.week-card
-  min-height: 320px
-
-  .card-body
-    padding: var(--space-4)
-
-.summary-row
+.kpi-item
   display: flex
-  justify-content: space-between
-  align-items: center
-  margin-bottom: var(--space-2)
+  flex-direction: column
+  justify-content: center
+  gap: 4px
+
+.kpi-label
+  font-size: 0.75rem
   color: var(--theme-text-muted)
-  gap: var(--space-2)
+  letter-spacing: 0.08em
+  text-transform: uppercase
 
-  strong
-    display: inline-flex
-    align-items: center
-    gap: var(--space-1)
-    color: var(--theme-text)
-    font-weight: 700
-
-.progress-row
-  display: flex
-  align-items: center
-  gap: var(--space-2)
-  margin-top: var(--space-2)
-
-.percent-label
+.kpi-value
+  font-size: 1.4rem
   font-weight: 700
-  color: var(--theme-accent)
-
-.week-chips
-  display: flex
-  flex-wrap: wrap
-  gap: var(--space-1)
-  margin-bottom: var(--space-2)
-
-.chip-tag
-  padding: 4px 10px
-  border-radius: 999px
-  font-size: var(--text-muted)
-  background: var(--theme-accent-soft)
-  border: 1px solid var(--theme-border)
   color: var(--theme-text)
 
-.chip-tag.is-empty
-  opacity: 0.5
+.calendar-card
+  margin-bottom: var(--space-4)
 
-.week-counts
+  .card-body
+    padding: var(--space-3)
+
+.calendar-grid
   display: grid
   grid-template-columns: repeat(7, minmax(0, 1fr))
-  gap: var(--space-1)
-  margin-bottom: var(--space-3)
+  gap: 10px
 
-.count-cell
-  text-align: center
-  font-size: var(--text-muted)
+.calendar-weekday
+  font-size: 0.7rem
+  text-transform: uppercase
+  letter-spacing: 0.08em
   color: var(--theme-text-muted)
+  text-align: center
 
-.count-pill
+.calendar-cell
+  position: relative
+  min-height: 60px
+  padding: 8px
+  border-radius: 12px
+  border: 1px solid var(--theme-border)
+  background: var(--theme-surface-2)
+  color: var(--theme-text)
+  display: flex
+  flex-direction: column
+  justify-content: space-between
+  text-align: left
+  cursor: pointer
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease
+
+  &:hover
+    transform: translateY(-1px)
+    box-shadow: 0 0 14px var(--theme-glow)
+
+  &.is-empty
+    background: transparent
+    border-color: transparent
+    cursor: default
+
+  &.is-selected
+    box-shadow: 0 0 0 2px var(--theme-accent), 0 0 16px var(--theme-glow)
+
+  &.is-perfect
+    border-color: rgba(242, 122, 42, 0.6)
+    animation: perfectPulse 2.5s ease-in-out infinite
+
+  &.is-zero
+    background: rgba(12, 14, 20, 0.4)
+
+  &.is-low
+    background: rgba(242, 122, 42, 0.12)
+
+  &.is-mid
+    background: rgba(242, 122, 42, 0.2)
+
+  &.is-high
+    background: rgba(242, 122, 42, 0.28)
+
+.cell-date
+  font-size: 0.85rem
+  font-weight: 600
   display: inline-flex
   align-items: center
-  justify-content: center
-  min-width: 28px
-  height: 24px
-  border-radius: 999px
-  background: var(--theme-success-soft)
-  border: 1px solid var(--theme-success)
-  color: var(--theme-text)
-  font-weight: 700
+  gap: 6px
 
-.divider
-  height: 1px
-  background: var(--theme-border)
-  margin: var(--space-2) 0 var(--space-3)
+.today-dot
+  width: 6px
+  height: 6px
+  border-radius: 50%
+  background: var(--theme-accent)
+  box-shadow: 0 0 6px var(--theme-glow)
+
+.cell-metric
+  align-self: flex-end
+  font-size: 0.7rem
+  font-weight: 600
+  color: var(--theme-text)
+
+.summary-card
+  .card-body
+    padding: var(--space-3)
+
+.weekly-row
+  display: grid
+  grid-template-columns: 60px 90px 1fr 52px 70px
+  align-items: center
+  gap: 10px
+  padding: 8px 0
+  border-bottom: 1px solid var(--theme-border)
+  color: var(--theme-text-muted)
+
+  &:last-child
+    border-bottom: none
+
+.weekly-header
+  text-transform: uppercase
+  font-size: 0.7rem
+  letter-spacing: 0.08em
+  color: var(--theme-text-muted)
+
+.week-label
+  font-weight: 700
+  color: var(--theme-text)
+
+.week-metric,
+.week-percent,
+.week-perfect
+  font-weight: 600
+  color: var(--theme-text)
+
+.week-bar
+  position: relative
+  height: 8px
+  border-radius: 999px
+  background: var(--theme-surface-2)
+  border: 1px solid var(--theme-border)
+  overflow: hidden
+
+.week-bar-fill
+  height: 100%
+  background: linear-gradient(90deg, var(--theme-accent), rgba(63, 181, 122, 0.9))
+
+@keyframes perfectPulse
+  0%, 100%
+    box-shadow: 0 0 10px rgba(242, 122, 42, 0.25)
+  50%
+    box-shadow: 0 0 18px rgba(242, 122, 42, 0.45)
 
 @media (max-width: 1024px)
-  .overview-grid
-    grid-template-columns: 1fr
-
-  .weeks-grid
-    grid-template-columns: repeat(2, minmax(260px, 1fr))
+  .kpi-strip
+    grid-template-columns: repeat(2, minmax(0, 1fr))
 
 @media (max-width: 720px)
-  .weeks-grid
-    grid-template-columns: 1fr
+  .calendar-grid
+    gap: 8px
+
+  .calendar-cell
+    min-height: 48px
+    padding: 6px
+
+@media (max-width: 640px)
+  .calendar-grid
+    gap: 6px
+
+  .weekly-row
+    grid-template-columns: 1fr 1fr
+    grid-auto-rows: minmax(0, auto)
+    row-gap: 6px
+    font-size: 0.8rem
+
+  .week-bar
+    grid-column: 1 / -1

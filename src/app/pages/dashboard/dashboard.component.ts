@@ -37,6 +37,13 @@ type DateChip = {
             {{ isEditingToday ? todayLabel : ('Editing: ' + todayLabel) }}
           </div>
           <div class="text-label today-status">Complete your habits for today</div>
+          <div class="streak-badge" *ngIf="streakCount > 0">
+            <div class="streak-count">🔥 {{ streakCount }} days</div>
+            <div class="streak-status text-label">
+              {{ remainingCount === 0 && totalCount > 0 ? 'Perfect day. Streak secured 🔥' : (remainingCount + ' habits left to keep your streak alive') }}
+            </div>
+          </div>
+          <div class="streak-hint text-muted" *ngIf="streakCount === 0">Start your streak today</div>
         </div>
         <div class="date-carousel">
           <button class="carousel-arrow" type="button" aria-label="Previous week" (click)="shiftDateWindow(-7)">
@@ -201,12 +208,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   motivationMessage = '';
   habitProgressMap: Record<string, number> = {};
   selectedDate = new Date();
+  todayDateKey = '';
   insightsOpen = true;
   isMobile = false;
   showInstallBanner = false;
   showTodayFooter = false;
   doneCount = 0;
   totalCount = 0;
+  streakCount = 0;
+  remainingCount = 0;
   dateChips: DateChip[] = [];
   private deferredPrompt: BeforeInstallPromptEvent | null = null;
   private installListener?: (event: Event) => void;
@@ -222,6 +232,22 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   ) {}
 
   ngOnInit(): void {
+    this.todayDateKey = this.toIsoDateLocal(this.normalizeDate(new Date()));
+    this.subscription.add(
+      this.habitStore.getSelectedDateKey().subscribe(dateKey => {
+        const parsed = this.dateFromKey(dateKey);
+        if (!parsed || this.isSameDate(parsed, this.selectedDate)) {
+          return;
+        }
+        this.selectedDate = parsed;
+        this.habitStore.setSelectedMonthYear(parsed.getFullYear(), parsed.getMonth());
+        this.syncSelectedDateToMonth();
+        this.updateTodayLabels();
+        this.updateDateChips();
+        this.updateHabitProgress();
+        this.updateMotivation();
+      })
+    );
     this.subscription.add(
       combineLatest([
         this.habitStore.getSelectedMonthYear(),
@@ -378,7 +404,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   private getCompletedTodayValue(): number | null {
     const dateKey = this.toIsoDateLocal(this.selectedDate);
     const dayMap = this.habitStore.getCompletionsSync()[dateKey] || {};
-    return Object.values(dayMap).filter(Boolean).length;
+    const activeHabits = this.habits;
+    const completedCount = activeHabits.reduce((sum, habit) => sum + (dayMap[habit.id] ? 1 : 0), 0);
+    return completedCount;
   }
 
   isTodayChecked(habitId: string): boolean {
@@ -577,7 +605,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       month: 'short',
       day: 'numeric'
     });
-    const today = new Date();
+    const today = this.normalizeDate(new Date());
     this.isEditingToday = this.isSameDate(today, date);
   }
 
@@ -605,38 +633,17 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private updateMotivation(): void {
-    const { year, monthIndex, dayNumber } = this.getSelectedDateParts();
-    const completions = this.habitStore.getCompletionsSync();
-    const dateKey = this.toIsoDateLocal(new Date(year, monthIndex, dayNumber));
-    const dayMap = completions[dateKey] || {};
-    const completedCount = Object.values(dayMap).filter(Boolean).length;
-    const remaining = Math.max(this.habitsCount - completedCount, 0);
-    this.currentStreakDisplay = this.computeStreak();
-    this.doneCount = completedCount;
+    const remaining = this.habitStore.getRemainingCount(this.selectedDate);
+    this.streakCount = this.habitStore.getCurrentStreak(this.todayDateKey);
+    this.currentStreakDisplay = this.streakCount;
     this.totalCount = this.habitsCount;
+    this.doneCount = Math.max(this.totalCount - remaining, 0);
+    this.remainingCount = remaining;
     if (this.habitsCount > 0 && remaining === 0) {
       this.motivationMessage = 'Perfect day. Streak secured 🔥';
     } else {
       this.motivationMessage = `${remaining} habits left to keep your streak alive`;
     }
-  }
-
-  private computeStreak(): number {
-    const completions = this.habitStore.getCompletionsSync();
-    let streak = 0;
-    const date = new Date();
-    for (let i = 0; i < 365; i++) {
-      const dateKey = this.toIsoDateLocal(date);
-      const dayMap = completions[dateKey] || {};
-      const count = Object.values(dayMap).filter(Boolean).length;
-      if (count > 0) {
-        streak++;
-      } else {
-        break;
-      }
-      date.setDate(date.getDate() - 1);
-    }
-    return streak;
   }
 
   private updateViewport(): void {
@@ -702,6 +709,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   setSelectedDate(date: Date): void {
     this.selectedDate = date;
     this.habitStore.setSelectedMonthYear(date.getFullYear(), date.getMonth());
+    this.habitStore.setSelectedDate(date);
     this.syncSelectedDateToMonth();
     this.updateTodayLabels();
     this.updateDateChips();
@@ -751,5 +759,25 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     return a.getFullYear() === b.getFullYear()
       && a.getMonth() === b.getMonth()
       && a.getDate() === b.getDate();
+  }
+
+  private normalizeDate(date: Date): Date {
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    return normalized;
+  }
+
+  private dateFromKey(dateKey: string): Date | null {
+    const parts = dateKey.split('-');
+    if (parts.length !== 3) {
+      return null;
+    }
+    const year = Number(parts[0]);
+    const monthIndex = Number(parts[1]) - 1;
+    const day = Number(parts[2]);
+    if (!Number.isFinite(year) || !Number.isFinite(monthIndex) || !Number.isFinite(day)) {
+      return null;
+    }
+    return this.normalizeDate(new Date(year, monthIndex, day));
   }
 }

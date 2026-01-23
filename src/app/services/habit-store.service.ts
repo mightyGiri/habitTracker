@@ -24,6 +24,7 @@ export class HabitStoreService {
   private habits$ = new BehaviorSubject<Habit[]>([]);
   private completions$ = new BehaviorSubject<HabitCompletion>({});
   private selectedMonthYear$ = new BehaviorSubject<MonthKey>({ year: 2026, month: 0 });
+  private selectedDateKey$ = new BehaviorSubject<string>(this.toIsoDateLocal(new Date()));
   private isHydrated = false;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingState: PersistedState | null = null;
@@ -83,6 +84,18 @@ export class HabitStoreService {
 
   getSelectedMonthYearSync(): MonthKey {
     return this.selectedMonthYear$.value;
+  }
+
+  getSelectedDateKey(): Observable<string> {
+    return this.selectedDateKey$.asObservable();
+  }
+
+  getSelectedDateKeySync(): string {
+    return this.selectedDateKey$.value;
+  }
+
+  setSelectedDate(date: Date): void {
+    this.selectedDateKey$.next(this.toIsoDateLocal(date));
   }
 
   getHabits(): Observable<Habit[]> {
@@ -240,6 +253,78 @@ export class HabitStoreService {
     }
     this.completions$.next(completions);
     this.saveToStorage();
+  }
+
+  isPerfectDay(date: Date): boolean {
+    const activeHabits = this.habits$.value.filter(habit => habit.isActive);
+    if (activeHabits.length === 0) {
+      return false;
+    }
+    const dateKey = this.toIsoDateLocal(date);
+    const dayMap = this.completions$.value[dateKey] || {};
+    const completedCount = activeHabits.reduce((sum, habit) => sum + (dayMap[habit.id] ? 1 : 0), 0);
+    return completedCount === activeHabits.length;
+  }
+
+  getRemainingCount(date: Date): number {
+    const activeHabits = this.habits$.value.filter(habit => habit.isActive);
+    if (activeHabits.length === 0) {
+      return 0;
+    }
+    const dateKey = this.toIsoDateLocal(date);
+    const dayMap = this.completions$.value[dateKey] || {};
+    const completedCount = activeHabits.reduce((sum, habit) => sum + (dayMap[habit.id] ? 1 : 0), 0);
+    return Math.max(activeHabits.length - completedCount, 0);
+  }
+
+  getStreakCount(endingDate: Date): number {
+    const activeHabits = this.habits$.value.filter(habit => habit.isActive);
+    if (activeHabits.length === 0) {
+      return 0;
+    }
+    let streak = 0;
+    const cursor = new Date(endingDate);
+    for (let i = 0; i < 365; i++) {
+      const dateKey = this.toIsoDateLocal(cursor);
+      const dayMap = this.completions$.value[dateKey] || {};
+      const completedCount = activeHabits.reduce((sum, habit) => sum + (dayMap[habit.id] ? 1 : 0), 0);
+      if (completedCount === activeHabits.length) {
+        streak++;
+      } else {
+        break;
+      }
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return streak;
+  }
+
+  getCurrentStreak(todayKey?: string): number {
+    const activeHabits = this.habits$.value.filter(habit => habit.isActive);
+    if (activeHabits.length === 0) {
+      return 0;
+    }
+
+    const today = todayKey ? this.dateFromKey(todayKey) : this.normalizeDate(new Date());
+    if (!today) {
+      return 0;
+    }
+
+    const startDate = new Date(today);
+    if (!this.isPerfectDay(startDate)) {
+      startDate.setDate(startDate.getDate() - 1);
+    }
+
+    let streak = 0;
+    const cursor = new Date(startDate);
+    for (let i = 0; i < 365; i++) {
+      if (this.isPerfectDay(cursor)) {
+        streak++;
+      } else {
+        break;
+      }
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return streak;
   }
 
   isCheckedForDate(year: number, monthIndex: number, dayNumber: number, habitId: string): boolean {
@@ -665,5 +750,25 @@ export class HabitStoreService {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  private dateFromKey(dateKey: string): Date | null {
+    const parts = dateKey.split('-');
+    if (parts.length !== 3) {
+      return null;
+    }
+    const year = Number(parts[0]);
+    const monthIndex = Number(parts[1]) - 1;
+    const day = Number(parts[2]);
+    if (!Number.isFinite(year) || !Number.isFinite(monthIndex) || !Number.isFinite(day)) {
+      return null;
+    }
+    return this.normalizeDate(new Date(year, monthIndex, day));
+  }
+
+  private normalizeDate(date: Date): Date {
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    return normalized;
   }
 }
