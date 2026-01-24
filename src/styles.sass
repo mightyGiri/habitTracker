@@ -6,7 +6,7 @@
   --theme-bg-2: #141a2b
   --theme-bg-spot-1: var(--accent-20)
   --theme-bg-spot-2: rgba(63, 181, 122, 0.12)
-  --theme-pattern: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 14px)
+  --theme-pattern: none
   --theme-surface: #1a1c28
   --theme-surface-2: #23263a
   --theme-border: rgba(255, 255, 255, 0.08)
@@ -73,7 +73,7 @@
   --theme-bg-2: #efe7d9
   --theme-bg-spot-1: var(--accent-20)
   --theme-bg-spot-2: rgba(63, 181, 122, 0.1)
-  --theme-pattern: repeating-linear-gradient(135deg, rgba(0, 0, 0, 0.04) 0 1px, transparent 1px 16px)
+  --theme-pattern: none
   --theme-surface: #ffffff
   --theme-surface-2: #f3ece0
   --theme-border: rgba(32, 28, 23, 0.12)
@@ -631,6 +631,14 @@ mat-card
     background: var(--theme-surface-2)
     color: var(--theme-text)
     border: 1px solid var(--theme-border)
+
+.skip-dialog
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface
+    background: var(--theme-surface)
+    color: var(--theme-text)
+    border: 1px solid var(--theme-border)
+    border-radius: 16px
+    box-shadow: none
 
 ::-webkit-scrollbar
   height: 8px

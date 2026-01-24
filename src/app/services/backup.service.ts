@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HabitStoreService } from './habit-store.service';
 import { ThemeService } from './theme.service';
-import { HabitCompletion } from '../models/habit.model';
+import { HabitCompletion, HabitSkips, UserProfile } from '../models/habit.model';
 import { DateUtils } from '../shared/date-utils';
 import * as XLSX from 'xlsx';
 
@@ -15,6 +15,9 @@ type BackupPayload = {
   };
   habits: Array<{ id: string; name: string; goalDays: number }>;
   checks: HabitCompletion;
+  skips?: HabitSkips;
+  onboardingCompleted?: boolean;
+  userProfile?: UserProfile;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -36,7 +39,10 @@ export class BackupService {
         name: habit.name,
         goalDays: habit.goalDays
       })),
-      checks: snapshot.completions
+      checks: snapshot.completions,
+      skips: snapshot.skips,
+      onboardingCompleted: snapshot.onboardingCompleted,
+      userProfile: snapshot.userProfile ?? undefined
     };
 
     const json = JSON.stringify(payload, null, 2);

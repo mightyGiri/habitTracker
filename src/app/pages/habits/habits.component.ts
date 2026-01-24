@@ -7,7 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { ToggleComponent } from '../../shared/ui/toggle/toggle.component';
 import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors, FormGroup } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Subscription, Observable } from 'rxjs';
 import { HabitStoreService } from '../../services/habit-store.service';
 import { Habit } from '../../models/habit.model';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/confirm-dialog.component';
@@ -30,10 +30,16 @@ import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-
   animations: [staggerFadeUp || noopAnimation, fadeSlideInOut || noopAnimation],
   template: `
     <div class="page-container" [@.disabled]="reduceMotion">
+      <h1 class="text-title page-title">Your Habits</h1>
+      <ng-container *ngIf="ready$ | async; else loading">
       <mat-card class="aesthetic-card habits-card">
-        <div class="section-header text-section">Your Habits</div>
         <mat-card-content>
-          <button class="add-habit-btn btn btn-outline" type="button" (click)="startAdd()">+ Add Habit</button>
+          <div class="habits-toolbar">
+            <button class="add-habit-btn btn btn-outline btn-sm" type="button" (click)="startAdd()" aria-label="Add habit">
+              <mat-icon>add</mat-icon>
+              Add Habit
+            </button>
+          </div>
 
           <form class="habit-form" *ngIf="formOpen" [formGroup]="habitForm" (ngSubmit)="saveHabit()">
             <mat-form-field appearance="fill">
@@ -83,6 +89,12 @@ import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-
           </div>
         </mat-card-content>
       </mat-card>
+      </ng-container>
+      <ng-template #loading>
+        <mat-card class="aesthetic-card">
+          <mat-card-content>Loading habits...</mat-card-content>
+        </mat-card>
+      </ng-template>
 
     </div>
   `,
@@ -94,6 +106,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
   editingHabitId: string | null = null;
   habitForm: FormGroup;
   reduceMotion = false;
+  ready$!: Observable<boolean>;
   private subscription: Subscription = new Subscription();
 
   constructor(
@@ -108,6 +121,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.ready$ = this.habitStore.getReady();
     this.subscription.add(
       this.habitStore.getHabits().subscribe(habits => {
         this.habits = [...habits].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));

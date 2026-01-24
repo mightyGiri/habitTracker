@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
-import { Subscription, combineLatest } from 'rxjs';
+import { Subscription, combineLatest, Observable } from 'rxjs';
 import { HabitStoreService } from '../../services/habit-store.service';
 import { MonthKey, MonthSlot } from '../../models/habit.model';
 import { DateUtils } from '../../shared/date-utils';
@@ -36,6 +36,8 @@ type WeekSummary = {
   animations: [staggerFadeUp || noopAnimation],
   template: `
     <div class="page-container" [@.disabled]="reduceMotion" [class.reduce-motion]="reduceMotion">
+      <h1 class="text-title page-title">Overview</h1>
+      <ng-container *ngIf="ready$ | async; else loading">
       <mat-card class="aesthetic-card kpi-strip" [@staggerFadeUp]="animationKey">
         <div class="kpi-item">
           <span class="kpi-label">Completion</span>
@@ -103,6 +105,12 @@ type WeekSummary = {
           </div>
         </mat-card-content>
       </mat-card>
+      </ng-container>
+      <ng-template #loading>
+        <mat-card class="aesthetic-card">
+          <mat-card-content>Loading overview...</mat-card-content>
+        </mat-card>
+      </ng-template>
     </div>
   `,
   styleUrls: ['./overview.component.sass']
@@ -123,6 +131,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
   bestWeekLabel = '--';
   private todayKey = '';
   private gridRows = 6;
+  ready$!: Observable<boolean>;
 
   private subscription: Subscription = new Subscription();
 
@@ -133,6 +142,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.todayKey = this.habitStore.toDateKey(new Date());
+    this.ready$ = this.habitStore.getReady();
     this.subscription.add(
       combineLatest([
         this.habitStore.getSelectedMonthYear(),

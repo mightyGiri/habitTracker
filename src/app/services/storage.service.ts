@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { openDB, IDBPDatabase } from 'idb';
-import { HabitCompletion, Habit, MonthKey } from '../models/habit.model';
+import { HabitCompletion, Habit, MonthKey, HabitSkips, UserProfile } from '../models/habit.model';
 import { AppTheme } from './theme.service';
 
 const DB_NAME = 'habit-tracker-db';
@@ -13,7 +13,10 @@ export type PersistedState = {
   schemaVersion: number;
   habits: Habit[];
   completions: HabitCompletion;
+  skips?: HabitSkips;
   selectedMonthYear: MonthKey;
+  onboardingCompleted?: boolean;
+  userProfile?: UserProfile;
   settings?: {
     theme?: AppTheme;
   };
@@ -83,7 +86,10 @@ export class StorageService {
           schemaVersion: 1,
           habits: parsed.habits as Habit[],
           completions: parsed.completions as HabitCompletion,
-          selectedMonthYear: parsed.selectedMonthYear as MonthKey
+          skips: (parsed.skips as HabitSkips) || {},
+          selectedMonthYear: parsed.selectedMonthYear as MonthKey,
+          onboardingCompleted: typeof parsed.onboardingCompleted === 'boolean' ? parsed.onboardingCompleted : undefined,
+          userProfile: (parsed.userProfile as UserProfile) || undefined
         };
       }
     } catch (error) {

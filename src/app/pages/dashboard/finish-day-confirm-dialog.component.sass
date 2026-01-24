@@ -1,0 +1,32 @@
+.confirm-dialog
+  max-width: 320px
+  padding: 16px
+  display: flex
+  flex-direction: column
+  gap: 12px
+  margin: 0
+
+.dialog-actions
+  display: flex
+  gap: 10px
+  align-items: center
+  justify-content: flex-end
+
+  .btn
+    min-height: 40px
+
+.btn-cancel
+  color: var(--theme-text-muted)
+  border-color: var(--theme-border)
+  box-shadow: none
+
+  &:hover
+    border-color: var(--theme-border)
+    background: var(--theme-surface-2)
+    box-shadow: none
+
+.btn-finish
+  background: var(--theme-accent)
+  color: #fff
+  border-color: var(--theme-accent)
+  box-shadow: none

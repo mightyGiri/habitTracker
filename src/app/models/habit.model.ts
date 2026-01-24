@@ -24,6 +24,24 @@ export interface HabitCompletion {
   [dateKey: string]: Record<string, boolean>; // "YYYY-MM-DD" -> habitId -> completed
 }
 
+export interface HabitSkip {
+  reason: string;
+  note?: string;
+  ts: number;
+}
+
+export interface HabitSkips {
+  [dateKey: string]: Record<string, HabitSkip>; // "YYYY-MM-DD" -> habitId -> skip meta
+}
+
+export interface UserProfile {
+  name: string;
+  persona: string;
+  primaryGoal: string;
+  why?: string;
+  createdAt: number;
+}
+
 export interface MonthlyTotals {
   completed: number;
   goal: number;

@@ -147,7 +147,7 @@
 
   &.perfect-day
     border-color: var(--theme-accent)
-    box-shadow: 0 0 22px var(--theme-glow)
+    box-shadow: 0 0 28px var(--theme-glow)
     background: linear-gradient(135deg, var(--theme-accent-soft), var(--theme-surface-2))
     animation: perfectPulse 2.5s ease-in-out infinite
 
@@ -170,41 +170,52 @@
   animation-timing-function: ease-out
   animation-fill-mode: forwards
 
-.selected-progress
-  display: flex
-  flex-direction: column
-  gap: 6px
-  padding: 0 4px var(--space-2)
-
-.progress-text
-  font-size: 0.85rem
-  font-weight: 600
-  color: var(--theme-text)
-
-.select-all-row
+.today-hero
   display: flex
   align-items: center
   justify-content: space-between
-  gap: 12px
-  padding: 0 4px var(--space-2)
-
-.select-all-label
-  display: inline-flex
-  align-items: center
-  gap: 6px
-  font-size: 0.85rem
-  font-weight: 600
+  gap: var(--space-3)
+  padding: 12px 14px
+  margin-bottom: var(--space-2)
+  border-radius: var(--radius-md)
+  border: 1px solid var(--theme-border)
+  background: var(--theme-surface-2)
   color: var(--theme-text)
 
-.select-all-count
-  color: var(--theme-text-muted)
-  font-weight: 500
+  &.perfect-day
+    box-shadow: 0 0 26px var(--theme-glow)
+    background: linear-gradient(135deg, var(--theme-accent-soft), var(--theme-surface-2))
 
-.select-all-checkbox
-  width: 22px
-  height: 22px
-  accent-color: var(--theme-accent)
-  cursor: pointer
+.hero-text
+  display: flex
+  flex-direction: column
+  gap: 4px
+  flex: 1
+
+.hero-title
+  font-size: 1.1rem
+  font-weight: 700
+
+.hero-subtitle
+  font-size: 0.9rem
+  color: var(--theme-text-muted)
+
+.hero-micro
+  font-size: 0.8rem
+
+.finish-day
+  display: flex
+  flex-direction: column
+  gap: var(--space-2)
+  margin-top: var(--space-2)
+  align-items: stretch
+
+  .btn
+    min-height: 44px
+
+.hero-progress
+  margin: 0 0 var(--space-3)
+
 
 .install-banner
   display: flex
@@ -267,8 +278,23 @@
     outline-offset: 2px
 
   &.is-completed
+    border-color: var(--theme-success)
+    background: var(--theme-success-soft)
+    box-shadow: 0 0 14px var(--theme-success)
+
+  &.is-skipped
+    border-color: var(--theme-border)
+    background: var(--theme-input-bg)
+    color: var(--theme-text-muted)
+    box-shadow: none
+
+    &:hover
+      border-color: var(--theme-border)
+      box-shadow: none
+      transform: none
+
+  &.is-next
     border-color: var(--theme-accent)
-    background: var(--theme-accent-soft)
     box-shadow: 0 0 14px var(--theme-glow)
 
 .today-item-info
@@ -283,6 +309,18 @@
 
 .today-item-sub
   font-size: 0.85rem
+
+.skipped-chip
+  display: inline-flex
+  align-items: center
+  gap: 4px
+  margin-top: 6px
+  padding: 2px 8px
+  border-radius: 999px
+  border: 1px solid var(--theme-border)
+  font-size: 0.7rem
+  color: var(--theme-text-muted)
+  background: var(--theme-surface-2)
 
 .today-item-meta
   display: flex
@@ -447,6 +485,17 @@
   .today-header
     flex-direction: column
     align-items: flex-start
+
+  .today-hero
+    flex-direction: column
+    align-items: flex-start
+
+  .hero-ring
+    align-self: flex-end
+
+@media (max-width: 360px)
+  .finish-day
+    flex-direction: column
 
   .streak-badge
     width: 100%

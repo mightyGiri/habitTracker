@@ -1,10 +1,11 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, Inject, PLATFORM_ID, HostListener } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, Inject, PLATFORM_ID, HostListener, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { Subscription, combineLatest } from 'rxjs';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { Subscription, combineLatest, Observable } from 'rxjs';
 import { HabitStoreService } from '../../services/habit-store.service';
 import { MonthKey, MonthlyTotals, TopHabit, MonthInsights, Habit } from '../../models/habit.model';
 import type { ChartDataset } from 'chart.js';
@@ -12,6 +13,8 @@ import Chart from 'chart.js/auto';
 import { ThemeService } from '../../services/theme.service';
 import { staggerFadeUp, noopAnimation } from '../../shared/list-animations';
 import { DateUtils } from '../../shared/date-utils';
+import { FinishDayConfirmDialogComponent } from './finish-day-confirm-dialog.component';
+import { SkipRemainingDialogComponent, SkipReasonResult } from './skip-remaining-dialog.component';
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -37,22 +40,23 @@ type ConfettiPiece = {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatProgressBarModule, MatIconModule, MatSnackBarModule],
+  imports: [CommonModule, MatCardModule, MatProgressBarModule, MatIconModule, MatSnackBarModule, MatDialogModule],
   animations: [staggerFadeUp || noopAnimation],
   template: `
     <div class="page-container" [@.disabled]="reduceMotion" [class.reduce-motion]="reduceMotion">
+      <ng-container *ngIf="ready$ | async; else loading">
       <section class="today-header" [class.perfect-day]="isPerfectTodaySelected">
         <div>
           <h1 class="text-title">Level-Up</h1>
           <div class="text-muted today-date">
             {{ isEditingToday ? todayLabel : ('Editing: ' + todayLabel) }}
           </div>
-          <div class="text-label today-status">Complete your habits for today</div>
+          
           <div class="perfect-chip" *ngIf="selectedIsPerfect" [class.celebrate]="celebrateBadge">Perfect Day &#x1F525;</div>
           <div class="streak-badge" *ngIf="streakCount > 0" [class.streak-pop]="streakCelebrating">
             <div class="streak-count">&#x1F525; {{ streakCount }} days</div>
-            <div class="streak-status text-label">
-              {{ todayRemainingCount === 0 && totalCount > 0 ? 'Perfect day. Streak secured' : (todayRemainingCount + ' habits left to keep your streak alive') }}
+            <div class="streak-status text-label" *ngIf="isEditingToday && remainingCount > 0">
+              {{ remainingCount }} left to keep streak
             </div>
           </div>
           <div class="streak-hint text-muted" *ngIf="streakCount === 0">Start your streak today</div>
@@ -82,6 +86,17 @@ type ConfettiPiece = {
         </div>
       </section>
 
+      <div class="today-hero" [class.perfect-day]="isPerfectTodaySelected">
+        <div class="hero-text">
+          <div class="hero-title">Today</div>
+          <div class="hero-subtitle">{{ heroHandledText }}</div>
+          <div class="hero-micro text-muted" *ngIf="selectedSummary.totalCount > 0">{{ heroDetailText }}</div>
+        </div>
+      </div>
+      <div class="hero-progress">
+        <mat-progress-bar mode="determinate" [value]="selectedSummary.percentHandled"></mat-progress-bar>
+      </div>
+
       <mat-card class="aesthetic-card today-list-card" [@staggerFadeUp]="animationKey" #todaySection [class.perfect-day]="isPerfectTodaySelected">
         <div class="section-header text-section">Today Habits</div>
         <div class="confetti-layer" *ngIf="confettiPieces.length > 0">
@@ -98,36 +113,23 @@ type ConfettiPiece = {
           </span>
         </div>
         <mat-card-content>
-          <div class="selected-progress">
-            <span class="progress-text">{{ doneCount }}/{{ totalCount }} done | {{ selectedDayPercent }}%</span>
-            <mat-progress-bar mode="determinate" [value]="selectedDayPercent"></mat-progress-bar>
-          </div>
-          <div class="select-all-row">
-            <div class="select-all-label">
-              <span>Select all</span>
-              <span class="select-all-count" *ngIf="totalCount">({{ totalCount }})</span>
-            </div>
-            <input
-              type="checkbox"
-              class="select-all-checkbox"
-              [checked]="selectAllChecked"
-              [indeterminate]="selectAllIndeterminate"
-              (change)="toggleAllForSelectedDay($event.target.checked)"
-              [attr.aria-label]="'Select all habits for ' + todayLabel">
-          </div>
           <div class="today-list" [class.perfect-day]="isPerfectTodaySelected">
             <button
               class="today-item"
               type="button"
               *ngFor="let habit of habits; trackBy: trackByHabitCard"
               [class.is-completed]="isTodayChecked(habit.id)"
+              [class.is-skipped]="isSelectedDaySkipped(habit.id)"
+              [class.is-next]="isNextHabit(habit.id)"
               (click)="toggleHabitForSelectedDay(habit)"
               (keydown.enter)="toggleHabitForSelectedDay(habit)"
               (keydown.space)="toggleHabitForSelectedDay(habit); $event.preventDefault()"
-              [attr.aria-label]="'Toggle ' + habit.name + ' for today'">
+              [attr.aria-label]="'Toggle ' + habit.name + ' for today'"
+              [attr.id]="'habit-' + habit.id">
               <div class="today-item-info">
                 <div class="today-item-name">{{ habit.name }}</div>
                 <div class="today-item-sub text-muted">{{ habitProgressMap[habit.id] || 0 }}% this month</div>
+                <span class="skipped-chip" *ngIf="isSelectedDaySkipped(habit.id)">Skipped</span>
               </div>
               <div class="today-item-meta">
                 <span class="today-item-percent text-label">{{ habitProgressMap[habit.id] || 0 }}%</span>
@@ -141,6 +143,11 @@ type ConfettiPiece = {
               </div>
             </button>
           </div>
+          <div class="today-actions" *ngIf="showTodayActions">
+            <button class="btn btn-primary btn-sm" type="button" (click)="finishToday()">Finish day</button>
+            <button class="btn btn-outline btn-sm" type="button" (click)="openSkipRemainingDialog()">Skip rest</button>
+          </div>
+          <div class="text-muted finish-hint" *ngIf="showTodayActions">Marks remaining as skipped.</div>
         </mat-card-content>
       </mat-card>
 
@@ -149,7 +156,7 @@ type ConfettiPiece = {
         <mat-card-content>
           <div class="streak-row">
             <div class="streak-value">{{ currentStreakDisplay }} days</div>
-            <div class="streak-message text-label">{{ motivationMessage }}</div>
+            <div class="streak-message text-label" *ngIf="motivationMessage">{{ motivationMessage }}</div>
           </div>
         </mat-card-content>
       </mat-card>
@@ -208,6 +215,12 @@ type ConfettiPiece = {
           <button class="btn btn-icon btn-sm" type="button" aria-label="Dismiss install banner" (click)="dismissInstallBanner()">&#x2715;</button>
         </div>
       </div>
+      </ng-container>
+      <ng-template #loading>
+        <mat-card class="aesthetic-card">
+          <mat-card-content>Loading your habits...</mat-card-content>
+        </mat-card>
+      </ng-template>
     </div>
   `,
   styleUrls: ['./dashboard.component.sass']
@@ -249,8 +262,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   streakCount = 0;
   remainingCount = 0;
   todayRemainingCount = 0;
-  todaySummary = { doneCount: 0, totalCount: 0, percent: 0 };
-  selectedSummary = { doneCount: 0, totalCount: 0, percent: 0 };
+  todaySummary = { doneCount: 0, skippedCount: 0, handledCount: 0, totalCount: 0, percentDone: 0, percentHandled: 0 };
+  selectedSummary = { doneCount: 0, skippedCount: 0, handledCount: 0, totalCount: 0, percentDone: 0, percentHandled: 0 };
   todayIsPerfect = false;
   dateChips: DateChip[] = [];
   selectedIsPerfect = false;
@@ -265,9 +278,40 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   private resizeListener?: () => void;
   private lastMonthKey: string | null = null;
   private rewardStageMap: Record<string, number> = {};
+  ready$!: Observable<boolean>;
 
   get isPerfectTodaySelected(): boolean {
     return this.isSameDate(this.selectedDate, this.todayDate) && this.todayIsPerfect;
+  }
+
+  get heroHandledText(): string {
+    if (this.selectedSummary.totalCount == 0) {
+      return 'Add habits to start.';
+    }
+    return `Handled ${this.selectedSummary.handledCount}/${this.selectedSummary.totalCount}`;
+  }
+
+  get heroDetailText(): string {
+    if (this.selectedSummary.skippedCount > 0) {
+      return `Done ${this.selectedSummary.doneCount} - Skipped ${this.selectedSummary.skippedCount}`;
+    }
+    return `Done ${this.selectedSummary.doneCount}`;
+  }
+
+  get isTodaySelected(): boolean {
+    return this.isSameDate(this.selectedDate, this.todayDate);
+  }
+
+  get canActOnToday(): boolean {
+    return this.isTodaySelected;
+  }
+
+  get showTodayActions(): boolean {
+    return this.canActOnToday && this.remainingCount > 0;
+  }
+
+  get canSkipRemaining(): boolean {
+    return this.isTodaySelected && this.remainingCount > 0;
   }
 
   private subscription: Subscription = new Subscription();
@@ -276,39 +320,38 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     private habitStore: HabitStoreService,
     private themeService: ThemeService,
     private snackBar: MatSnackBar,
+    private dialog: MatDialog,
+    private cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   ngOnInit(): void {
     this.todayDate = this.normalizeDate(new Date());
     this.todayDateKey = this.toIsoDateLocal(this.todayDate);
-    this.subscription.add(
-      this.habitStore.getSelectedDateKey().subscribe(dateKey => {
-        const parsed = this.dateFromKey(dateKey);
-        if (!parsed || this.isSameDate(parsed, this.selectedDate)) {
-          return;
-        }
-        this.selectedDate = parsed;
-        this.habitStore.setSelectedMonthYear(parsed.getFullYear(), parsed.getMonth());
-        this.syncSelectedDateToMonth();
-        this.updateTodayLabels();
-        this.updateDateChips();
-        this.updateHabitProgress();
-        this.recomputeDashboardState();
-      })
-    );
+    this.ready$ = this.habitStore.getReady();
     this.subscription.add(
       combineLatest([
-        this.habitStore.getSelectedMonthYear(),
+        this.habitStore.getHabits(),
         this.habitStore.getCompletions(),
-        this.habitStore.getHabits()
-      ]).subscribe(([monthYear, , habits]) => {
+        this.habitStore.getSkips(),
+        this.habitStore.getSelectedMonthYear(),
+        this.habitStore.getSelectedDateKey()
+      ]).subscribe(([habits, completions, skips, monthYear, dateKey]) => {
+        const parsed = this.dateFromKey(dateKey);
+        if (parsed) {
+          this.selectedDate = parsed;
+        }
         this.selectedMonthYear = monthYear;
         this.habits = habits
           .filter(habit => habit.isActive)
           .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
         this.habitsCount = this.habits.length;
         this.updateData();
+        this.syncSelectedDateToMonth();
+        this.updateTodayLabels();
+        this.updateDateChips();
+        this.updateHabitProgress();
+        this.recomputeDashboardState();
       })
     );
     this.subscription.add(
@@ -438,11 +481,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       this.lastMonthKey = monthKey;
       this.animateKpis(shouldAnimate);
       this.animationKey++;
-      this.syncSelectedDateToMonth();
-      this.updateTodayLabels();
-      this.updateDateChips();
-      this.updateHabitProgress();
-      this.recomputeDashboardState();
 
       if (isPlatformBrowser(this.platformId)) {
         this.updateCharts();
@@ -462,14 +500,24 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.habitStore.isCompleted(habitId, this.selectedDate);
   }
 
+  isSelectedDaySkipped(habitId: string): boolean {
+    return this.habitStore.isSkipped(habitId, this.selectedDate);
+  }
+
   toggleTodayHabit(habitId: string): void {
     const summaryBefore = this.habitStore.getDaySummary(this.selectedDate);
-    const next = !this.habitStore.isCompleted(habitId, this.selectedDate);
-    this.habitStore.setCompleted(habitId, this.selectedDate, next);
+    if (this.habitStore.isSkipped(habitId, this.selectedDate)) {
+      this.habitStore.unskipHabit(habitId, this.selectedDate);
+      this.habitStore.setCompleted(habitId, this.selectedDate, true);
+    } else {
+      const next = !this.habitStore.isCompleted(habitId, this.selectedDate);
+      if (!next) {
+        this.habitStore.unskipHabit(habitId, this.selectedDate);
+      }
+      this.habitStore.setCompleted(habitId, this.selectedDate, next);
+    }
+    this.refreshTodayState();
     const summaryAfter = this.habitStore.getDaySummary(this.selectedDate);
-    this.updateTodayLabels();
-    this.updateHabitProgress();
-    this.recomputeDashboardState();
     this.handleRewards(summaryBefore, summaryAfter);
   }
 
@@ -477,12 +525,43 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.toggleTodayHabit(habit.id);
   }
 
-  toggleAllForSelectedDay(checked: boolean): void {
-    const { year, monthIndex, dayNumber } = this.getSelectedDateParts();
-    this.habitStore.setAllForDayForDate(year, monthIndex, dayNumber, checked);
-    this.updateTodayLabels();
-    this.updateHabitProgress();
-    this.recomputeDashboardState();
+  finishToday(): void {
+    if (!this.showTodayActions) {
+      return;
+    }
+    const dialogRef = this.dialog.open(FinishDayConfirmDialogComponent, {
+      width: '320px',
+      panelClass: ['skip-dialog'],
+      data: { remainingCount: this.remainingCount }
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (!result) {
+        return;
+      }
+      const before = this.habitStore.getDaySummary(this.todayDate);
+      this.habitStore.skipRemaining(this.todayDate, 'Finish');
+      this.refreshTodayState();
+      const after = this.habitStore.getDaySummary(this.todayDate);
+      this.handleRewards(before, after);
+      this.cdr.markForCheck();
+    });
+  }
+  openSkipRemainingDialog(): void {
+    const ref = this.dialog.open(SkipRemainingDialogComponent, {
+      width: '320px',
+      panelClass: ['skip-dialog']
+    });
+    ref.afterClosed().subscribe((result: SkipReasonResult | null) => {
+      if (!result) {
+        return;
+      }
+      const before = this.habitStore.getDaySummary(this.todayDate);
+      this.habitStore.skipRemaining(this.todayDate, result.reason, result.note);
+      this.refreshTodayState();
+      const after = this.habitStore.getDaySummary(this.todayDate);
+      this.handleRewards(before, after);
+      this.cdr.markForCheck();
+    });
   }
 
   toggleInsights(): void {
@@ -516,6 +595,44 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   trackByHabitCard(index: number, habit: Habit): string {
     return habit.id;
+  }
+
+  private findFirstRemainingHabitId(): string | null {
+    for (const habit of this.habits) {
+      if (!this.habitStore.isCompleted(habit.id, this.selectedDate) &&
+          !this.habitStore.isSkipped(habit.id, this.selectedDate)) {
+        return habit.id;
+      }
+    }
+    return null;
+  }
+
+  private findFirstSkippedHabitId(): string | null {
+    for (const habit of this.habits) {
+      if (this.habitStore.isSkipped(habit.id, this.selectedDate)) {
+        return habit.id;
+      }
+    }
+    return null;
+  }
+
+  isNextHabit(habitId: string): boolean {
+    const nextId = this.findFirstRemainingHabitId();
+    return nextId === habitId;
+  }
+
+  private scrollToHabit(habitId: string): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    const element = document.getElementById(`habit-${habitId}`);
+    if (!element) {
+      return;
+    }
+    element.scrollIntoView({
+      behavior: this.reduceMotion ? 'auto' : 'smooth',
+      block: 'center'
+    });
   }
 
   private updateCharts(): void {
@@ -638,14 +755,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     return new Date();
   }
 
-  private getSelectedDateParts(): { year: number; monthIndex: number; dayNumber: number } {
-    return {
-      year: this.selectedDate.getFullYear(),
-      monthIndex: this.selectedDate.getMonth(),
-      dayNumber: this.selectedDate.getDate()
-    };
-  }
-
   private updateTodayLabels(): void {
     const date = this.selectedDate;
     this.todayLabel = date.toLocaleDateString('en-US', {
@@ -653,27 +762,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       month: 'short',
       day: 'numeric'
     });
-    const today = this.normalizeDate(new Date());
-    this.isEditingToday = this.isSameDate(today, date);
+    this.isEditingToday = this.isSameDate(this.todayDate, date);
   }
 
   private updateDateChips(): void {
     this.dateChips = this.getDateChips();
-  }
-
-  get selectedDayPercent(): number {
-    if (!this.totalCount) {
-      return 0;
-    }
-    return Math.round((this.doneCount / this.totalCount) * 100);
-  }
-
-  get selectAllChecked(): boolean {
-    return this.totalCount > 0 && this.doneCount === this.totalCount;
-  }
-
-  get selectAllIndeterminate(): boolean {
-    return this.doneCount > 0 && this.doneCount < this.totalCount;
   }
 
   private updateHabitProgress(): void {
@@ -689,6 +782,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private recomputeDashboardState(): void {
+    this.todayDate = this.normalizeDate(new Date());
+    this.todayDateKey = this.toIsoDateLocal(this.todayDate);
     this.selectedSummary = this.habitStore.getDaySummary(this.selectedDate);
     this.todaySummary = this.habitStore.getDaySummary(this.todayDate);
     this.selectedIsPerfect = this.habitStore.isPerfectDay(this.selectedDate);
@@ -696,8 +791,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
     this.doneCount = this.selectedSummary.doneCount;
     this.totalCount = this.selectedSummary.totalCount;
-    this.remainingCount = Math.max(this.selectedSummary.totalCount - this.selectedSummary.doneCount, 0);
-    this.todayRemainingCount = Math.max(this.todaySummary.totalCount - this.todaySummary.doneCount, 0);
+    this.remainingCount = Math.max(this.selectedSummary.totalCount - this.selectedSummary.handledCount, 0);
+    this.todayRemainingCount = Math.max(this.todaySummary.totalCount - this.todaySummary.handledCount, 0);
 
     const newStreak = this.habitStore.getCurrentStreak(this.todayDateKey);
     if (this.isSameDate(this.selectedDate, this.todayDate) && newStreak > this.previousStreakCount) {
@@ -708,10 +803,18 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.currentStreakDisplay = this.streakCount;
 
     if (this.habitsCount > 0 && this.todayRemainingCount === 0) {
-      this.motivationMessage = 'Perfect day. Streak secured';
-    } else {
+      this.motivationMessage = '';
+    } else if (this.isEditingToday && this.todayRemainingCount > 0) {
       this.motivationMessage = `${this.todayRemainingCount} habits left to keep your streak alive`;
+    } else {
+      this.motivationMessage = '';
     }
+  }
+
+  private refreshTodayState(): void {
+    this.updateTodayLabels();
+    this.updateHabitProgress();
+    this.recomputeDashboardState();
   }
 
   private updateViewport(): void {
@@ -775,14 +878,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   setSelectedDate(date: Date): void {
-    this.selectedDate = date;
     this.habitStore.setSelectedMonthYear(date.getFullYear(), date.getMonth());
     this.habitStore.setSelectedDate(date);
-    this.syncSelectedDateToMonth();
-    this.updateTodayLabels();
-    this.updateDateChips();
-    this.updateHabitProgress();
-    this.recomputeDashboardState();
   }
 
   private syncSelectedDateToMonth(): void {
@@ -878,8 +975,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private handleRewards(
-    before: { doneCount: number; totalCount: number; percent: number },
-    after: { doneCount: number; totalCount: number; percent: number }
+    before: { doneCount: number; skippedCount: number; handledCount: number; totalCount: number; percentDone: number; percentHandled: number },
+    after: { doneCount: number; skippedCount: number; handledCount: number; totalCount: number; percentDone: number; percentHandled: number }
   ): void {
     if (!this.isSameDate(this.selectedDate, this.todayDate)) {
       return;
@@ -889,15 +986,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     const dateKey = this.todayDateKey;
     const stage = this.rewardStageMap[dateKey] || 0;
-    if (before.doneCount === 0 && after.doneCount === 1 && stage < 1) {
+    if (before.handledCount === 0 && after.handledCount === 1 && stage < 1) {
       this.showToast('Nice start');
       this.rewardStageMap[dateKey] = 1;
     }
-    if (before.percent < 50 && after.percent >= 50 && stage < 2) {
+    if (before.percentHandled < 50 && after.percentHandled >= 50 && stage < 2) {
       this.showToast('Halfway there');
       this.rewardStageMap[dateKey] = 2;
     }
-    if (before.percent < 100 && after.percent === 100 && stage < 3) {
+    if (before.percentHandled < 100 && after.percentHandled === 100 && stage < 3) {
       this.showToast('Perfect Day');
       this.rewardStageMap[dateKey] = 3;
       if (!this.reduceMotion) {
@@ -945,6 +1042,17 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.normalizeDate(new Date(year, monthIndex, day));
   }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

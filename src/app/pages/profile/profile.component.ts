@@ -1,5 +1,5 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -17,6 +17,10 @@ import { ImportConfirmDialogComponent, ImportConfirmDialogData } from '../../sha
 import { staggerFadeUp, noopAnimation } from '../../shared/list-animations';
 
 type AccentPreset = { id: AccentId; name: string; color: string };
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+};
 
 @Component({
   selector: 'app-profile',
@@ -38,149 +42,163 @@ type AccentPreset = { id: AccentId; name: string; color: string };
       <h1 class="text-title page-title">Profile</h1>
 
       <mat-card class="aesthetic-card profile-card" [@staggerFadeUp]="animationKey">
-        <div class="card-header text-section">Account</div>
-        <mat-card-content class="card-body">
-          <div class="row-between">
-            <div>
-              <div class="text-body">Status</div>
-              <div class="text-muted">Logged out</div>
+        <div class="section-block">
+          <div class="card-header text-section">Account</div>
+          <mat-card-content class="card-body">
+            <div class="row-between">
+              <div>
+                <div class="text-body">Status</div>
+                <div class="text-muted">Logged out</div>
+              </div>
+              <div class="button-row">
+                <button class="btn btn-outline btn-sm" type="button" disabled>Login</button>
+                <button class="btn btn-outline btn-sm" type="button" disabled>Logout</button>
+              </div>
             </div>
-            <div class="button-row">
-              <button class="btn btn-outline btn-sm" type="button" disabled>Login</button>
-              <button class="btn btn-outline btn-sm" type="button" disabled>Logout</button>
+          </mat-card-content>
+        </div>
+
+        <div class="section-block">
+          <div class="card-header text-section">How to Use</div>
+          <mat-card-content class="card-body">
+            <ol class="howto-list">
+              <li>Pick your habits and keep the list short.</li>
+              <li>Check in daily using the Today screen.</li>
+              <li>Use Overview to spot streaks and perfect days.</li>
+              <li>Export backups regularly for peace of mind.</li>
+            </ol>
+          </mat-card-content>
+        </div>
+
+        <div class="section-block">
+          <div class="card-header text-section">Backup & Restore</div>
+          <mat-card-content class="card-body">
+            <div class="backup-actions">
+              <button class="btn btn-outline" type="button" (click)="exportJson()">Export JSON</button>
+              <button class="btn btn-outline" type="button" (click)="triggerImportJson(importInput)">Import JSON</button>
+              <button class="btn btn-outline" type="button" (click)="exportXlsx()" [disabled]="exportingXlsx">
+                {{ exportingXlsx ? 'Exporting...' : 'Export Excel (XLSX)' }}
+              </button>
+              <button class="btn btn-outline" type="button" (click)="exportCsv()">Export CSV</button>
             </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
+            <input
+              #importInput
+              type="file"
+              hidden
+              class="visually-hidden"
+              accept=".json,application/json"
+              (change)="onImportJson($event)">
+          </mat-card-content>
+        </div>
 
-      <mat-card class="aesthetic-card profile-card" [@staggerFadeUp]="animationKey">
-        <div class="card-header text-section">How to Use</div>
-        <mat-card-content class="card-body">
-          <ol class="howto-list">
-            <li>Pick your habits and keep the list short.</li>
-            <li>Check in daily using the Today screen.</li>
-            <li>Use Overview to spot streaks and perfect days.</li>
-            <li>Export backups regularly for peace of mind.</li>
-          </ol>
-        </mat-card-content>
-      </mat-card>
+        <div class="section-block">
+          <div class="card-header text-section">Appearance</div>
+          <mat-card-content class="card-body">
+              <div class="field-grid">
+                <div class="control-group">
+                  <mat-form-field appearance="fill" class="appearance-field">
+                    <mat-label>Theme</mat-label>
+                    <mat-select [value]="themeMode" (selectionChange)="updateThemeMode($event.value)">
+                      <mat-option value="dark">Dark</mat-option>
+                      <mat-option value="light">Light</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+                <div class="control-group">
+                  <div class="compact-label text-label">
+                    Font size: {{ fontSizeLabel }}
+                  </div>
+                    <input
+                      type="range"
+                      min="12"
+                      max="18"
+                      step="1"
+                      class="font-slider"
+                      [value]="fontSizePx"
+                      (input)="setFontSizeFromRange($event)">
+                </div>
+              </div>
 
-      <mat-card class="aesthetic-card profile-card" [@staggerFadeUp]="animationKey">
-        <div class="card-header text-section">Backup & Restore</div>
-        <mat-card-content class="card-body">
-          <div class="backup-actions">
-            <button class="btn btn-outline" type="button" (click)="exportJson()">Export JSON</button>
-            <button class="btn btn-outline" type="button" (click)="triggerImportJson(importInput)">Import JSON</button>
-            <button class="btn btn-outline" type="button" (click)="exportXlsx()" [disabled]="exportingXlsx">
-              {{ exportingXlsx ? 'Exporting...' : 'Export Excel (XLSX)' }}
-            </button>
-            <button class="btn btn-outline" type="button" (click)="exportCsv()">Export CSV</button>
-          </div>
-          <input
-            #importInput
-            type="file"
-            hidden
-            class="visually-hidden"
-            accept=".json,application/json"
-            (change)="onImportJson($event)">
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="aesthetic-card profile-card" [@staggerFadeUp]="animationKey">
-        <div class="card-header text-section">Appearance</div>
-        <mat-card-content class="card-body">
-            <div class="field-grid">
-              <div class="control-group">
+              <div class="font-family-row">
                 <mat-form-field appearance="fill" class="appearance-field">
-                  <mat-label>Theme</mat-label>
-                  <mat-select [value]="themeMode" (selectionChange)="updateThemeMode($event.value)">
-                    <mat-option value="dark">Dark</mat-option>
-                    <mat-option value="light">Light</mat-option>
+                  <mat-label>Font Family</mat-label>
+                  <mat-select [value]="fontFamily" (selectionChange)="updateFontFamily($event.value)">
+                    <mat-option value="system">System UI</mat-option>
+                    <mat-option value="inter">Inter</mat-option>
+                    <mat-option value="roboto">Roboto</mat-option>
+                    <mat-option value="poppins">Poppins</mat-option>
+                    <mat-option value="montserrat">Montserrat</mat-option>
                   </mat-select>
                 </mat-form-field>
               </div>
-              <div class="control-group">
-                <div class="compact-label text-label">
-                  Font size: {{ fontSizeLabel }}
+
+              <div class="accent-row">
+                <div class="text-body">Accent</div>
+                <div class="accent-swatches">
+                  <button
+                    class="accent-swatch"
+                    *ngFor="let preset of accentPresets"
+                    [style.background]="preset.color"
+                    [class.is-active]="isAccentPresetActive(preset.id)"
+                    (click)="setAccentPreset(preset.id)"
+                    [attr.aria-label]="preset.name">
+                    <span class="swatch-check" *ngIf="isAccentPresetActive(preset.id)">&#x2713;</span>
+                  </button>
                 </div>
-                  <input
-                    type="range"
-                    min="12"
-                    max="18"
-                    step="1"
-                    class="font-slider"
-                    [value]="fontSizePx"
-                    (input)="setFontSizeFromRange($event)">
+                <div class="custom-accent" [class.is-active]="accent.type === 'custom'">
+                  <label class="text-label">Custom</label>
+                  <input type="color" [value]="customAccent" (input)="setCustomAccent($event)">
+                </div>
               </div>
-            </div>
+          </mat-card-content>
+        </div>
 
-            <div class="font-family-row">
-              <mat-form-field appearance="fill" class="appearance-field">
-                <mat-label>Font Family</mat-label>
-                <mat-select [value]="fontFamily" (selectionChange)="updateFontFamily($event.value)">
-                  <mat-option value="system">System UI</mat-option>
-                  <mat-option value="inter">Inter</mat-option>
-                  <mat-option value="roboto">Roboto</mat-option>
-                  <mat-option value="poppins">Poppins</mat-option>
-                  <mat-option value="montserrat">Montserrat</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
-
-            <div class="accent-row">
-              <div class="text-body">Accent</div>
-              <div class="accent-swatches">
-                <button
-                  class="accent-swatch"
-                  *ngFor="let preset of accentPresets"
-                  [style.background]="preset.color"
-                  [class.is-active]="isAccentPresetActive(preset.id)"
-                  (click)="setAccentPreset(preset.id)"
-                  [attr.aria-label]="preset.name">
-                  <span class="swatch-check" *ngIf="isAccentPresetActive(preset.id)">&#x2713;</span>
-                </button>
+        <div class="section-block">
+          <div class="card-header text-section">Notifications</div>
+          <mat-card-content class="card-body">
+            <div class="row-between">
+              <div>
+                <div class="text-body">Daily reminder</div>
+                <div class="text-muted">Coming soon</div>
               </div>
-              <div class="custom-accent" [class.is-active]="accent.type === 'custom'">
-                <label class="text-label">Custom</label>
-                <input type="color" [value]="customAccent" (input)="setCustomAccent($event)">
-              </div>
+                <app-toggle [checked]="notificationsEnabled" [disabled]="true" size="sm"></app-toggle>
             </div>
-        </mat-card-content>
-      </mat-card>
+            <mat-form-field appearance="fill" class="time-field" disabled>
+              <mat-label>Reminder time</mat-label>
+              <input matInput type="time" [value]="notificationTime" disabled>
+            </mat-form-field>
+          </mat-card-content>
+        </div>
 
-      <mat-card class="aesthetic-card profile-card" [@staggerFadeUp]="animationKey">
-        <div class="card-header text-section">Notifications</div>
-        <mat-card-content class="card-body">
-          <div class="row-between">
-            <div>
-              <div class="text-body">Daily reminder</div>
-              <div class="text-muted">Coming soon</div>
+        <div class="section-block">
+          <div class="card-header text-section">About</div>
+          <mat-card-content class="card-body">
+            <div class="about-row">
+              <span class="text-label">Owner</span>
+              <strong>Giri</strong>
             </div>
-              <app-toggle [checked]="notificationsEnabled" [disabled]="true" size="sm"></app-toggle>
-          </div>
-          <mat-form-field appearance="fill" class="time-field" disabled>
-            <mat-label>Reminder time</mat-label>
-            <input matInput type="time" [value]="notificationTime" disabled>
-          </mat-form-field>
-        </mat-card-content>
-      </mat-card>
+            <div class="about-row">
+              <span class="text-label">Version</span>
+              <strong>{{ appVersion }}</strong>
+            </div>
+            <div class="about-row">
+              <span class="text-label">Privacy</span>
+              <strong>All data stays on your device.</strong>
+            </div>
+          </mat-card-content>
+        </div>
 
-      <mat-card class="aesthetic-card profile-card" [@staggerFadeUp]="animationKey">
-        <div class="card-header text-section">About</div>
-        <mat-card-content class="card-body">
-          <div class="about-row">
-            <span class="text-label">Owner</span>
-            <strong>Giri</strong>
-          </div>
-          <div class="about-row">
-            <span class="text-label">Version</span>
-            <strong>{{ appVersion }}</strong>
-          </div>
-          <div class="about-row">
-            <span class="text-label">Privacy</span>
-            <strong>All data stays on your device.</strong>
-          </div>
-        </mat-card-content>
+        <hr class="section-divider">
+
+        <div class="section-block">
+          <div class="card-header text-section">Install App</div>
+          <mat-card-content class="card-body">
+            <p class="text-body">Install Daily Levelling for quick access on your device.</p>
+            <button class="btn btn-primary btn-sm" type="button" (click)="installPwa()" [disabled]="!canInstall">
+              Install app
+            </button>
+          </mat-card-content>
+        </div>
       </mat-card>
     </div>
   `,
@@ -198,6 +216,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   notificationsEnabled = false;
   notificationTime = '08:00';
   appVersion = '0.1.0';
+  canInstall = false;
   accentPresets: AccentPreset[] = [
     { id: 'orange', name: 'Orange', color: '#f27a2a' },
     { id: 'purple', name: 'Purple', color: '#7b68ee' },
@@ -212,6 +231,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
   ];
 
   private subscription = new Subscription();
+  private deferredPrompt: BeforeInstallPromptEvent | null = null;
+  private installListener?: (event: Event) => void;
 
   constructor(
     private dialog: MatDialog,
@@ -219,7 +240,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     private backupService: BackupService,
     private habitStore: HabitStoreService,
     private settingsService: SettingsService,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   ngOnInit(): void {
@@ -241,10 +263,22 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.notificationTime = settings.notificationTime;
       })
     );
+
+    if (isPlatformBrowser(this.platformId)) {
+      this.installListener = (event: Event) => {
+        event.preventDefault();
+        this.deferredPrompt = event as BeforeInstallPromptEvent;
+        this.canInstall = true;
+      };
+      window.addEventListener('beforeinstallprompt', this.installListener);
+    }
   }
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
+    if (this.installListener) {
+      window.removeEventListener('beforeinstallprompt', this.installListener);
+    }
   }
 
   updateThemeMode(mode: ThemeMode): void {
@@ -282,6 +316,17 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   get fontSizeLabel(): string {
     return `${this.fontSizePx}px`;
+  }
+
+  installPwa(): void {
+    if (!this.deferredPrompt) {
+      return;
+    }
+    void this.deferredPrompt.prompt();
+    void this.deferredPrompt.userChoice.then(() => {
+      this.deferredPrompt = null;
+      this.canInstall = false;
+    });
   }
 
   exportJson(): void {
