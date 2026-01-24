@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { ToggleComponent } from '../../shared/ui/toggle/toggle.component';
@@ -22,6 +23,7 @@ import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     MatIconModule,
     MatDialogModule,
     ToggleComponent,
@@ -35,10 +37,16 @@ import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-
       <mat-card class="aesthetic-card habits-card">
         <mat-card-content>
           <div class="habits-toolbar">
-            <button class="add-habit-btn btn btn-outline btn-sm" type="button" (click)="startAdd()" aria-label="Add habit">
+            <button class="add-habit-btn btn btn-outline btn-sm" type="button" (click)="startAdd()" [disabled]="isHabitLimitReached" aria-label="Add habit">
               <mat-icon>add</mat-icon>
               Add Habit
             </button>
+          </div>
+          <div class="habit-warning text-muted" *ngIf="showSoftLimitWarning">
+            More habits = less consistency. Try staying under 5.
+          </div>
+          <div class="habit-warning text-muted" *ngIf="isHabitLimitReached">
+            Habit limit reached. Focus on consistency first.
           </div>
 
           <form class="habit-form" *ngIf="formOpen" [formGroup]="habitForm" (ngSubmit)="saveHabit()">
@@ -49,6 +57,17 @@ import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-
               <mat-error *ngIf="nameControl?.hasError('minlength')">Minimum 2 characters</mat-error>
               <mat-error *ngIf="nameControl?.hasError('maxlength')">Maximum 24 characters</mat-error>
               <mat-error *ngIf="nameControl?.hasError('duplicate')">Name already exists</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="fill">
+              <mat-label>Frequency</mat-label>
+              <mat-select formControlName="frequency">
+                <mat-option value="daily">Daily</mat-option>
+                <mat-option value="weekly">Weekly</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="fill">
+              <mat-label>Minimum version</mat-label>
+              <input matInput formControlName="minimum" placeholder="e.g., 1 page, 5 minutes">
             </mat-form-field>
             <div class="form-actions">
               <button class="btn btn-primary" type="submit" [disabled]="habitForm.invalid">
@@ -67,7 +86,11 @@ import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-
               <div class="habit-header">
                 <div class="habit-name">
                   <div class="text-body">{{ habit.name }}</div>
-                  <div class="text-muted">{{ habit.isActive ? 'Active' : 'Inactive' }}</div>
+                  <div class="text-muted">
+                    {{ habit.isActive ? 'Active' : 'Inactive' }}
+                    <span *ngIf="habit.frequency">• {{ habit.frequency === 'daily' ? 'Daily' : 'Weekly' }}</span>
+                    <span *ngIf="habit.minimum">• {{ habit.minimum }}</span>
+                  </div>
                 </div>
                 <app-toggle [checked]="habit.isActive" (checkedChange)="toggleActive(habit.id)"></app-toggle>
               </div>
@@ -107,6 +130,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
   habitForm: FormGroup;
   reduceMotion = false;
   ready$!: Observable<boolean>;
+  totalHabits = 0;
   private subscription: Subscription = new Subscription();
 
   constructor(
@@ -116,7 +140,9 @@ export class HabitsComponent implements OnInit, OnDestroy {
     private fb: FormBuilder
   ) {
     this.habitForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(24), this.nameUniqueValidator]]
+      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(24), this.nameUniqueValidator]],
+      frequency: ['daily', [Validators.required]],
+      minimum: ['']
     });
   }
 
@@ -125,6 +151,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
     this.subscription.add(
       this.habitStore.getHabits().subscribe(habits => {
         this.habits = [...habits].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+        this.totalHabits = habits.length;
         this.nameControl?.updateValueAndValidity({ emitEvent: false });
       })
     );
@@ -145,20 +172,24 @@ export class HabitsComponent implements OnInit, OnDestroy {
 
   startAdd(): void {
     this.editingHabitId = null;
-    this.habitForm.reset();
+    this.habitForm.reset({ frequency: 'daily', minimum: '' });
     this.formOpen = true;
   }
 
   startEdit(habit: Habit): void {
     this.editingHabitId = habit.id;
-    this.habitForm.setValue({ name: habit.name });
+    this.habitForm.setValue({
+      name: habit.name,
+      frequency: habit.frequency ?? 'daily',
+      minimum: habit.minimum ?? ''
+    });
     this.formOpen = true;
   }
 
   cancelEdit(): void {
     this.formOpen = false;
     this.editingHabitId = null;
-    this.habitForm.reset();
+    this.habitForm.reset({ frequency: 'daily', minimum: '' });
   }
 
   saveHabit(): void {
@@ -166,15 +197,25 @@ export class HabitsComponent implements OnInit, OnDestroy {
       return;
     }
     const name = this.nameControl?.value?.toString().trim() || '';
+    const frequency = (this.habitForm.get('frequency')?.value as 'daily' | 'weekly') || 'daily';
+    const minimum = String(this.habitForm.get('minimum')?.value || '').trim();
     if (!name) {
       return;
     }
     if (this.editingHabitId) {
-      this.habitStore.updateHabit(this.editingHabitId, { name });
+      this.habitStore.updateHabit(this.editingHabitId, { name, frequency, minimum });
     } else {
-      this.habitStore.addHabit(name);
+      this.habitStore.addHabit(name, frequency, minimum);
     }
     this.cancelEdit();
+  }
+
+  get showSoftLimitWarning(): boolean {
+    return this.totalHabits > 5 && this.totalHabits < 7;
+  }
+
+  get isHabitLimitReached(): boolean {
+    return this.totalHabits >= 7;
   }
 
   toggleActive(habitId: string): void {

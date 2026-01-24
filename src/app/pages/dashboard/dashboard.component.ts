@@ -13,8 +13,6 @@ import Chart from 'chart.js/auto';
 import { ThemeService } from '../../services/theme.service';
 import { staggerFadeUp, noopAnimation } from '../../shared/list-animations';
 import { DateUtils } from '../../shared/date-utils';
-import { FinishDayConfirmDialogComponent } from './finish-day-confirm-dialog.component';
-import { SkipRemainingDialogComponent, SkipReasonResult } from './skip-remaining-dialog.component';
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -55,9 +53,6 @@ type ConfettiPiece = {
           <div class="perfect-chip" *ngIf="selectedIsPerfect" [class.celebrate]="celebrateBadge">Perfect Day &#x1F525;</div>
           <div class="streak-badge" *ngIf="streakCount > 0" [class.streak-pop]="streakCelebrating">
             <div class="streak-count">&#x1F525; {{ streakCount }} days</div>
-            <div class="streak-status text-label" *ngIf="isEditingToday && remainingCount > 0">
-              {{ remainingCount }} left to keep streak
-            </div>
           </div>
           <div class="streak-hint text-muted" *ngIf="streakCount === 0">Start your streak today</div>
         </div>
@@ -89,8 +84,7 @@ type ConfettiPiece = {
       <div class="today-hero" [class.perfect-day]="isPerfectTodaySelected">
         <div class="hero-text">
           <div class="hero-title">Today</div>
-          <div class="hero-subtitle">{{ heroHandledText }}</div>
-          <div class="hero-micro text-muted" *ngIf="selectedSummary.totalCount > 0">{{ heroDetailText }}</div>
+          <div class="hero-subtitle">{{ heroStatusLine }}</div>
         </div>
       </div>
       <div class="hero-progress">
@@ -143,11 +137,10 @@ type ConfettiPiece = {
               </div>
             </button>
           </div>
-          <div class="today-actions" *ngIf="showTodayActions">
-            <button class="btn btn-primary btn-sm" type="button" (click)="finishToday()">Finish day</button>
-            <button class="btn btn-outline btn-sm" type="button" (click)="openSkipRemainingDialog()">Skip rest</button>
+          <div class="finish-day" *ngIf="showTodayActions">
+            <button class="btn btn-primary btn-sm" type="button" (click)="finishToday()">Finish Day</button>
+            <div class="text-muted finish-hint">Marks remaining as skipped.</div>
           </div>
-          <div class="text-muted finish-hint" *ngIf="showTodayActions">Marks remaining as skipped.</div>
         </mat-card-content>
       </mat-card>
 
@@ -156,7 +149,6 @@ type ConfettiPiece = {
         <mat-card-content>
           <div class="streak-row">
             <div class="streak-value">{{ currentStreakDisplay }} days</div>
-            <div class="streak-message text-label" *ngIf="motivationMessage">{{ motivationMessage }}</div>
           </div>
         </mat-card-content>
       </mat-card>
@@ -284,18 +276,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.isSameDate(this.selectedDate, this.todayDate) && this.todayIsPerfect;
   }
 
-  get heroHandledText(): string {
-    if (this.selectedSummary.totalCount == 0) {
+  get heroStatusLine(): string {
+    if (this.selectedSummary.totalCount === 0) {
       return 'Add habits to start.';
     }
-    return `Handled ${this.selectedSummary.handledCount}/${this.selectedSummary.totalCount}`;
-  }
-
-  get heroDetailText(): string {
-    if (this.selectedSummary.skippedCount > 0) {
-      return `Done ${this.selectedSummary.doneCount} - Skipped ${this.selectedSummary.skippedCount}`;
+    if (this.remainingCount > 0) {
+      return `${this.remainingCount} left`;
     }
-    return `Done ${this.selectedSummary.doneCount}`;
+    return 'Day secured 🔥';
   }
 
   get isTodaySelected(): boolean {
@@ -529,39 +517,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!this.showTodayActions) {
       return;
     }
-    const dialogRef = this.dialog.open(FinishDayConfirmDialogComponent, {
-      width: '320px',
-      panelClass: ['skip-dialog'],
-      data: { remainingCount: this.remainingCount }
-    });
-    dialogRef.afterClosed().subscribe(result => {
-      if (!result) {
-        return;
-      }
-      const before = this.habitStore.getDaySummary(this.todayDate);
-      this.habitStore.skipRemaining(this.todayDate, 'Finish');
-      this.refreshTodayState();
-      const after = this.habitStore.getDaySummary(this.todayDate);
-      this.handleRewards(before, after);
-      this.cdr.markForCheck();
-    });
-  }
-  openSkipRemainingDialog(): void {
-    const ref = this.dialog.open(SkipRemainingDialogComponent, {
-      width: '320px',
-      panelClass: ['skip-dialog']
-    });
-    ref.afterClosed().subscribe((result: SkipReasonResult | null) => {
-      if (!result) {
-        return;
-      }
-      const before = this.habitStore.getDaySummary(this.todayDate);
-      this.habitStore.skipRemaining(this.todayDate, result.reason, result.note);
-      this.refreshTodayState();
-      const after = this.habitStore.getDaySummary(this.todayDate);
-      this.handleRewards(before, after);
-      this.cdr.markForCheck();
-    });
+    const before = this.habitStore.getDaySummary(this.todayDate);
+    this.habitStore.skipRemaining(this.todayDate, 'Finished Day');
+    this.refreshTodayState();
+    const after = this.habitStore.getDaySummary(this.todayDate);
+    this.handleRewards(before, after);
+    this.cdr.markForCheck();
   }
 
   toggleInsights(): void {
@@ -802,13 +763,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.previousStreakCount = newStreak;
     this.currentStreakDisplay = this.streakCount;
 
-    if (this.habitsCount > 0 && this.todayRemainingCount === 0) {
-      this.motivationMessage = '';
-    } else if (this.isEditingToday && this.todayRemainingCount > 0) {
-      this.motivationMessage = `${this.todayRemainingCount} habits left to keep your streak alive`;
-    } else {
-      this.motivationMessage = '';
-    }
+    this.motivationMessage = '';
   }
 
   private refreshTodayState(): void {

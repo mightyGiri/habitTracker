@@ -13,7 +13,7 @@ type BackupPayload = {
     selectedYear?: number;
     selectedMonthIndex?: number;
   };
-  habits: Array<{ id: string; name: string; goalDays: number }>;
+  habits: Array<{ id: string; name: string; goalDays: number; frequency?: 'daily' | 'weekly'; minimum?: string }>;
   checks: HabitCompletion;
   skips?: HabitSkips;
   onboardingCompleted?: boolean;
@@ -37,7 +37,9 @@ export class BackupService {
       habits: snapshot.habits.map(habit => ({
         id: habit.id,
         name: habit.name,
-        goalDays: habit.goalDays
+        goalDays: habit.goalDays,
+        frequency: habit.frequency,
+        minimum: habit.minimum
       })),
       checks: snapshot.completions,
       skips: snapshot.skips,

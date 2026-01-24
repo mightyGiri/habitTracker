@@ -2,6 +2,8 @@ export interface Habit {
   id: string;
   name: string;
   goalDays: number;
+  frequency?: 'daily' | 'weekly';
+  minimum?: string;
   color?: string;
   createdAt: number;
   isActive: boolean;

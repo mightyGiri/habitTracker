@@ -15,7 +15,7 @@ interface StorageData {
 }
 
 type BackupData = {
-  habits: Array<{ id: string; name: string; goalDays: number }>;
+  habits: Array<{ id: string; name: string; goalDays: number; frequency?: 'daily' | 'weekly'; minimum?: string }>;
   checks: HabitCompletion;
   skips?: HabitSkips;
   onboardingCompleted?: boolean;
@@ -38,7 +38,6 @@ export class HabitStoreService {
   private isHydrated = false;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingState: PersistedState | null = null;
-  private defaultsAppliedKey = 'habit_defaults_v2_applied';
 
   constructor(private storageService: StorageService, private themeService: ThemeService) {
     void this.initialize();
@@ -50,13 +49,7 @@ export class HabitStoreService {
     const state = await this.storageService.loadState();
     if (state) {
       const normalizedHabits = this.normalizeHabits(state.habits || []);
-      const shouldApplyDefaults = !this.hasAppliedDefaultHabitsUpdate();
-      if (shouldApplyDefaults) {
-        this.seedHabits();
-        this.completions$.next({});
-        this.skips$.next({});
-        this.markDefaultsApplied();
-      } else if (normalizedHabits.length > 0) {
+      if (normalizedHabits.length > 0) {
         this.habits$.next(normalizedHabits);
         this.completions$.next(this.normalizeCompletions(state.completions || {}));
         this.skips$.next(this.normalizeSkips(state.skips || {}));
@@ -91,28 +84,15 @@ export class HabitStoreService {
   private seedHabits(): void {
     const now = Date.now();
     const habits: Habit[] = [
-      { id: '1', name: 'Waking up at 7', goalDays: 30, createdAt: now, isActive: true, sortOrder: 0 },
-      { id: '2', name: 'Drinking 1L water', goalDays: 30, createdAt: now + 1, isActive: true, sortOrder: 1 },
-      { id: '3', name: 'Walking 45mins', goalDays: 25, createdAt: now + 2, isActive: true, sortOrder: 2 },
-      { id: '4', name: 'Project contribution', goalDays: 20, createdAt: now + 3, isActive: true, sortOrder: 3 },
-      { id: '5', name: 'Reflected on today', goalDays: 20, createdAt: now + 4, isActive: true, sortOrder: 4 }
+      { id: '1', name: 'Wake up on time', goalDays: 30, frequency: 'daily', createdAt: now, isActive: true, sortOrder: 0 },
+      { id: '2', name: 'Drink water', goalDays: 30, frequency: 'daily', createdAt: now + 1, isActive: true, sortOrder: 1 },
+      { id: '3', name: 'Move (walk/exercise)', goalDays: 25, frequency: 'daily', createdAt: now + 2, isActive: true, sortOrder: 2 },
+      { id: '4', name: 'Read', goalDays: 20, frequency: 'daily', createdAt: now + 3, isActive: true, sortOrder: 3 },
+      { id: '5', name: 'Reflect', goalDays: 20, frequency: 'daily', createdAt: now + 4, isActive: true, sortOrder: 4 }
     ];
     this.habits$.next(habits);
   }
 
-  private hasAppliedDefaultHabitsUpdate(): boolean {
-    if (typeof window === 'undefined' || !window.localStorage) {
-      return false;
-    }
-    return window.localStorage.getItem(this.defaultsAppliedKey) === 'true';
-  }
-
-  private markDefaultsApplied(): void {
-    if (typeof window === 'undefined' || !window.localStorage) {
-      return;
-    }
-    window.localStorage.setItem(this.defaultsAppliedKey, 'true');
-  }
 
   setSelectedMonthYear(year: number, monthIndex: number): void {
     this.selectedMonthYear$.next({ year, month: monthIndex });
@@ -198,7 +178,7 @@ export class HabitStoreService {
     return this.skips$.value;
   }
 
-  addHabit(name: string, goalDays = 30): void {
+  addHabit(name: string, frequency: 'daily' | 'weekly', minimum: string, goalDays = 30): void {
     const trimmed = name.trim();
     if (!trimmed) {
       return;
@@ -211,7 +191,7 @@ export class HabitStoreService {
     const id = this.createId();
     const sortOrder = habits.length > 0 ? Math.max(...habits.map(h => h.sortOrder ?? 0)) + 1 : 0;
     const createdAt = Date.now();
-    const nextHabits = [...habits, { id, name: trimmed, goalDays, createdAt, isActive: true, sortOrder }];
+    const nextHabits = [...habits, { id, name: trimmed, goalDays, frequency, minimum, createdAt, isActive: true, sortOrder }];
     this.habits$.next(this.sortHabits(nextHabits));
     this.saveToStorage();
   }
@@ -246,7 +226,7 @@ export class HabitStoreService {
     this.saveToStorage();
   }
 
-  updateHabit(habitId: string, patch: Partial<Pick<Habit, 'name' | 'isActive' | 'sortOrder' | 'goalDays'>>): void {
+  updateHabit(habitId: string, patch: Partial<Pick<Habit, 'name' | 'isActive' | 'sortOrder' | 'goalDays' | 'frequency' | 'minimum'>>): void {
     const habits = this.habits$.value.map(habit => {
       if (habit.id !== habitId) {
         return habit;
@@ -739,6 +719,8 @@ export class HabitStoreService {
         id: habit.id,
         name: String(habit.name || '').trim() || 'Habit',
         goalDays: Math.max(1, Number(habit.goalDays) || 1),
+        frequency: (habit.frequency === 'weekly' ? 'weekly' : 'daily') as 'daily' | 'weekly',
+        minimum: habit.minimum ? String(habit.minimum) : undefined,
         createdAt: Number((habit as Habit).createdAt) || Date.now(),
         isActive: (habit as Habit).isActive ?? true,
         sortOrder: Number((habit as Habit).sortOrder) || 0
@@ -893,6 +875,8 @@ export class HabitStoreService {
       ...habit,
       name: habit.name?.trim() || `Habit ${index + 1}`,
       goalDays: habit.goalDays ?? 30,
+      frequency: (habit.frequency === 'weekly' ? 'weekly' : 'daily') as 'daily' | 'weekly',
+      minimum: habit.minimum ? String(habit.minimum) : undefined,
       createdAt: habit.createdAt ?? Date.now() + index,
       isActive: habit.isActive ?? true,
       sortOrder: habit.sortOrder ?? index
