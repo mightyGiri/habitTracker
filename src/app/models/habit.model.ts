@@ -2,8 +2,9 @@ export interface Habit {
   id: string;
   name: string;
   goalDays: number;
-  frequency?: 'daily' | 'weekly';
-  minimum?: string;
+  frequencyType?: 'daily' | 'weekly';
+  weeklyTarget?: number;
+  minimumVersion?: string;
   color?: string;
   createdAt: number;
   isActive: boolean;
@@ -38,10 +39,15 @@ export interface HabitSkips {
 
 export interface UserProfile {
   name: string;
-  persona: string;
-  primaryGoal: string;
+  persona?: string;
+  primaryGoal?: string;
   why?: string;
+  whyStatement?: string;
   createdAt: number;
+}
+
+export interface ProfileSettings {
+  displayName?: string;
 }
 
 export interface MonthlyTotals {

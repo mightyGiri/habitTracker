@@ -1,7 +1,7 @@
-﻿import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, Inject, PLATFORM_ID, HostListener, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, Inject, PLATFORM_ID, HostListener, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { ProgressBarComponent } from '../../shared/progress-bar.component';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -13,6 +13,10 @@ import Chart from 'chart.js/auto';
 import { ThemeService } from '../../services/theme.service';
 import { staggerFadeUp, noopAnimation } from '../../shared/list-animations';
 import { DateUtils } from '../../shared/date-utils';
+import { getDailyMotivation } from '../../shared/daily-motivations';
+import { getLevelProgress, LevelProgress } from '../../shared/level-utils';
+import { DayCountPipe } from '../../shared/day-count.pipe';
+import { ActivatedRoute } from '@angular/router';
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -38,7 +42,7 @@ type ConfettiPiece = {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatProgressBarModule, MatIconModule, MatSnackBarModule, MatDialogModule],
+  imports: [CommonModule, MatCardModule, MatIconModule, MatSnackBarModule, MatDialogModule, DayCountPipe, ProgressBarComponent],
   animations: [staggerFadeUp || noopAnimation],
   template: `
     <div class="page-container" [@.disabled]="reduceMotion" [class.reduce-motion]="reduceMotion">
@@ -49,12 +53,19 @@ type ConfettiPiece = {
           <div class="text-muted today-date">
             {{ isEditingToday ? todayLabel : ('Editing: ' + todayLabel) }}
           </div>
-          
-          <div class="perfect-chip" *ngIf="selectedIsPerfect" [class.celebrate]="celebrateBadge">Perfect Day &#x1F525;</div>
-          <div class="streak-badge" *ngIf="streakCount > 0" [class.streak-pop]="streakCelebrating">
-            <div class="streak-count">&#x1F525; {{ streakCount }} days</div>
+          <div class="text-muted today-subtitle">{{ dailyMotivation }}</div>
+          <div class="level-badge">{{ levelBadgeText }}</div>
+          <div class="level-xp text-muted">{{ levelXpText }}</div>
+          <div class="level-next text-muted">{{ levelProgressText }}</div>
+          <div class="level-progress">
+            <app-progress-bar [value]="levelStats.progressPercent" [height]="4"></app-progress-bar>
           </div>
-          <div class="streak-hint text-muted" *ngIf="streakCount === 0">Start your streak today</div>
+          
+          <div class="perfect-chip" *ngIf="selectedIsPerfect" [class.celebrate]="celebrateBadge">Perfect Level &#x1F525;</div>
+          <div class="streak-badge" *ngIf="streakCount > 0" [class.streak-pop]="streakCelebrating">
+            <div class="streak-count">&#x1F525; {{ streakCount | dayCount }}</div>
+          </div>
+          <div class="streak-hint text-muted" *ngIf="streakCount === 0">Start your level streak today</div>
         </div>
         <div class="date-carousel">
           <button class="carousel-arrow" type="button" aria-label="Previous week" (click)="shiftDateWindow(-7)">
@@ -81,17 +92,32 @@ type ConfettiPiece = {
         </div>
       </section>
 
+      <div class="today-cue" *ngIf="isEditingToday">
+        <ng-container *ngIf="showReadyBanner; else cueFollowUp">
+          <div class="cue-title">Ready to level up today?</div>
+          <div class="cue-sub text-muted">Do 1 habit now. Momentum starts small.</div>
+        </ng-container>
+        <ng-template #cueFollowUp>
+          <div class="cue-title" *ngIf="remainingCount > 0">Good. Keep going.</div>
+          <div class="cue-title" *ngIf="remainingCount === 0">Day secured 🔥</div>
+        </ng-template>
+      </div>
+
       <div class="today-hero" [class.perfect-day]="isPerfectTodaySelected">
         <div class="hero-text">
           <div class="hero-title">Today</div>
           <div class="hero-subtitle">{{ heroStatusLine }}</div>
+          <div class="hero-helper text-muted" *ngIf="isEditingToday && selectedIsPerfect">
+            Come back tomorrow to keep your level streak.
+          </div>
+          <div class="finish-message" *ngIf="finishMomentActive">{{ finishMomentMessage }}</div>
         </div>
       </div>
       <div class="hero-progress">
-        <mat-progress-bar mode="determinate" [value]="selectedSummary.percentHandled"></mat-progress-bar>
+        <app-progress-bar [value]="selectedSummary.percentHandled / 100" [height]="6"></app-progress-bar>
       </div>
 
-      <mat-card class="aesthetic-card today-list-card" [@staggerFadeUp]="animationKey" #todaySection [class.perfect-day]="isPerfectTodaySelected">
+      <mat-card class="aesthetic-card today-list-card" [@staggerFadeUp]="animationKey" #todaySection [class.perfect-day]="isPerfectTodaySelected" [class.finish-moment]="finishMomentActive">
         <div class="section-header text-section">Today Habits</div>
         <div class="confetti-layer" *ngIf="confettiPieces.length > 0">
           <span
@@ -115,6 +141,7 @@ type ConfettiPiece = {
               [class.is-completed]="isTodayChecked(habit.id)"
               [class.is-skipped]="isSelectedDaySkipped(habit.id)"
               [class.is-next]="isNextHabit(habit.id)"
+              [class.reward-pulse]="inlineRewardHabitId === habit.id"
               (click)="toggleHabitForSelectedDay(habit)"
               (keydown.enter)="toggleHabitForSelectedDay(habit)"
               (keydown.space)="toggleHabitForSelectedDay(habit); $event.preventDefault()"
@@ -124,6 +151,7 @@ type ConfettiPiece = {
                 <div class="today-item-name">{{ habit.name }}</div>
                 <div class="today-item-sub text-muted">{{ habitProgressMap[habit.id] || 0 }}% this month</div>
                 <span class="skipped-chip" *ngIf="isSelectedDaySkipped(habit.id)">Skipped</span>
+                <span class="inline-reward" *ngIf="inlineRewardHabitId === habit.id">+1 Level · {{ habit.name }}</span>
               </div>
               <div class="today-item-meta">
                 <span class="today-item-percent text-label">{{ habitProgressMap[habit.id] || 0 }}%</span>
@@ -138,17 +166,18 @@ type ConfettiPiece = {
             </button>
           </div>
           <div class="finish-day" *ngIf="showTodayActions">
-            <button class="btn btn-primary btn-sm" type="button" (click)="finishToday()">Finish Day</button>
+            <button class="btn btn-primary btn-sm" type="button" (click)="finishToday()">Level Up Today</button>
             <div class="text-muted finish-hint">Marks remaining as skipped.</div>
           </div>
+          <div class="identity-line text-muted" *ngIf="isEditingToday && selectedIsPerfect">{{ identityLine }}</div>
         </mat-card-content>
       </mat-card>
 
       <mat-card class="aesthetic-card streak-card">
-        <div class="section-header text-section">Streak & Motivation</div>
+        <div class="section-header text-section">Level Streak</div>
         <mat-card-content>
           <div class="streak-row">
-            <div class="streak-value">{{ currentStreakDisplay }} days</div>
+            <div class="streak-value">{{ currentStreakDisplay | dayCount }}</div>
           </div>
         </mat-card-content>
       </mat-card>
@@ -207,6 +236,7 @@ type ConfettiPiece = {
           <button class="btn btn-icon btn-sm" type="button" aria-label="Dismiss install banner" (click)="dismissInstallBanner()">&#x2715;</button>
         </div>
       </div>
+
       </ng-container>
       <ng-template #loading>
         <mat-card class="aesthetic-card">
@@ -231,6 +261,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   habits: Habit[] = [];
   habitsCount = 0;
   completedTodayDisplay = '--';
+  levelStats: LevelProgress = getLevelProgress(0);
   monthlyPercentDisplay = 0;
   totalHabitsDisplay = 0;
   currentStreakDisplay = 0;
@@ -262,10 +293,23 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   celebrateBadge = false;
   confettiPieces: ConfettiPiece[] = [];
   private confettiTimer?: ReturnType<typeof setTimeout>;
+  inlineRewardHabitId: string | null = null;
+  private inlineRewardTimer?: ReturnType<typeof setTimeout>;
+  finishMomentMessage = '';
+  finishMomentActive = false;
+  private finishMomentTimer?: ReturnType<typeof setTimeout>;
+  identityLine = '';
+  private identityVariants = [
+    'You’re building your real-life character.',
+    'This is how consistency looks.',
+    'One level stronger than yesterday.'
+  ];
   streakCelebrating = false;
   private streakCelebrationTimer?: ReturnType<typeof setTimeout>;
   private previousStreakCount = 0;
   private deferredPrompt: BeforeInstallPromptEvent | null = null;
+  private viewReady = false;
+  private focusTodayRequested = false;
   private installListener?: (event: Event) => void;
   private resizeListener?: () => void;
   private lastMonthKey: string | null = null;
@@ -276,14 +320,42 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.isSameDate(this.selectedDate, this.todayDate) && this.todayIsPerfect;
   }
 
+  get dailyMotivation(): string {
+    return getDailyMotivation(this.todayDate.getDate());
+  }
+
   get heroStatusLine(): string {
     if (this.selectedSummary.totalCount === 0) {
       return 'Add habits to start.';
     }
     if (this.remainingCount > 0) {
-      return `${this.remainingCount} left`;
+      return `${this.remainingCount} habits left`;
     }
-    return 'Day secured 🔥';
+    return 'Level Up Complete 🔥';
+  }
+
+  get levelBadgeText(): string {
+    return `Level ${this.levelStats.level}`;
+  }
+
+  get levelXpText(): string {
+    return `XP: ${this.levelStats.totalDone} done`;
+  }
+
+  get levelProgressText(): string {
+    if (this.levelStats.level === 0 && this.levelStats.totalDone === 0) {
+      return 'Complete 1 habit to reach Level 1';
+    }
+
+    return `${this.levelStats.progressInLevel}/${this.levelStats.requiredThisLevel} to Level ${this.levelStats.nextLevel}`;
+  }
+
+  get handledCountToday(): number {
+    return this.todaySummary.handledCount;
+  }
+
+  get showReadyBanner(): boolean {
+    return this.isEditingToday && this.handledCountToday === 0;
   }
 
   get isTodaySelected(): boolean {
@@ -310,6 +382,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -323,13 +396,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         this.habitStore.getCompletions(),
         this.habitStore.getSkips(),
         this.habitStore.getSelectedMonthYear(),
-        this.habitStore.getSelectedDateKey()
-      ]).subscribe(([habits, completions, skips, monthYear, dateKey]) => {
+        this.habitStore.getSelectedDateKey(),
+        this.habitStore.getLevelStats()
+      ]).subscribe(([habits, completions, skips, monthYear, dateKey, levelStats]) => {
         const parsed = this.dateFromKey(dateKey);
         if (parsed) {
           this.selectedDate = parsed;
         }
         this.selectedMonthYear = monthYear;
+        this.levelStats = levelStats;
         this.habits = habits
           .filter(habit => habit.isActive)
           .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
@@ -354,6 +429,16 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         this.reduceMotion = reduce;
       })
     );
+    if (isPlatformBrowser(this.platformId)) {
+      this.subscription.add(
+        this.route.queryParamMap.subscribe(params => {
+          if (params.get('focus') === 'todayList') {
+            this.focusTodayRequested = true;
+            this.tryFocusTodayList();
+          }
+        })
+      );
+    }
 
     if (isPlatformBrowser(this.platformId)) {
       const dismissed = window.localStorage?.getItem('pwa_install_banner_dismissed') === 'true';
@@ -370,6 +455,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
+    this.viewReady = true;
+    this.tryFocusTodayList();
     if (isPlatformBrowser(this.platformId)) {
       this.createCharts();
       this.updateViewport();
@@ -494,6 +581,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   toggleTodayHabit(habitId: string): void {
     const summaryBefore = this.habitStore.getDaySummary(this.selectedDate);
+    const wasDone = this.habitStore.isCompleted(habitId, this.selectedDate);
     if (this.habitStore.isSkipped(habitId, this.selectedDate)) {
       this.habitStore.unskipHabit(habitId, this.selectedDate);
       this.habitStore.setCompleted(habitId, this.selectedDate, true);
@@ -507,6 +595,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.refreshTodayState();
     const summaryAfter = this.habitStore.getDaySummary(this.selectedDate);
     this.handleRewards(summaryBefore, summaryAfter);
+    const isDoneNow = this.habitStore.isCompleted(habitId, this.selectedDate);
+    if (!wasDone && isDoneNow) {
+      this.showHabitReward(habitId);
+    }
   }
 
   toggleHabitForSelectedDay(habit: Habit): void {
@@ -522,6 +614,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.refreshTodayState();
     const after = this.habitStore.getDaySummary(this.todayDate);
     this.handleRewards(before, after);
+    this.triggerFinishMoment(after);
     this.cdr.markForCheck();
   }
 
@@ -764,12 +857,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.currentStreakDisplay = this.streakCount;
 
     this.motivationMessage = '';
+    this.updateIdentityLine();
   }
 
   private refreshTodayState(): void {
     this.updateTodayLabels();
     this.updateHabitProgress();
     this.recomputeDashboardState();
+    this.updateIdentityLine();
   }
 
   private updateViewport(): void {
@@ -791,11 +886,20 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   scrollToToday(): void {
     const target = this.todaySection?.nativeElement;
+    const behavior: ScrollBehavior = this.reduceMotion ? 'auto' : 'smooth';
     if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      target.scrollIntoView({ behavior, block: 'start' });
     } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior });
     }
+  }
+
+  private tryFocusTodayList(): void {
+    if (!this.focusTodayRequested || !this.viewReady) {
+      return;
+    }
+    this.focusTodayRequested = false;
+    this.scrollToToday();
   }
 
   private updateFooterVisibility(): void {
@@ -942,15 +1046,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     const dateKey = this.todayDateKey;
     const stage = this.rewardStageMap[dateKey] || 0;
     if (before.handledCount === 0 && after.handledCount === 1 && stage < 1) {
-      this.showToast('Nice start');
+      this.showToast('Level started.');
       this.rewardStageMap[dateKey] = 1;
     }
     if (before.percentHandled < 50 && after.percentHandled >= 50 && stage < 2) {
-      this.showToast('Halfway there');
+      this.showToast('Nice');
       this.rewardStageMap[dateKey] = 2;
     }
     if (before.percentHandled < 100 && after.percentHandled === 100 && stage < 3) {
-      this.showToast('Perfect Day');
+      this.showToast('Perfect level achieved.');
       this.rewardStageMap[dateKey] = 3;
       if (!this.reduceMotion) {
         this.triggerPerfectDayCelebrate();
@@ -961,6 +1065,54 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private showToast(message: string): void {
     this.snackBar.open(message, 'Close', { duration: 1600, panelClass: ['reward-toast'] });
+  }
+
+  private showHabitReward(habitId: string): void {
+    if (!this.isSameDate(this.selectedDate, this.todayDate)) {
+      return;
+    }
+    if (this.inlineRewardTimer) {
+      clearTimeout(this.inlineRewardTimer);
+    }
+    this.inlineRewardHabitId = habitId;
+    this.inlineRewardTimer = setTimeout(() => {
+      if (this.inlineRewardHabitId === habitId) {
+        this.inlineRewardHabitId = null;
+      }
+    }, 1000);
+  }
+
+  private pickIdentityLine(): string {
+    const index = Math.floor(Math.random() * this.identityVariants.length);
+    return this.identityVariants[index];
+  }
+
+  private updateIdentityLine(): void {
+    if (this.isEditingToday && this.selectedIsPerfect) {
+      if (!this.identityLine) {
+        this.identityLine = this.pickIdentityLine();
+      }
+      return;
+    }
+    this.identityLine = '';
+  }
+
+  private triggerFinishMoment(summary: { doneCount: number; totalCount: number; handledCount: number }): void {
+    if (!this.isSameDate(this.selectedDate, this.todayDate)) {
+      return;
+    }
+    if (summary.handledCount < summary.totalCount) {
+      return;
+    }
+    if (this.finishMomentTimer) {
+      clearTimeout(this.finishMomentTimer);
+    }
+    this.finishMomentMessage =
+      summary.doneCount === summary.totalCount ? 'Perfect level 🔥' : 'Day completed';
+    this.finishMomentActive = true;
+    this.finishMomentTimer = setTimeout(() => {
+      this.finishMomentActive = false;
+    }, 700);
   }
 
   private loadRewardStageMap(): Record<string, number> {
@@ -997,6 +1149,21 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.normalizeDate(new Date(year, monthIndex, day));
   }
 }
+
+// Manual tests
+// Feature 10: Daily Level-Up hook (copy + identity only)
+// - Opening Today shows cue only when not secured
+// - Ready banner hides after first done/skip and stays hidden on refresh
+// - Completing a habit shows reward toast instantly
+// - Rapid toggles update reward message without stacking
+// - Level Up Complete hides cue and shows identity line
+// - Progress bar color matches accent and animates smoothly
+// - Default theme is blue on fresh install, saved theme overrides
+// - Motivation changes by day-of-month
+// - No overlap with bottom nav
+
+
+
 
 
 

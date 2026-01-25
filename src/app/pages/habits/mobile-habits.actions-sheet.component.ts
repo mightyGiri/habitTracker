@@ -7,6 +7,7 @@ import { Habit } from '../../models/habit.model';
 import { HabitStoreService } from '../../services/habit-store.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/confirm-dialog.component';
 import { HabitEditDialogComponent, HabitEditDialogData } from './mobile-habits.edit-dialog.component';
+import { DayCountPipe } from '../../shared/day-count.pipe';
 
 type HabitActionsData = {
   habit: Habit;
@@ -16,12 +17,12 @@ type HabitActionsData = {
 @Component({
   selector: 'app-habit-actions-sheet',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatIconModule],
+  imports: [CommonModule, MatDialogModule, MatIconModule, DayCountPipe],
   template: `
     <div class="sheet">
       <div class="sheet-header">
         <div class="sheet-title">{{ data.habit.name }}</div>
-        <div class="sheet-subtitle text-muted">Goal {{ data.habit.goalDays }} days</div>
+        <div class="sheet-subtitle text-muted">Goal {{ data.habit.goalDays | dayCount }}</div>
       </div>
       <div class="sheet-actions">
         <button class="btn btn-outline btn-sm" type="button" (click)="editName()">

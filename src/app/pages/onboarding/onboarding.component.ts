@@ -20,19 +20,19 @@ type OnboardingStep = 0 | 1 | 2;
         <mat-card-content>
           <ng-container [ngSwitch]="step">
             <div *ngSwitchCase="0" class="onboarding-step">
-              <h2 class="text-title">Build a streak that lasts</h2>
+              <h2 class="text-title">Level up your real life.</h2>
               <div class="step-cards">
                 <div class="step-card">
-                  <div class="step-title">Small wins</div>
-                  <p class="text-body">Keep your list short so wins stay consistent.</p>
+                  <div class="step-title">Small levels</div>
+                  <p class="text-body">Short daily actions beat big plans.</p>
                 </div>
                 <div class="step-card">
                   <div class="step-title">Daily loop</div>
-                  <p class="text-body">Check in fast on the Today screen.</p>
+                  <p class="text-body">Open → tap → level up → leave.</p>
                 </div>
                 <div class="step-card">
-                  <div class="step-title">Reflect</div>
-                  <p class="text-body">Use Overview to spot streaks and patterns.</p>
+                  <div class="step-title">Identity</div>
+                  <p class="text-body">You become what you repeat.</p>
                 </div>
               </div>
             </div>
@@ -147,7 +147,7 @@ export class OnboardingComponent implements OnInit {
       name: this.name.trim(),
       persona,
       primaryGoal: goal,
-      why: why?.trim() || undefined,
+      whyStatement: why?.trim() || undefined,
       createdAt: Date.now()
     };
     this.habitStore.setUserProfile(profile);

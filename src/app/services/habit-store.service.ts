@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { Habit, MonthKey, HabitCompletion, DayCheck, MonthlyTotals, TopHabit, MonthInsights, HabitSkips, HabitSkip, UserProfile } from '../models/habit.model';
+import { Habit, MonthKey, HabitCompletion, DayCheck, MonthlyTotals, TopHabit, MonthInsights, HabitSkips, HabitSkip, UserProfile, ProfileSettings } from '../models/habit.model';
 import { DateUtils } from '../shared/date-utils';
+import { getLevelProgress, LevelProgress } from '../shared/level-utils';
 import { StorageService, PersistedState } from './storage.service';
 import { ThemeService } from './theme.service';
 
@@ -12,14 +13,26 @@ interface StorageData {
   selectedMonthYear: MonthKey;
   onboardingCompleted?: boolean;
   userProfile?: UserProfile | null;
+  profile?: ProfileSettings;
+  defaultsSeeded?: boolean;
 }
 
 type BackupData = {
-  habits: Array<{ id: string; name: string; goalDays: number; frequency?: 'daily' | 'weekly'; minimum?: string }>;
+  habits: Array<{
+    id: string;
+    name: string;
+    goalDays: number;
+    frequencyType?: 'daily' | 'weekly';
+    weeklyTarget?: number;
+    minimumVersion?: string;
+    frequency?: 'daily' | 'weekly';
+    minimum?: string;
+  }>;
   checks: HabitCompletion;
   skips?: HabitSkips;
   onboardingCompleted?: boolean;
   userProfile?: UserProfile;
+  profile?: ProfileSettings;
   appSettings?: { selectedYear?: number; selectedMonthIndex?: number };
 };
 
@@ -30,17 +43,23 @@ export class HabitStoreService {
   private habits$ = new BehaviorSubject<Habit[]>([]);
   private completions$ = new BehaviorSubject<HabitCompletion>({});
   private skips$ = new BehaviorSubject<HabitSkips>({});
+  private levelStats$ = new BehaviorSubject<LevelProgress>(getLevelProgress(0));
   private selectedMonthYear$ = new BehaviorSubject<MonthKey>({ year: 2026, month: 0 });
   private selectedDateKey$ = new BehaviorSubject<string>(this.toIsoDateLocal(new Date()));
   private onboardingCompleted$ = new BehaviorSubject<boolean>(false);
   private userProfile$ = new BehaviorSubject<UserProfile | null>(null);
+  private profile$ = new BehaviorSubject<ProfileSettings>({});
   private ready$ = new BehaviorSubject<boolean>(false);
+  private defaultsSeeded = false;
   private isHydrated = false;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingState: PersistedState | null = null;
 
   constructor(private storageService: StorageService, private themeService: ThemeService) {
     void this.initialize();
+    this.completions$.subscribe(completions => {
+      this.levelStats$.next(this.buildLevelStats(completions));
+    });
     this.themeService.getTheme().subscribe(() => this.saveToStorage());
   }
 
@@ -49,15 +68,18 @@ export class HabitStoreService {
     const state = await this.storageService.loadState();
     if (state) {
       const normalizedHabits = this.normalizeHabits(state.habits || []);
+      this.defaultsSeeded = state.defaultsSeeded === true || normalizedHabits.length > 0;
       if (normalizedHabits.length > 0) {
         this.habits$.next(normalizedHabits);
         this.completions$.next(this.normalizeCompletions(state.completions || {}));
         this.skips$.next(this.normalizeSkips(state.skips || {}));
-      } else {
+      } else if (!this.defaultsSeeded) {
         this.seedHabits();
+        this.defaultsSeeded = true;
       }
-      const profile = state.userProfile ?? null;
+      const profile = state.userProfile ? this.normalizeUserProfile(state.userProfile) : null;
       this.userProfile$.next(profile);
+      this.profile$.next(state.profile ?? {});
       if (typeof state.onboardingCompleted === 'boolean') {
         this.onboardingCompleted$.next(state.onboardingCompleted);
       } else if (profile) {
@@ -76,6 +98,7 @@ export class HabitStoreService {
     }
 
     this.seedHabits();
+    this.defaultsSeeded = true;
     this.isHydrated = true;
     this.saveToStorage();
     this.ready$.next(true);
@@ -84,11 +107,11 @@ export class HabitStoreService {
   private seedHabits(): void {
     const now = Date.now();
     const habits: Habit[] = [
-      { id: '1', name: 'Wake up on time', goalDays: 30, frequency: 'daily', createdAt: now, isActive: true, sortOrder: 0 },
-      { id: '2', name: 'Drink water', goalDays: 30, frequency: 'daily', createdAt: now + 1, isActive: true, sortOrder: 1 },
-      { id: '3', name: 'Move (walk/exercise)', goalDays: 25, frequency: 'daily', createdAt: now + 2, isActive: true, sortOrder: 2 },
-      { id: '4', name: 'Read', goalDays: 20, frequency: 'daily', createdAt: now + 3, isActive: true, sortOrder: 3 },
-      { id: '5', name: 'Reflect', goalDays: 20, frequency: 'daily', createdAt: now + 4, isActive: true, sortOrder: 4 }
+      { id: this.createId(), name: 'Wake up on time', goalDays: 30, frequencyType: 'daily', createdAt: now, isActive: true, sortOrder: 0 },
+      { id: this.createId(), name: 'Drink water', goalDays: 30, frequencyType: 'daily', createdAt: now + 1, isActive: true, sortOrder: 1 },
+      { id: this.createId(), name: 'Move (walk/exercise)', goalDays: 30, frequencyType: 'daily', createdAt: now + 2, isActive: true, sortOrder: 2 },
+      { id: this.createId(), name: 'Read', goalDays: 30, frequencyType: 'daily', createdAt: now + 3, isActive: true, sortOrder: 3 },
+      { id: this.createId(), name: 'Reflect (journal)', goalDays: 30, frequencyType: 'daily', createdAt: now + 4, isActive: true, sortOrder: 4 }
     ];
     this.habits$.next(habits);
   }
@@ -135,6 +158,14 @@ export class HabitStoreService {
     return this.completions$.value;
   }
 
+  getLevelStats(): Observable<LevelProgress> {
+    return this.levelStats$.asObservable();
+  }
+
+  getLevelStatsSync(): LevelProgress {
+    return this.levelStats$.value;
+  }
+
   getSkips(): Observable<HabitSkips> {
     return this.skips$.asObservable();
   }
@@ -147,8 +178,21 @@ export class HabitStoreService {
     return this.userProfile$.value;
   }
 
+  getProfile(): Observable<ProfileSettings> {
+    return this.profile$.asObservable();
+  }
+
+  getProfileSync(): ProfileSettings {
+    return this.profile$.value;
+  }
+
+  setProfile(profile: ProfileSettings): void {
+    this.profile$.next(profile);
+    this.saveToStorage();
+  }
+
   setUserProfile(profile: UserProfile): void {
-    this.userProfile$.next(profile);
+    this.userProfile$.next(this.normalizeUserProfile(profile));
     this.saveToStorage();
   }
 
@@ -178,7 +222,20 @@ export class HabitStoreService {
     return this.skips$.value;
   }
 
-  addHabit(name: string, frequency: 'daily' | 'weekly', minimum: string, goalDays = 30): void {
+  private buildLevelStats(completions: HabitCompletion): LevelProgress {
+    let totalDone = 0;
+    Object.values(completions).forEach(dayMap => {
+      Object.values(dayMap).forEach(value => {
+        if (value) {
+          totalDone += 1;
+        }
+      });
+    });
+
+    return getLevelProgress(totalDone);
+  }
+
+  addHabit(name: string, frequencyType: 'daily' | 'weekly', weeklyTarget: number | undefined, minimumVersion: string, goalDays = 30): void {
     const trimmed = name.trim();
     if (!trimmed) {
       return;
@@ -191,7 +248,21 @@ export class HabitStoreService {
     const id = this.createId();
     const sortOrder = habits.length > 0 ? Math.max(...habits.map(h => h.sortOrder ?? 0)) + 1 : 0;
     const createdAt = Date.now();
-    const nextHabits = [...habits, { id, name: trimmed, goalDays, frequency, minimum, createdAt, isActive: true, sortOrder }];
+    const normalizedMinimum = minimumVersion.trim();
+    const nextHabits = [
+      ...habits,
+      {
+        id,
+        name: trimmed,
+        goalDays,
+        frequencyType,
+        weeklyTarget: frequencyType === 'weekly' ? weeklyTarget : undefined,
+        minimumVersion: normalizedMinimum || undefined,
+        createdAt,
+        isActive: true,
+        sortOrder
+      }
+    ];
     this.habits$.next(this.sortHabits(nextHabits));
     this.saveToStorage();
   }
@@ -226,16 +297,26 @@ export class HabitStoreService {
     this.saveToStorage();
   }
 
-  updateHabit(habitId: string, patch: Partial<Pick<Habit, 'name' | 'isActive' | 'sortOrder' | 'goalDays' | 'frequency' | 'minimum'>>): void {
+  updateHabit(habitId: string, patch: Partial<Pick<Habit, 'name' | 'isActive' | 'sortOrder' | 'goalDays' | 'frequencyType' | 'weeklyTarget' | 'minimumVersion'>>): void {
     const habits = this.habits$.value.map(habit => {
       if (habit.id !== habitId) {
         return habit;
       }
       const nextName = patch.name ? patch.name.trim() : habit.name;
+      const nextFrequencyType = patch.frequencyType ?? habit.frequencyType ?? 'daily';
+      const nextWeeklyTarget = nextFrequencyType === 'weekly'
+        ? (patch.weeklyTarget ?? habit.weeklyTarget ?? 3)
+        : undefined;
+      const nextMinimum = patch.minimumVersion !== undefined
+        ? patch.minimumVersion.trim()
+        : habit.minimumVersion;
       return {
         ...habit,
         ...patch,
-        name: nextName || habit.name
+        name: nextName || habit.name,
+        frequencyType: nextFrequencyType,
+        weeklyTarget: nextWeeklyTarget,
+        minimumVersion: nextMinimum || undefined
       };
     });
     this.habits$.next(this.sortHabits(habits));
@@ -708,23 +789,34 @@ export class HabitStoreService {
       skips: this.skips$.value,
       selectedMonthYear: this.selectedMonthYear$.value,
       onboardingCompleted: this.onboardingCompleted$.value,
-      userProfile: this.userProfile$.value
+      userProfile: this.userProfile$.value,
+      profile: this.profile$.value,
+      defaultsSeeded: this.defaultsSeeded
     };
   }
 
   restoreFromBackup(backup: BackupData, mode: 'replace' | 'merge' = 'replace'): void {
     const normalizedHabits = (backup.habits || [])
       .filter(habit => habit && typeof habit.id === 'string')
-      .map(habit => ({
-        id: habit.id,
-        name: String(habit.name || '').trim() || 'Habit',
-        goalDays: Math.max(1, Number(habit.goalDays) || 1),
-        frequency: (habit.frequency === 'weekly' ? 'weekly' : 'daily') as 'daily' | 'weekly',
-        minimum: habit.minimum ? String(habit.minimum) : undefined,
-        createdAt: Number((habit as Habit).createdAt) || Date.now(),
-        isActive: (habit as Habit).isActive ?? true,
-        sortOrder: Number((habit as Habit).sortOrder) || 0
-      }));
+      .map(habit => {
+        const frequencyType = this.normalizeFrequencyType(habit.frequencyType || habit.frequency);
+        const weeklyTargetRaw = Number(habit.weeklyTarget);
+        const weeklyTarget = frequencyType === 'weekly' && Number.isFinite(weeklyTargetRaw)
+          ? Math.min(7, Math.max(1, weeklyTargetRaw))
+          : undefined;
+        const minimumVersion = habit.minimumVersion ?? habit.minimum;
+        return {
+          id: habit.id,
+          name: String(habit.name || '').trim() || 'Habit',
+          goalDays: Math.max(1, Number(habit.goalDays) || 1),
+          frequencyType,
+          weeklyTarget,
+          minimumVersion: minimumVersion ? String(minimumVersion) : undefined,
+          createdAt: Number((habit as Habit).createdAt) || Date.now(),
+          isActive: (habit as Habit).isActive ?? true,
+          sortOrder: Number((habit as Habit).sortOrder) || 0
+        };
+      });
 
     const incomingChecks = this.normalizeCompletions(backup.checks || {});
     const incomingSkips = this.normalizeSkips(backup.skips || {});
@@ -771,13 +863,17 @@ export class HabitStoreService {
       });
 
       this.habits$.next(mergedHabits);
+      this.defaultsSeeded = mergedHabits.length > 0;
       this.completions$.next(mergedCompletions);
       this.skips$.next(mergedSkips);
       if (typeof backup.onboardingCompleted === 'boolean') {
         this.onboardingCompleted$.next(backup.onboardingCompleted);
       }
       if (backup.userProfile) {
-        this.userProfile$.next(backup.userProfile);
+        this.userProfile$.next(this.normalizeUserProfile(backup.userProfile));
+      }
+      if (backup.profile) {
+        this.profile$.next(backup.profile);
       }
       this.saveToStorage();
       return;
@@ -817,13 +913,17 @@ export class HabitStoreService {
     });
 
     this.habits$.next(this.sortHabits(normalizedHabits));
+    this.defaultsSeeded = normalizedHabits.length > 0;
     this.completions$.next(cleanedCompletions);
     this.skips$.next(cleanedSkips);
     if (typeof backup.onboardingCompleted === 'boolean') {
       this.onboardingCompleted$.next(backup.onboardingCompleted);
     }
     if (backup.userProfile) {
-      this.userProfile$.next(backup.userProfile);
+      this.userProfile$.next(this.normalizeUserProfile(backup.userProfile));
+    }
+    if (backup.profile) {
+      this.profile$.next(backup.profile);
     }
 
     const selectedYear = backup.appSettings?.selectedYear;
@@ -847,6 +947,8 @@ export class HabitStoreService {
       selectedMonthYear: this.selectedMonthYear$.value,
       onboardingCompleted: this.onboardingCompleted$.value,
       userProfile: this.userProfile$.value ?? undefined,
+      profile: this.profile$.value,
+      defaultsSeeded: this.defaultsSeeded,
       settings: {
         theme: this.themeService.getThemeSync()
       }
@@ -871,16 +973,40 @@ export class HabitStoreService {
   }
 
   private normalizeHabits(habits: Habit[]): Habit[] {
-    return habits.map((habit, index) => ({
-      ...habit,
-      name: habit.name?.trim() || `Habit ${index + 1}`,
-      goalDays: habit.goalDays ?? 30,
-      frequency: (habit.frequency === 'weekly' ? 'weekly' : 'daily') as 'daily' | 'weekly',
-      minimum: habit.minimum ? String(habit.minimum) : undefined,
-      createdAt: habit.createdAt ?? Date.now() + index,
-      isActive: habit.isActive ?? true,
-      sortOrder: habit.sortOrder ?? index
-    })).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    return habits.map((habit, index) => {
+      const legacy = habit as Habit & { frequency?: 'daily' | 'weekly'; minimum?: string };
+      const frequencyType = this.normalizeFrequencyType(habit.frequencyType || legacy.frequency);
+      const weeklyTargetRaw = Number(habit.weeklyTarget);
+      const weeklyTarget = frequencyType === 'weekly' && Number.isFinite(weeklyTargetRaw)
+        ? Math.min(7, Math.max(1, weeklyTargetRaw))
+        : undefined;
+      const minimumVersion = habit.minimumVersion ?? legacy.minimum;
+      return {
+        ...habit,
+        name: habit.name?.trim() || `Habit ${index + 1}`,
+        goalDays: habit.goalDays ?? 30,
+        frequencyType,
+        weeklyTarget,
+        minimumVersion: minimumVersion ? String(minimumVersion) : undefined,
+        createdAt: habit.createdAt ?? Date.now() + index,
+        isActive: habit.isActive ?? true,
+        sortOrder: habit.sortOrder ?? index
+      };
+    }).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  }
+
+  private normalizeUserProfile(profile: UserProfile): UserProfile {
+    const name = String(profile.name || '').trim();
+    const whyStatement = profile.whyStatement ?? profile.why;
+    return {
+      ...profile,
+      name,
+      whyStatement: whyStatement ? String(whyStatement).trim() : undefined,
+      why: profile.why ? String(profile.why).trim() : undefined,
+      persona: profile.persona ? String(profile.persona).trim() : undefined,
+      primaryGoal: profile.primaryGoal ? String(profile.primaryGoal).trim() : undefined,
+      createdAt: Number(profile.createdAt) || Date.now()
+    };
   }
 
   private createId(): string {
@@ -888,6 +1014,10 @@ export class HabitStoreService {
       return crypto.randomUUID();
     }
     return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+
+  private normalizeFrequencyType(value: unknown): 'daily' | 'weekly' {
+    return value === 'weekly' ? 'weekly' : 'daily';
   }
 
   private removeHabitFromCompletions(habitId: string, completions: HabitCompletion): HabitCompletion {

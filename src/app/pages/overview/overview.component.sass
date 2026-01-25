@@ -1,34 +1,65 @@
 .page-title
   margin-bottom: var(--space-3)
 
-.kpi-strip
-  display: grid
-  grid-template-columns: repeat(4, minmax(0, 1fr))
-  gap: 12px
-  padding: 12px 16px
-  min-height: 78px
-  margin-bottom: var(--space-4)
-
-.kpi-item
+.overview-hero
+  padding: 16px
+  margin-bottom: var(--space-3)
   display: flex
   flex-direction: column
-  justify-content: center
-  gap: 4px
+  gap: 12px
 
-.kpi-label
+.hero-grid
+  display: grid
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr))
+  gap: 12px
+
+.hero-block
+  display: flex
+  flex-direction: column
+  gap: 6px
+  padding: 10px 12px
+  border-radius: var(--radius-md)
+  background: var(--theme-surface-2)
+  border: 1px solid var(--theme-border)
+
+.hero-action
+  gap: 8px
+
+.hero-label
   font-size: 0.75rem
   color: var(--theme-text-muted)
   letter-spacing: 0.08em
   text-transform: uppercase
 
-.kpi-value
-  font-size: 1.4rem
-  font-weight: 700
+.hero-value
+  font-size: 1rem
+  font-weight: 600
   color: var(--theme-text)
 
-.calendar-card
-  margin-bottom: var(--space-4)
+.details-button
+  width: 100%
 
+.details-section
+  display: grid
+  gap: var(--space-3)
+  max-height: 2000px
+  transition: max-height 180ms ease, opacity 180ms ease
+
+  &.is-collapsed
+    max-height: 0
+    overflow: hidden
+    opacity: 0
+    pointer-events: none
+
+.empty-state
+  padding: 16px
+
+  .empty-title
+    font-size: 1rem
+    font-weight: 600
+    margin-bottom: 6px
+
+.calendar-card
   .card-body
     padding: var(--space-3)
 
@@ -150,7 +181,7 @@
 
 .week-bar-fill
   height: 100%
-  background: linear-gradient(90deg, var(--theme-accent), rgba(63, 181, 122, 0.9))
+  background: linear-gradient(90deg, var(--theme-accent), var(--accent-strong))
 
 @keyframes perfectPulse
   0%, 100%
@@ -163,7 +194,7 @@
     animation: none
 
 @media (max-width: 1024px)
-  .kpi-strip
+  .hero-grid
     grid-template-columns: repeat(2, minmax(0, 1fr))
 
 @media (max-width: 720px)
@@ -173,6 +204,9 @@
   .calendar-cell
     min-height: 48px
     padding: 6px
+
+  .hero-grid
+    grid-template-columns: 1fr
 
 @media (max-width: 640px)
   .calendar-grid

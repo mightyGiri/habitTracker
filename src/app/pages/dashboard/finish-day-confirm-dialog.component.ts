@@ -12,13 +12,13 @@ export type FinishDayConfirmData = {
   imports: [CommonModule, MatDialogModule],
   template: `
     <div class="confirm-dialog">
-      <h2 class="text-title">Finish today?</h2>
+      <h2 class="text-title">Level up today?</h2>
       <p class="text-body">
-        You still have {{ data.remainingCount }} habits left. Finishing will mark the rest as skipped.
+        You still have {{ data.remainingCount }} habits left. Leveling up will mark the rest as skipped.
       </p>
       <div class="dialog-actions">
         <button class="btn btn-outline btn-sm btn-cancel" type="button" (click)="close(false)">Back</button>
-        <button class="btn btn-primary btn-sm btn-finish" type="button" (click)="close(true)">Finish</button>
+        <button class="btn btn-primary btn-sm btn-finish" type="button" (click)="close(true)">Level up</button>
       </div>
     </div>
   `,

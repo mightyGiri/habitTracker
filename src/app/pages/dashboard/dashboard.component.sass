@@ -23,6 +23,30 @@
   .today-status
     margin-top: 6px
 
+.level-badge
+  margin-top: 10px
+  display: inline-flex
+  align-items: center
+  padding: 4px 10px
+  border-radius: 999px
+  border: 1px solid var(--theme-border)
+  background: var(--theme-accent-soft)
+  color: var(--theme-text)
+  font-size: 0.85rem
+  font-weight: 700
+
+.level-xp
+  margin-top: 6px
+  font-size: 0.85rem
+
+.level-next
+  margin-top: 2px
+  font-size: 0.8rem
+
+.level-progress
+  margin-top: 6px
+  max-width: 200px
+
 .perfect-chip
   margin-top: 10px
   display: inline-flex
@@ -35,7 +59,7 @@
   color: var(--theme-text)
   font-size: 0.8rem
   font-weight: 600
-  box-shadow: 0 10px 20px rgba(8, 10, 18, 0.25)
+  box-shadow: var(--shadow-soft)
 
 .perfect-chip.celebrate
   animation: badgePop 0.6s ease
@@ -46,22 +70,26 @@
   border-radius: 16px
   border: 1px solid var(--theme-border)
   background: linear-gradient(135deg, var(--theme-accent-soft), var(--theme-success-soft))
-  box-shadow: 0 12px 24px rgba(8, 10, 18, 0.25)
+  box-shadow: var(--shadow-soft)
   display: inline-flex
   flex-direction: column
-  gap: 4px
+  gap: 0
   max-width: 360px
 
   &.streak-pop
     animation: streakPop 0.9s ease
 
 .streak-count
+  display: inline-flex
+  align-items: center
+  gap: 6px
   font-size: 1rem
   font-weight: 700
   color: var(--theme-text)
 
 .streak-status
   font-size: 0.8rem
+  margin-top: 4px
 
 .streak-hint
   margin-top: 8px
@@ -151,6 +179,10 @@
     background: linear-gradient(135deg, var(--theme-accent-soft), var(--theme-surface-2))
     animation: perfectPulse 2.5s ease-in-out infinite
 
+  &.finish-moment
+    animation: finishMoment 0.7s ease
+    box-shadow: 0 0 22px var(--theme-glow)
+
 .confetti-layer
   position: absolute
   left: 0
@@ -200,6 +232,11 @@
   font-size: 0.95rem
   color: var(--theme-text)
 
+.finish-message
+  margin-top: 4px
+  font-size: 0.85rem
+  color: var(--theme-text)
+
 .hero-micro
   font-size: 0.8rem
 
@@ -219,6 +256,20 @@
 
 .hero-progress
   margin: 0 0 var(--space-2)
+
+.today-cue
+  margin-bottom: var(--space-2)
+  padding: 10px 12px
+  border-radius: var(--radius-md)
+  border: 1px solid var(--theme-border)
+  background: var(--theme-surface)
+
+.cue-title
+  font-weight: 600
+
+.cue-sub
+  font-size: 0.85rem
+
 
 
 .install-banner
@@ -301,6 +352,9 @@
     border-color: var(--theme-accent)
     box-shadow: 0 0 14px var(--theme-glow)
 
+  &.reward-pulse
+    animation: rewardPulse 0.6s ease
+
 .today-item-info
   display: flex
   flex-direction: column
@@ -325,6 +379,19 @@
   font-size: 0.7rem
   color: var(--theme-text-muted)
   background: var(--theme-surface-2)
+
+.inline-reward
+  display: inline-flex
+  align-items: center
+  gap: 4px
+  margin-top: 6px
+  font-size: 0.75rem
+  font-weight: 600
+  color: var(--theme-accent)
+
+.identity-line
+  margin-top: var(--space-2)
+  font-size: 0.85rem
 
 .today-item-meta
   display: flex
@@ -536,6 +603,11 @@
     animation: none !important
     transition: none !important
 
+  .reward-pulse,
+  .finish-moment
+    animation: none !important
+    transition: none !important
+
 @keyframes perfectPulse
   0%, 100%
     transform: scale(1)
@@ -562,6 +634,31 @@
   50%
     transform: scale(1.08)
     box-shadow: 0 0 16px var(--accent-35)
+  100%
+    transform: scale(1)
+    box-shadow: 0 0 0 var(--accent-20)
+
+@keyframes rewardPulse
+  0%
+    box-shadow: 0 0 0 var(--accent-20)
+    transform: scale(1)
+  60%
+    box-shadow: 0 0 16px var(--accent-45)
+    transform: scale(1.01)
+  100%
+    box-shadow: 0 0 0 var(--accent-20)
+    transform: scale(1)
+
+@keyframes finishMoment
+  0%
+    transform: scale(0.99)
+    opacity: 0.7
+  60%
+    transform: scale(1.01)
+    opacity: 1
+  100%
+    transform: scale(1)
+    opacity: 1
   100%
     transform: scale(1)
     box-shadow: 0 0 0 var(--accent-20)

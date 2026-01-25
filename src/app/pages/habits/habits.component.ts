@@ -30,23 +30,21 @@ import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-
     ReactiveFormsModule
   ],
   animations: [staggerFadeUp || noopAnimation, fadeSlideInOut || noopAnimation],
-  template: `
+    template: `
     <div class="page-container" [@.disabled]="reduceMotion">
       <h1 class="text-title page-title">Your Habits</h1>
       <ng-container *ngIf="ready$ | async; else loading">
       <mat-card class="aesthetic-card habits-card">
         <mat-card-content>
+          <div class="habits-guidance" [class.is-warning]="isOverRecommended">
+            <div class="text-body">{{ guidanceMessage }}</div>
+            <div class="text-muted">Active: {{ activeCount }} / Recommended: 6</div>
+          </div>
           <div class="habits-toolbar">
-            <button class="add-habit-btn btn btn-outline btn-sm" type="button" (click)="startAdd()" [disabled]="isHabitLimitReached" aria-label="Add habit">
+            <button class="add-habit-btn btn btn-primary btn-sm" type="button" (click)="startAdd()" aria-label="Add habit">
               <mat-icon>add</mat-icon>
               Add Habit
             </button>
-          </div>
-          <div class="habit-warning text-muted" *ngIf="showSoftLimitWarning">
-            More habits = less consistency. Try staying under 5.
-          </div>
-          <div class="habit-warning text-muted" *ngIf="isHabitLimitReached">
-            Habit limit reached. Focus on consistency first.
           </div>
 
           <form class="habit-form" *ngIf="formOpen" [formGroup]="habitForm" (ngSubmit)="saveHabit()">
@@ -60,14 +58,20 @@ import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-
             </mat-form-field>
             <mat-form-field appearance="fill">
               <mat-label>Frequency</mat-label>
-              <mat-select formControlName="frequency">
+              <mat-select formControlName="frequencyType">
                 <mat-option value="daily">Daily</mat-option>
                 <mat-option value="weekly">Weekly</mat-option>
               </mat-select>
             </mat-form-field>
+            <mat-form-field appearance="fill" *ngIf="habitForm.get('frequencyType')?.value === 'weekly'">
+              <mat-label>Days per week</mat-label>
+              <mat-select formControlName="weeklyTarget">
+                <mat-option *ngFor="let target of weeklyTargetOptions" [value]="target">{{ target }}</mat-option>
+              </mat-select>
+            </mat-form-field>
             <mat-form-field appearance="fill">
-              <mat-label>Minimum version</mat-label>
-              <input matInput formControlName="minimum" placeholder="e.g., 1 page, 5 minutes">
+              <mat-label>Minimum version (optional)</mat-label>
+              <input matInput formControlName="minimumVersion" placeholder="e.g., 1 page, 5 minutes">
             </mat-form-field>
             <div class="form-actions">
               <button class="btn btn-primary" type="submit" [disabled]="habitForm.invalid">
@@ -88,8 +92,9 @@ import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-
                   <div class="text-body">{{ habit.name }}</div>
                   <div class="text-muted">
                     {{ habit.isActive ? 'Active' : 'Inactive' }}
-                    <span *ngIf="habit.frequency">• {{ habit.frequency === 'daily' ? 'Daily' : 'Weekly' }}</span>
-                    <span *ngIf="habit.minimum">• {{ habit.minimum }}</span>
+                    <span *ngIf="habit.frequencyType">- {{ habit.frequencyType === 'daily' ? 'Daily' : 'Weekly' }}</span>
+                    <span *ngIf="habit.frequencyType === 'weekly' && habit.weeklyTarget">- {{ habit.weeklyTarget }}x/week</span>
+                    <span *ngIf="habit.minimumVersion">- {{ habit.minimumVersion }}</span>
                   </div>
                 </div>
                 <app-toggle [checked]="habit.isActive" (checkedChange)="toggleActive(habit.id)"></app-toggle>
@@ -130,7 +135,8 @@ export class HabitsComponent implements OnInit, OnDestroy {
   habitForm: FormGroup;
   reduceMotion = false;
   ready$!: Observable<boolean>;
-  totalHabits = 0;
+  activeCount = 0;
+  weeklyTargetOptions = [1, 2, 3, 4, 5, 6, 7];
   private subscription: Subscription = new Subscription();
 
   constructor(
@@ -141,8 +147,9 @@ export class HabitsComponent implements OnInit, OnDestroy {
   ) {
     this.habitForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(24), this.nameUniqueValidator]],
-      frequency: ['daily', [Validators.required]],
-      minimum: ['']
+      frequencyType: ['daily', [Validators.required]],
+      weeklyTarget: [3],
+      minimumVersion: ['']
     });
   }
 
@@ -151,7 +158,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
     this.subscription.add(
       this.habitStore.getHabits().subscribe(habits => {
         this.habits = [...habits].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
-        this.totalHabits = habits.length;
+        this.activeCount = habits.filter(habit => habit.isActive).length;
         this.nameControl?.updateValueAndValidity({ emitEvent: false });
       })
     );
@@ -172,7 +179,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
 
   startAdd(): void {
     this.editingHabitId = null;
-    this.habitForm.reset({ frequency: 'daily', minimum: '' });
+    this.habitForm.reset({ frequencyType: 'daily', weeklyTarget: 3, minimumVersion: '' });
     this.formOpen = true;
   }
 
@@ -180,8 +187,9 @@ export class HabitsComponent implements OnInit, OnDestroy {
     this.editingHabitId = habit.id;
     this.habitForm.setValue({
       name: habit.name,
-      frequency: habit.frequency ?? 'daily',
-      minimum: habit.minimum ?? ''
+      frequencyType: habit.frequencyType ?? 'daily',
+      weeklyTarget: habit.weeklyTarget ?? 3,
+      minimumVersion: habit.minimumVersion ?? ''
     });
     this.formOpen = true;
   }
@@ -189,7 +197,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
   cancelEdit(): void {
     this.formOpen = false;
     this.editingHabitId = null;
-    this.habitForm.reset({ frequency: 'daily', minimum: '' });
+    this.habitForm.reset({ frequencyType: 'daily', weeklyTarget: 3, minimumVersion: '' });
   }
 
   saveHabit(): void {
@@ -197,25 +205,40 @@ export class HabitsComponent implements OnInit, OnDestroy {
       return;
     }
     const name = this.nameControl?.value?.toString().trim() || '';
-    const frequency = (this.habitForm.get('frequency')?.value as 'daily' | 'weekly') || 'daily';
-    const minimum = String(this.habitForm.get('minimum')?.value || '').trim();
+    const frequencyType = (this.habitForm.get('frequencyType')?.value as 'daily' | 'weekly') || 'daily';
+    const weeklyTargetRaw = Number(this.habitForm.get('weeklyTarget')?.value);
+    const weeklyTarget = frequencyType === 'weekly' && Number.isFinite(weeklyTargetRaw)
+      ? Math.min(7, Math.max(1, weeklyTargetRaw))
+      : undefined;
+    const minimumVersion = String(this.habitForm.get('minimumVersion')?.value || '').trim();
     if (!name) {
       return;
     }
     if (this.editingHabitId) {
-      this.habitStore.updateHabit(this.editingHabitId, { name, frequency, minimum });
+      this.habitStore.updateHabit(this.editingHabitId, {
+        name,
+        frequencyType,
+        weeklyTarget,
+        minimumVersion
+      });
     } else {
-      this.habitStore.addHabit(name, frequency, minimum);
+      this.habitStore.addHabit(name, frequencyType, weeklyTarget, minimumVersion);
     }
     this.cancelEdit();
   }
 
-  get showSoftLimitWarning(): boolean {
-    return this.totalHabits > 5 && this.totalHabits < 7;
+  get isOverRecommended(): boolean {
+    return this.activeCount > 6;
   }
 
-  get isHabitLimitReached(): boolean {
-    return this.totalHabits >= 7;
+  get guidanceMessage(): string {
+    if (this.activeCount <= 3) {
+      return 'Great - keep it small. Consistency beats intensity.';
+    }
+    if (this.activeCount <= 6) {
+      return 'Nice. Try to keep it under 6 for best level streak success.';
+    }
+    return 'More habits = less consistency. Consider pausing some.';
   }
 
   toggleActive(habitId: string): void {
