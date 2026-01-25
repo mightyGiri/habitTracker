@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HabitStoreService } from './habit-store.service';
 import { ThemeService } from './theme.service';
-import { HabitCompletion } from '../models/habit.model';
+import { HabitCompletion, HabitSkips, UserProfile, ProfileSettings } from '../models/habit.model';
 import { DateUtils } from '../shared/date-utils';
 import * as XLSX from 'xlsx';
 
@@ -13,8 +13,19 @@ type BackupPayload = {
     selectedYear?: number;
     selectedMonthIndex?: number;
   };
-  habits: Array<{ id: string; name: string; goalDays: number }>;
+  habits: Array<{
+    id: string;
+    name: string;
+    goalDays: number;
+    frequencyType?: 'daily' | 'weekly';
+    weeklyTarget?: number;
+    minimumVersion?: string;
+  }>;
   checks: HabitCompletion;
+  skips?: HabitSkips;
+  onboardingCompleted?: boolean;
+  userProfile?: UserProfile;
+  profile?: ProfileSettings;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -34,9 +45,16 @@ export class BackupService {
       habits: snapshot.habits.map(habit => ({
         id: habit.id,
         name: habit.name,
-        goalDays: habit.goalDays
+        goalDays: habit.goalDays,
+        frequencyType: habit.frequencyType,
+        weeklyTarget: habit.weeklyTarget,
+        minimumVersion: habit.minimumVersion
       })),
-      checks: snapshot.completions
+      checks: snapshot.completions,
+      skips: snapshot.skips,
+      onboardingCompleted: snapshot.onboardingCompleted,
+      userProfile: snapshot.userProfile ?? undefined,
+      profile: snapshot.profile ?? undefined
     };
 
     const json = JSON.stringify(payload, null, 2);
@@ -115,8 +133,15 @@ export class BackupService {
     });
 
     const habitsRows: Array<Array<string | number>> = [
-      ['HabitId', 'HabitName', 'GoalDays'],
-      ...snapshot.habits.map(habit => [habit.id, habit.name, habit.goalDays])
+      ['HabitId', 'HabitName', 'GoalDays', 'Frequency', 'WeeklyTarget', 'MinimumVersion'],
+      ...snapshot.habits.map(habit => [
+        habit.id,
+        habit.name,
+        habit.goalDays,
+        habit.frequencyType || 'daily',
+        habit.weeklyTarget ?? '',
+        habit.minimumVersion ?? ''
+      ])
     ];
 
     const workbook = XLSX.utils.book_new();

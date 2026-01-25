@@ -4,6 +4,15 @@
   justify-content: space-between
   margin-bottom: var(--space-3)
   gap: var(--space-3)
+  position: relative
+
+  &.perfect-day
+    outline: 1px solid var(--theme-accent)
+    outline-offset: 3px
+    border-radius: var(--radius-md)
+    background: linear-gradient(135deg, var(--theme-accent-soft), transparent)
+    box-shadow: 0 0 20px var(--theme-glow)
+    animation: perfectPulse 2.5s ease-in-out infinite
 
   h1
     margin: 0
@@ -13,6 +22,30 @@
 
   .today-status
     margin-top: 6px
+
+.level-badge
+  margin-top: 10px
+  display: inline-flex
+  align-items: center
+  padding: 4px 10px
+  border-radius: 999px
+  border: 1px solid var(--theme-border)
+  background: var(--theme-accent-soft)
+  color: var(--theme-text)
+  font-size: 0.85rem
+  font-weight: 700
+
+.level-xp
+  margin-top: 6px
+  font-size: 0.85rem
+
+.level-next
+  margin-top: 2px
+  font-size: 0.8rem
+
+.level-progress
+  margin-top: 6px
+  max-width: 200px
 
 .perfect-chip
   margin-top: 10px
@@ -26,7 +59,7 @@
   color: var(--theme-text)
   font-size: 0.8rem
   font-weight: 600
-  box-shadow: 0 10px 20px rgba(8, 10, 18, 0.25)
+  box-shadow: var(--shadow-soft)
 
 .perfect-chip.celebrate
   animation: badgePop 0.6s ease
@@ -37,19 +70,26 @@
   border-radius: 16px
   border: 1px solid var(--theme-border)
   background: linear-gradient(135deg, var(--theme-accent-soft), var(--theme-success-soft))
-  box-shadow: 0 12px 24px rgba(8, 10, 18, 0.25)
+  box-shadow: var(--shadow-soft)
   display: inline-flex
   flex-direction: column
-  gap: 4px
+  gap: 0
   max-width: 360px
 
+  &.streak-pop
+    animation: streakPop 0.9s ease
+
 .streak-count
+  display: inline-flex
+  align-items: center
+  gap: 6px
   font-size: 1rem
   font-weight: 700
   color: var(--theme-text)
 
 .streak-status
   font-size: 0.8rem
+  margin-top: 4px
 
 .streak-hint
   margin-top: 8px
@@ -133,6 +173,16 @@
   margin-bottom: var(--space-3)
   position: relative
 
+  &.perfect-day
+    border-color: var(--theme-accent)
+    box-shadow: 0 0 28px var(--theme-glow)
+    background: linear-gradient(135deg, var(--theme-accent-soft), var(--theme-surface-2))
+    animation: perfectPulse 2.5s ease-in-out infinite
+
+  &.finish-moment
+    animation: finishMoment 0.7s ease
+    box-shadow: 0 0 22px var(--theme-glow)
+
 .confetti-layer
   position: absolute
   left: 0
@@ -152,41 +202,75 @@
   animation-timing-function: ease-out
   animation-fill-mode: forwards
 
-.selected-progress
-  display: flex
-  flex-direction: column
-  gap: 6px
-  padding: 0 4px var(--space-2)
-
-.progress-text
-  font-size: 0.85rem
-  font-weight: 600
-  color: var(--theme-text)
-
-.select-all-row
+.today-hero
   display: flex
   align-items: center
   justify-content: space-between
-  gap: 12px
-  padding: 0 4px var(--space-2)
-
-.select-all-label
-  display: inline-flex
-  align-items: center
-  gap: 6px
-  font-size: 0.85rem
-  font-weight: 600
+  gap: var(--space-3)
+  padding: 10px 12px
+  margin-bottom: var(--space-2)
+  border-radius: var(--radius-md)
+  border: 1px solid var(--theme-border)
+  background: var(--theme-surface-2)
   color: var(--theme-text)
 
-.select-all-count
-  color: var(--theme-text-muted)
-  font-weight: 500
+  &.perfect-day
+    box-shadow: 0 0 26px var(--theme-glow)
+    background: linear-gradient(135deg, var(--theme-accent-soft), var(--theme-surface-2))
 
-.select-all-checkbox
-  width: 22px
-  height: 22px
-  accent-color: var(--theme-accent)
-  cursor: pointer
+.hero-text
+  display: flex
+  flex-direction: column
+  gap: 4px
+  flex: 1
+
+.hero-title
+  font-size: 1.1rem
+  font-weight: 700
+
+.hero-subtitle
+  font-size: 0.95rem
+  color: var(--theme-text)
+
+.finish-message
+  margin-top: 4px
+  font-size: 0.85rem
+  color: var(--theme-text)
+
+.hero-micro
+  font-size: 0.8rem
+
+.finish-day
+  display: flex
+  flex-direction: column
+  gap: var(--space-2)
+  margin-top: var(--space-2)
+  align-items: stretch
+
+  .btn
+    min-height: 44px
+    width: 100%
+
+.finish-hint
+  font-size: 0.85rem
+
+.hero-progress
+  margin: 0 0 var(--space-2)
+
+.today-cue
+  margin-bottom: var(--space-2)
+  padding: 10px 12px
+  border-radius: var(--radius-md)
+  border: 1px solid var(--theme-border)
+  background: var(--theme-surface)
+
+.cue-title
+  font-weight: 600
+
+.cue-sub
+  font-size: 0.85rem
+
+
 
 .install-banner
   display: flex
@@ -219,6 +303,10 @@
   display: grid
   gap: 12px
 
+  &.perfect-day .today-item
+    border-color: var(--theme-accent)
+    box-shadow: 0 0 14px var(--theme-glow)
+
 .today-item
   width: 100%
   display: flex
@@ -244,6 +332,29 @@
     outline: 2px solid var(--theme-accent)
     outline-offset: 2px
 
+  &.is-completed
+    border-color: var(--theme-success)
+    background: var(--theme-success-soft)
+    box-shadow: 0 0 14px var(--theme-success)
+
+  &.is-skipped
+    border-color: var(--theme-border)
+    background: var(--theme-input-bg)
+    color: var(--theme-text-muted)
+    box-shadow: none
+
+    &:hover
+      border-color: var(--theme-border)
+      box-shadow: none
+      transform: none
+
+  &.is-next
+    border-color: var(--theme-accent)
+    box-shadow: 0 0 14px var(--theme-glow)
+
+  &.reward-pulse
+    animation: rewardPulse 0.6s ease
+
 .today-item-info
   display: flex
   flex-direction: column
@@ -255,6 +366,31 @@
   font-size: 1rem
 
 .today-item-sub
+  font-size: 0.85rem
+
+.skipped-chip
+  display: inline-flex
+  align-items: center
+  gap: 4px
+  margin-top: 6px
+  padding: 2px 8px
+  border-radius: 999px
+  border: 1px solid var(--theme-border)
+  font-size: 0.7rem
+  color: var(--theme-text-muted)
+  background: var(--theme-surface-2)
+
+.inline-reward
+  display: inline-flex
+  align-items: center
+  gap: 4px
+  margin-top: 6px
+  font-size: 0.75rem
+  font-weight: 600
+  color: var(--theme-accent)
+
+.identity-line
+  margin-top: var(--space-2)
   font-size: 0.85rem
 
 .today-item-meta
@@ -421,6 +557,17 @@
     flex-direction: column
     align-items: flex-start
 
+  .today-hero
+    flex-direction: column
+    align-items: flex-start
+
+  .hero-ring
+    align-self: flex-end
+
+@media (max-width: 360px)
+  .finish-day
+    flex-direction: column
+
   .streak-badge
     width: 100%
     max-width: 100%
@@ -441,19 +588,44 @@
 
 .reduce-motion
   .perfect-day
-    animation: none
+    animation: none !important
+    transition: none !important
 
   .perfect-chip.celebrate
-    animation: none
+    animation: none !important
+    transition: none !important
 
   .confetti-piece
-    animation: none
+    animation: none !important
+    transition: none !important
+
+  .streak-pop
+    animation: none !important
+    transition: none !important
+
+  .reward-pulse,
+  .finish-moment
+    animation: none !important
+    transition: none !important
 
 @keyframes perfectPulse
   0%, 100%
+    transform: scale(1)
     box-shadow: 0 0 10px var(--accent-20)
   50%
+    transform: scale(1.01)
     box-shadow: 0 0 18px var(--accent-45)
+
+@keyframes streakPop
+  0%
+    transform: scale(1)
+    box-shadow: 0 0 0 var(--accent-20)
+  50%
+    transform: scale(1.06)
+    box-shadow: 0 0 18px var(--accent-45)
+  100%
+    transform: scale(1)
+    box-shadow: 0 0 0 var(--accent-20)
 
 @keyframes badgePop
   0%
@@ -462,6 +634,31 @@
   50%
     transform: scale(1.08)
     box-shadow: 0 0 16px var(--accent-35)
+  100%
+    transform: scale(1)
+    box-shadow: 0 0 0 var(--accent-20)
+
+@keyframes rewardPulse
+  0%
+    box-shadow: 0 0 0 var(--accent-20)
+    transform: scale(1)
+  60%
+    box-shadow: 0 0 16px var(--accent-45)
+    transform: scale(1.01)
+  100%
+    box-shadow: 0 0 0 var(--accent-20)
+    transform: scale(1)
+
+@keyframes finishMoment
+  0%
+    transform: scale(0.99)
+    opacity: 0.7
+  60%
+    transform: scale(1.01)
+    opacity: 1
+  100%
+    transform: scale(1)
+    opacity: 1
   100%
     transform: scale(1)
     box-shadow: 0 0 0 var(--accent-20)

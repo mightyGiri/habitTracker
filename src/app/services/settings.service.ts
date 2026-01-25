@@ -112,6 +112,7 @@ export class SettingsService {
   private applyFontFamily(family: FontFamilyId): void {
     const stack = this.fontMap[family] ?? this.fontMap.system;
     this.setRootAttribute('data-font', family);
+    this.setRootStyle('--font-family', stack);
     this.setRootStyle('--app-font-family', stack);
     this.setRootStyle('--app-font', stack);
   }
@@ -176,7 +177,7 @@ export class SettingsService {
   private getDefaults(): AppSettings {
     return {
       themeMode: 'dark',
-      accent: { type: 'preset', value: 'orange' },
+      accent: { type: 'preset', value: 'blue' },
       fontSizePx: 16,
       fontFamily: 'system',
       notificationsEnabled: false,
@@ -209,11 +210,16 @@ export class SettingsService {
   private applyAccentTokens(hex: string): void {
     const rgb = this.hexToRgb(hex) ?? { r: 242, g: 122, b: 42 };
     const contrast = this.getContrastColor(rgb);
+    const strong = this.mixWithBlack(rgb, 0.3);
     this.setRootStyle('--theme-accent', hex);
     this.setRootStyle('--accent', hex);
+    this.setRootStyle('--app-accent', hex);
     this.setRootStyle('--theme-accent-soft', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`);
     this.setRootStyle('--theme-glow', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.28)`);
     this.setRootStyle('--accent-glow', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.28)`);
+    this.setRootStyle('--accent-weak', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`);
+    this.setRootStyle('--accent-strong', `rgb(${strong.r}, ${strong.g}, ${strong.b})`);
+    this.setRootStyle('--glow', `0 0 0 1px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.2), 0 0 18px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.2)`);
     this.setRootStyle('--accent-contrast', contrast);
     this.setRootStyle('--theme-input-border', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`);
     this.setRootStyle('--theme-input-border-hover', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.55)`);
@@ -242,5 +248,17 @@ export class SettingsService {
   private getContrastColor(rgb: { r: number; g: number; b: number }): string {
     const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
     return luminance > 0.6 ? '#1f1b16' : '#ffffff';
+  }
+
+  private mixWithBlack(
+    rgb: { r: number; g: number; b: number },
+    amount: number
+  ): { r: number; g: number; b: number } {
+    const factor = 1 - Math.min(Math.max(amount, 0), 1);
+    return {
+      r: Math.round(rgb.r * factor),
+      g: Math.round(rgb.g * factor),
+      b: Math.round(rgb.b * factor)
+    };
   }
 }

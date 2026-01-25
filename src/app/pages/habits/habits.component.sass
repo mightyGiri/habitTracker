@@ -1,13 +1,31 @@
 .habits-card
   margin-bottom: var(--space-3)
 
-.add-habit-btn
-  margin-bottom: var(--space-2)
-  color: var(--theme-accent)
-  border-color: var(--theme-accent)
+.page-title
+  margin-bottom: var(--space-3)
 
-  &:hover
-    background: var(--theme-accent-soft)
+.habits-toolbar
+  display: flex
+  justify-content: flex-end
+  margin-bottom: var(--space-3)
+
+.add-habit-btn
+  display: inline-flex
+  align-items: center
+  gap: 6px
+
+.habits-guidance
+  display: flex
+  flex-direction: column
+  gap: 4px
+  padding: 10px 12px
+  margin-bottom: var(--space-2)
+  border: 1px solid var(--border-subtle)
+  border-radius: var(--radius-md)
+  background: var(--surface-2)
+
+  &.is-warning
+    border-color: var(--app-accent)
 
 .habit-form
   display: grid

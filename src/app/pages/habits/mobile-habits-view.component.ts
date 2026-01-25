@@ -8,13 +8,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { Habit } from '../../models/habit.model';
 import { HabitStoreService } from '../../services/habit-store.service';
 import { HabitActionsSheetComponent } from './mobile-habits.actions-sheet.component';
+import { DayCountPipe } from '../../shared/day-count.pipe';
 
 type DayOption = { dayNumber: number; dayLabel: string };
 
 @Component({
   selector: 'app-mobile-habits-view',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatCheckboxModule, MatBottomSheetModule, MatDialogModule, MatIconModule],
+  imports: [CommonModule, MatCardModule, MatCheckboxModule, MatBottomSheetModule, MatDialogModule, MatIconModule, DayCountPipe],
   template: `
     <section class="mobile-habits">
       <mat-card class="aesthetic-card mobile-card">
@@ -64,7 +65,7 @@ type DayOption = { dayNumber: number; dayLabel: string };
               (click)="openHabitActions(habit)"
               aria-label="Edit habit">
               <div class="habit-name text-value">{{ habit.name }}</div>
-              <div class="habit-meta text-muted">Goal {{ habit.goalDays }} days</div>
+              <div class="habit-meta text-muted">Goal {{ habit.goalDays | dayCount }}</div>
             </button>
             <div class="habit-actions" (click)="$event.stopPropagation()">
               <span class="habit-progress text-label">{{ getProgress(habit.id) }}%</span>

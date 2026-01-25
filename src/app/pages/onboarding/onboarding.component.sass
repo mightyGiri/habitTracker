@@ -1,0 +1,63 @@
+.onboarding-card
+  max-width: 720px
+  margin: 0 auto
+
+.onboarding-step
+  display: grid
+  gap: 16px
+
+.step-cards
+  display: grid
+  gap: 12px
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))
+
+.step-card
+  padding: 12px 14px
+  border-radius: var(--radius-md)
+  border: 1px solid var(--theme-border)
+  background: var(--theme-surface-2)
+
+.step-title
+  font-weight: 600
+  margin-bottom: 6px
+
+.choice-grid
+  display: grid
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr))
+  gap: 10px
+
+.btn.is-active
+  border-color: var(--theme-accent)
+  box-shadow: 0 0 12px var(--theme-glow)
+
+.why-label
+  margin-top: 8px
+
+.onboarding-input
+  width: 100%
+  border-radius: var(--radius-md)
+  border: 1px solid var(--theme-border)
+  background: var(--theme-input-bg)
+  color: var(--theme-text)
+  padding: 10px 12px
+  resize: vertical
+
+.onboarding-actions
+  display: flex
+  justify-content: space-between
+  align-items: center
+  gap: 12px
+  margin-top: 16px
+
+.actions-right
+  display: flex
+  align-items: center
+  gap: 10px
+
+@media (max-width: 600px)
+  .onboarding-actions
+    flex-direction: column
+    align-items: stretch
+
+  .actions-right
+    justify-content: space-between

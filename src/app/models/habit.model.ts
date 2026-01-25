@@ -2,6 +2,9 @@ export interface Habit {
   id: string;
   name: string;
   goalDays: number;
+  frequencyType?: 'daily' | 'weekly';
+  weeklyTarget?: number;
+  minimumVersion?: string;
   color?: string;
   createdAt: number;
   isActive: boolean;
@@ -22,6 +25,29 @@ export interface DayCheck {
 
 export interface HabitCompletion {
   [dateKey: string]: Record<string, boolean>; // "YYYY-MM-DD" -> habitId -> completed
+}
+
+export interface HabitSkip {
+  reason: string;
+  note?: string;
+  ts: number;
+}
+
+export interface HabitSkips {
+  [dateKey: string]: Record<string, HabitSkip>; // "YYYY-MM-DD" -> habitId -> skip meta
+}
+
+export interface UserProfile {
+  name: string;
+  persona?: string;
+  primaryGoal?: string;
+  why?: string;
+  whyStatement?: string;
+  createdAt: number;
+}
+
+export interface ProfileSettings {
+  displayName?: string;
 }
 
 export interface MonthlyTotals {
