@@ -46,7 +46,7 @@ type WeekSummary = {
           <mat-card class="aesthetic-card overview-hero" [@staggerFadeUp]="animationKey">
             <div class="hero-grid">
               <div class="hero-block">
-                <div class="hero-label">Level streak</div>
+                <div class="hero-label">Streak</div>
                 <div class="hero-value">{{ currentStreak | dayCount }}</div>
               </div>
               <div class="hero-block">
@@ -127,7 +127,7 @@ type WeekSummary = {
           <mat-card class="aesthetic-card empty-state" [@staggerFadeUp]="animationKey">
             <mat-card-content>
               <div class="empty-title">Start with 1 habit today</div>
-              <div class="text-muted">Small steps build your level streak.</div>
+              <div class="text-muted">Small steps build your streak.</div>
               <button class="btn btn-primary btn-sm" type="button" (click)="goToTodayAction()">
                 Go to Today
               </button>

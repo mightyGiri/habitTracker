@@ -20,11 +20,16 @@
   .today-date
     margin-top: 4px
 
-  .today-status
-    margin-top: 6px
+.today-status
+  margin-top: 6px
+
+.level-block
+  margin-top: 10px
+  display: grid
+  gap: 4px
+  max-width: 320px
 
 .level-badge
-  margin-top: 10px
   display: inline-flex
   align-items: center
   padding: 4px 10px
@@ -36,19 +41,25 @@
   font-weight: 700
 
 .level-xp
-  margin-top: 6px
   font-size: 0.85rem
 
 .level-next
-  margin-top: 2px
   font-size: 0.8rem
 
 .level-progress
-  margin-top: 6px
   max-width: 200px
 
-.perfect-chip
+.level-progress-text
+  font-size: 0.75rem
+
+.status-row
   margin-top: 10px
+  display: flex
+  flex-wrap: wrap
+  align-items: center
+  gap: 8px
+
+.perfect-chip
   display: inline-flex
   align-items: center
   gap: 6px
@@ -65,15 +76,13 @@
   animation: badgePop 0.6s ease
 
 .streak-badge
-  margin-top: 10px
-  padding: 8px 14px
-  border-radius: 16px
+  padding: 6px 10px
+  border-radius: 999px
   border: 1px solid var(--theme-border)
-  background: linear-gradient(135deg, var(--theme-accent-soft), var(--theme-success-soft))
+  background: var(--theme-accent-soft)
   box-shadow: var(--shadow-soft)
   display: inline-flex
-  flex-direction: column
-  gap: 0
+  align-items: center
   max-width: 360px
 
   &.streak-pop
@@ -86,10 +95,6 @@
   font-size: 1rem
   font-weight: 700
   color: var(--theme-text)
-
-.streak-status
-  font-size: 0.8rem
-  margin-top: 4px
 
 .streak-hint
   margin-top: 8px
