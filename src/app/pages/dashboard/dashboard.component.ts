@@ -15,6 +15,7 @@ import { staggerFadeUp, noopAnimation } from '../../shared/list-animations';
 import { DateUtils } from '../../shared/date-utils';
 import { getDailyMotivation } from '../../shared/daily-motivations';
 import { getLevelProgress, LevelProgress } from '../../shared/level-utils';
+import { plural } from '../../shared/plural';
 import { DayCountPipe } from '../../shared/day-count.pipe';
 import { ActivatedRoute } from '@angular/router';
 
@@ -54,18 +55,25 @@ type ConfettiPiece = {
             {{ isEditingToday ? todayLabel : ('Editing: ' + todayLabel) }}
           </div>
           <div class="text-muted today-subtitle">{{ dailyMotivation }}</div>
-          <div class="level-badge">{{ levelBadgeText }}</div>
-          <div class="level-xp text-muted">{{ levelXpText }}</div>
-          <div class="level-next text-muted">{{ levelProgressText }}</div>
-          <div class="level-progress">
-            <app-progress-bar [value]="levelStats.progressPercent" [height]="4"></app-progress-bar>
+          <div class="level-block">
+            <div class="level-badge">{{ levelBadgeText }}</div>
+            <div class="level-xp text-muted">{{ levelXpText }}</div>
+            <div class="level-next text-muted">XP progress to Level {{ levelStats.nextLevel }}</div>
+            <div class="level-progress">
+              <app-progress-bar [value]="levelStats.progressPercent" [height]="4"></app-progress-bar>
+            </div>
+            <div class="level-progress-text text-muted">
+              {{ levelStats.progressInLevel }}/{{ levelStats.requiredThisLevel }} XP in this level
+            </div>
           </div>
-          
-          <div class="perfect-chip" *ngIf="selectedIsPerfect" [class.celebrate]="celebrateBadge">Perfect Level &#x1F525;</div>
-          <div class="streak-badge" *ngIf="streakCount > 0" [class.streak-pop]="streakCelebrating">
-            <div class="streak-count">&#x1F525; {{ streakCount | dayCount }}</div>
+
+          <div class="status-row">
+            <div class="perfect-chip" *ngIf="selectedIsPerfect" [class.celebrate]="celebrateBadge">Perfect Level &#x1F525;</div>
+            <div class="streak-badge" *ngIf="streakCount > 0" [class.streak-pop]="streakCelebrating">
+              <div class="streak-count">&#x1F525; {{ streakCount | dayCount }}</div>
+            </div>
           </div>
-          <div class="streak-hint text-muted" *ngIf="streakCount === 0">Start your level streak today</div>
+          <div class="streak-hint text-muted" *ngIf="streakCount === 0">Start your level journey today</div>
         </div>
         <div class="date-carousel">
           <button class="carousel-arrow" type="button" aria-label="Previous week" (click)="shiftDateWindow(-7)">
@@ -92,14 +100,14 @@ type ConfettiPiece = {
         </div>
       </section>
 
-      <div class="today-cue" *ngIf="isEditingToday">
-        <ng-container *ngIf="showReadyBanner; else cueFollowUp">
+      <div class="today-cue" *ngIf="isEditingToday && !isSelectedDayFinalized">
+        <ng-container *ngIf="doneToday === 0; else cueKeepGoing">
           <div class="cue-title">Ready to level up today?</div>
           <div class="cue-sub text-muted">Do 1 habit now. Momentum starts small.</div>
         </ng-container>
-        <ng-template #cueFollowUp>
-          <div class="cue-title" *ngIf="remainingCount > 0">Good. Keep going.</div>
-          <div class="cue-title" *ngIf="remainingCount === 0">Day secured 🔥</div>
+        <ng-template #cueKeepGoing>
+          <div class="cue-title">Good. Keep going.</div>
+          <div class="cue-sub text-muted">{{ momentumSubtitle }}</div>
         </ng-template>
       </div>
 
@@ -108,7 +116,7 @@ type ConfettiPiece = {
           <div class="hero-title">Today</div>
           <div class="hero-subtitle">{{ heroStatusLine }}</div>
           <div class="hero-helper text-muted" *ngIf="isEditingToday && selectedIsPerfect">
-            Come back tomorrow to keep your level streak.
+            Come back tomorrow to keep your streak.
           </div>
           <div class="finish-message" *ngIf="finishMomentActive">{{ finishMomentMessage }}</div>
         </div>
@@ -329,7 +337,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       return 'Add habits to start.';
     }
     if (this.remainingCount > 0) {
-      return `${this.remainingCount} habits left`;
+      return `${this.remainingCount} ${plural(this.remainingCount, 'habit')} left`;
     }
     return 'Level Up Complete 🔥';
   }
@@ -344,18 +352,26 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   get levelProgressText(): string {
     if (this.levelStats.level === 0 && this.levelStats.totalDone === 0) {
-      return 'Complete 1 habit to reach Level 1';
+      return `Complete 1 ${plural(1, 'habit')} to reach Level 1`;
     }
 
     return `${this.levelStats.progressInLevel}/${this.levelStats.requiredThisLevel} to Level ${this.levelStats.nextLevel}`;
   }
 
-  get handledCountToday(): number {
-    return this.todaySummary.handledCount;
+  get isSelectedDayFinalized(): boolean {
+    return this.selectedSummary.totalCount > 0 && this.selectedSummary.handledCount >= this.selectedSummary.totalCount;
   }
 
-  get showReadyBanner(): boolean {
-    return this.isEditingToday && this.handledCountToday === 0;
+  get doneToday(): number {
+    return this.isEditingToday ? this.selectedSummary.doneCount : 0;
+  }
+
+  get momentumSubtitle(): string {
+    if (this.levelStats.remainingToNext === 0) {
+      return 'Level up achieved. Finish strong.';
+    }
+
+    return `${this.levelStats.remainingToNext} more ${plural(this.levelStats.remainingToNext, 'habit')} to reach Level ${this.levelStats.nextLevel}.`;
   }
 
   get isTodaySelected(): boolean {
@@ -1152,14 +1168,18 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
 // Manual tests
 // Feature 10: Daily Level-Up hook (copy + identity only)
-// - Opening Today shows cue only when not secured
-// - Ready banner hides after first done/skip and stays hidden on refresh
+// - Ready card shows only when doneToday=0 and not finished
+// - Momentum card shows after first done, hides when day finished
 // - Completing a habit shows reward toast instantly
 // - Rapid toggles update reward message without stacking
 // - Level Up Complete hides cue and shows identity line
 // - Progress bar color matches accent and animates smoothly
 // - Default theme is blue on fresh install, saved theme overrides
 // - Motivation changes by day-of-month
+// - Pluralization correct (1 day / 2 days, 1 habit / 2 habits)
+// - XP increases when marking a habit done today
+// - XP persists after refresh and includes past days done habits
+// - Level never drops on date change; only if completions are removed
 // - No overlap with bottom nav
 
 

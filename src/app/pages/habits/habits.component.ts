@@ -236,7 +236,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
       return 'Great - keep it small. Consistency beats intensity.';
     }
     if (this.activeCount <= 6) {
-      return 'Nice. Try to keep it under 6 for best level streak success.';
+      return 'Nice. Try to keep it under 6 for the best streak success.';
     }
     return 'More habits = less consistency. Consider pausing some.';
   }

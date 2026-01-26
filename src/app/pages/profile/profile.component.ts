@@ -49,7 +49,7 @@ type BeforeInstallPromptEvent = Event & {
             <div>
               <div class="text-body">Your name</div>
               <div class="text-muted">{{ displayName }}</div>
-              <div class="text-muted helper-text">Used for motivation messages and level streaks.</div>
+              <div class="text-muted helper-text">Used for motivation messages and streaks.</div>
               <div class="text-muted helper-text">Your character name in this game.</div>
               <div class="text-muted level-row">Level {{ levelStats.level }} • {{ levelStats.totalDone }} total wins</div>
               <div class="account-meta">
