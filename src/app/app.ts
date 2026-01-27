@@ -16,6 +16,7 @@ import { ThemeService } from './services/theme.service';
 import { routeAnimations } from './shared/route-animations';
 import { BottomNavComponent } from './shared/bottom-nav/bottom-nav.component';
 import { SettingsService } from './services/settings.service';
+import { NotificationService } from './services/notification.service';
 
 @Component({
   selector: 'app-root',
@@ -62,6 +63,7 @@ export class App implements OnInit, OnDestroy {
   currentTheme: 'dark' | 'light' = 'dark';
   reduceMotion = false;
   pageTitle = 'Today';
+  showChrome = true;
 
   private subscription: Subscription = new Subscription();
 
@@ -69,7 +71,8 @@ export class App implements OnInit, OnDestroy {
     private habitStore: HabitStoreService,
     private themeService: ThemeService,
     private settingsService: SettingsService,
-    private router: Router
+    private router: Router,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
@@ -92,13 +95,17 @@ export class App implements OnInit, OnDestroy {
     this.subscription.add(
       this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
         this.pageTitle = this.getTitleFromUrl(this.router.url);
+        this.showChrome = !this.isSplashOrOnboarding(this.router.url);
       })
     );
     this.pageTitle = this.getTitleFromUrl(this.router.url);
+    this.showChrome = !this.isSplashOrOnboarding(this.router.url);
+    this.notificationService.init();
   }
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
+    this.notificationService.dispose();
   }
 
   onYearChange(): void {
@@ -123,5 +130,9 @@ export class App implements OnInit, OnDestroy {
     if (url.startsWith('/habits')) return 'Habits';
     if (url.startsWith('/profile')) return 'Profile';
     return 'Today';
+  }
+
+  private isSplashOrOnboarding(url: string): boolean {
+    return url.startsWith('/splash') || url.startsWith('/onboarding');
   }
 }

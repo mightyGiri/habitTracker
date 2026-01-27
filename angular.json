@@ -45,6 +45,10 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "capacitor": {
+              "outputMode": "static",
+              "serviceWorker": "ngsw-config.json"
             }
           },
           "defaultConfiguration": "production"

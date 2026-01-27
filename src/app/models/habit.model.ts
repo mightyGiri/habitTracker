@@ -43,6 +43,7 @@ export interface UserProfile {
   primaryGoal?: string;
   why?: string;
   whyStatement?: string;
+  statement?: string;
   createdAt: number;
 }
 

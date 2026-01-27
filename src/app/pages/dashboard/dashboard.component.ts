@@ -55,7 +55,7 @@ type ConfettiPiece = {
             {{ isEditingToday ? todayLabel : ('Editing: ' + todayLabel) }}
           </div>
           <div class="text-muted today-subtitle">{{ dailyMotivation }}</div>
-          <div class="level-block">
+          <div class="level-block" [class.level-up-glow]="levelUpAnimating">
             <div class="level-badge">{{ levelBadgeText }}</div>
             <div class="level-xp text-muted">{{ levelXpText }}</div>
             <div class="level-next text-muted">XP progress to Level {{ levelStats.nextLevel }}</div>
@@ -67,9 +67,10 @@ type ConfettiPiece = {
             </div>
           </div>
 
-          <div class="status-row">
-            <div class="perfect-chip" *ngIf="selectedIsPerfect" [class.celebrate]="celebrateBadge">Perfect Level &#x1F525;</div>
-            <div class="streak-badge" *ngIf="streakCount > 0" [class.streak-pop]="streakCelebrating">
+          <div class="status-row" *ngIf="selectedIsPerfect || selectedIsWon || streakCount > 0">
+            <div class="perfect-chip" *ngIf="selectedIsPerfect" [class.celebrate]="celebrateBadge">Perfect Day &#x1F525;</div>
+            <div class="perfect-chip" *ngIf="selectedIsWon && !selectedIsPerfect">Won Today &#x1F525;</div>
+            <div class="streak-badge" *ngIf="streakCount > 0" [class.streak-pop]="streakCelebrating" [class.streak-fire]="streakFireAnimating">
               <div class="streak-count">&#x1F525; {{ streakCount | dayCount }}</div>
             </div>
           </div>
@@ -115,7 +116,7 @@ type ConfettiPiece = {
         <div class="hero-text">
           <div class="hero-title">Today</div>
           <div class="hero-subtitle">{{ heroStatusLine }}</div>
-          <div class="hero-helper text-muted" *ngIf="isEditingToday && selectedIsPerfect">
+          <div class="hero-helper text-muted" *ngIf="isEditingToday && selectedIsWon">
             Come back tomorrow to keep your streak.
           </div>
           <div class="finish-message" *ngIf="finishMomentActive">{{ finishMomentMessage }}</div>
@@ -182,7 +183,7 @@ type ConfettiPiece = {
       </mat-card>
 
       <mat-card class="aesthetic-card streak-card">
-        <div class="section-header text-section">Level Streak</div>
+        <div class="section-header text-section">Streak</div>
         <mat-card-content>
           <div class="streak-row">
             <div class="streak-value">{{ currentStreakDisplay | dayCount }}</div>
@@ -298,6 +299,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   todayIsPerfect = false;
   dateChips: DateChip[] = [];
   selectedIsPerfect = false;
+  selectedIsWon = false;
+  todayIsWon = false;
   celebrateBadge = false;
   confettiPieces: ConfettiPiece[] = [];
   private confettiTimer?: ReturnType<typeof setTimeout>;
@@ -315,6 +318,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   streakCelebrating = false;
   private streakCelebrationTimer?: ReturnType<typeof setTimeout>;
   private previousStreakCount = 0;
+  streakFireAnimating = false;
+  private streakFireTimer?: ReturnType<typeof setTimeout>;
+  levelUpAnimating = false;
+  private levelUpTimer?: ReturnType<typeof setTimeout>;
+  private previousLevel = 0;
+  private previousTodayPerfect = false;
+  private levelStatsReady = false;
   private deferredPrompt: BeforeInstallPromptEvent | null = null;
   private viewReady = false;
   private focusTodayRequested = false;
@@ -339,7 +349,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.remainingCount > 0) {
       return `${this.remainingCount} ${plural(this.remainingCount, 'habit')} left`;
     }
-    return 'Level Up Complete 🔥';
+    if (this.selectedIsPerfect) {
+      return 'Perfect Day 🔥';
+    }
+    return 'Won today 🔥';
   }
 
   get levelBadgeText(): string {
@@ -421,6 +434,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         }
         this.selectedMonthYear = monthYear;
         this.levelStats = levelStats;
+        if (this.levelStatsReady && levelStats.level > this.previousLevel) {
+          this.triggerLevelUpGlow();
+        }
+        if (!this.levelStatsReady) {
+          this.levelStatsReady = true;
+        }
+        this.previousLevel = levelStats.level;
         this.habits = habits
           .filter(habit => habit.isActive)
           .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
@@ -852,12 +872,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private recomputeDashboardState(): void {
+    const wasPerfect = this.previousTodayPerfect;
     this.todayDate = this.normalizeDate(new Date());
     this.todayDateKey = this.toIsoDateLocal(this.todayDate);
     this.selectedSummary = this.habitStore.getDaySummary(this.selectedDate);
     this.todaySummary = this.habitStore.getDaySummary(this.todayDate);
-    this.selectedIsPerfect = this.habitStore.isPerfectDay(this.selectedDate);
-    this.todayIsPerfect = this.habitStore.isPerfectDay(this.todayDate);
+    this.selectedIsPerfect = this.isStrictPerfect(this.selectedSummary);
+    this.todayIsPerfect = this.isStrictPerfect(this.todaySummary);
+    this.selectedIsWon = this.isWonDay(this.selectedSummary);
+    this.todayIsWon = this.isWonDay(this.todaySummary);
 
     this.doneCount = this.selectedSummary.doneCount;
     this.totalCount = this.selectedSummary.totalCount;
@@ -867,10 +890,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     const newStreak = this.habitStore.getCurrentStreak(this.todayDateKey);
     if (this.isSameDate(this.selectedDate, this.todayDate) && newStreak > this.previousStreakCount) {
       this.triggerStreakCelebration();
+      this.triggerStreakFireBurst();
+    }
+    if (this.isSameDate(this.selectedDate, this.todayDate) && !wasPerfect && this.todayIsPerfect) {
+      this.triggerStreakFireBurst();
     }
     this.streakCount = newStreak;
     this.previousStreakCount = newStreak;
     this.currentStreakDisplay = this.streakCount;
+    this.previousTodayPerfect = this.todayIsPerfect;
 
     this.motivationMessage = '';
     this.updateIdentityLine();
@@ -980,10 +1008,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     for (let offset = -3; offset <= 3; offset++) {
       const date = new Date(this.selectedDate);
       date.setDate(date.getDate() + offset);
+      const summary = this.habitStore.getDaySummary(date);
       chips.push({
         date,
         label: date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }),
-        isPerfect: this.habitStore.isPerfectDay(date)
+        isPerfect: this.isStrictPerfect(summary)
       });
     }
     return chips;
@@ -1049,6 +1078,32 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     }, 900);
   }
 
+  private triggerStreakFireBurst(): void {
+    if (this.reduceMotion) {
+      return;
+    }
+    if (this.streakFireTimer) {
+      clearTimeout(this.streakFireTimer);
+    }
+    this.streakFireAnimating = true;
+    this.streakFireTimer = setTimeout(() => {
+      this.streakFireAnimating = false;
+    }, 1000);
+  }
+
+  private triggerLevelUpGlow(): void {
+    if (this.reduceMotion) {
+      return;
+    }
+    if (this.levelUpTimer) {
+      clearTimeout(this.levelUpTimer);
+    }
+    this.levelUpAnimating = true;
+    this.levelUpTimer = setTimeout(() => {
+      this.levelUpAnimating = false;
+    }, 2000);
+  }
+
   private handleRewards(
     before: { doneCount: number; skippedCount: number; handledCount: number; totalCount: number; percentDone: number; percentHandled: number },
     after: { doneCount: number; skippedCount: number; handledCount: number; totalCount: number; percentDone: number; percentHandled: number }
@@ -1070,7 +1125,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       this.rewardStageMap[dateKey] = 2;
     }
     if (before.percentHandled < 100 && after.percentHandled === 100 && stage < 3) {
-      this.showToast('Perfect level achieved.');
+      this.showToast('Perfect day achieved.');
       this.rewardStageMap[dateKey] = 3;
       if (!this.reduceMotion) {
         this.triggerPerfectDayCelebrate();
@@ -1124,11 +1179,19 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       clearTimeout(this.finishMomentTimer);
     }
     this.finishMomentMessage =
-      summary.doneCount === summary.totalCount ? 'Perfect level 🔥' : 'Day completed';
+      summary.doneCount === summary.totalCount ? 'Perfect Day 🔥' : 'Won today 🔥';
     this.finishMomentActive = true;
     this.finishMomentTimer = setTimeout(() => {
       this.finishMomentActive = false;
     }, 700);
+  }
+
+  private isStrictPerfect(summary: { doneCount: number; totalCount: number; skippedCount?: number }): boolean {
+    return summary.totalCount > 0 && summary.doneCount === summary.totalCount;
+  }
+
+  private isWonDay(summary: { handledCount: number; totalCount: number }): boolean {
+    return summary.totalCount > 0 && summary.handledCount >= summary.totalCount;
   }
 
   private loadRewardStageMap(): Record<string, number> {
@@ -1180,7 +1243,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 // - XP increases when marking a habit done today
 // - XP persists after refresh and includes past days done habits
 // - Level never drops on date change; only if completions are removed
+// - Level-up glow triggers on level increment
+// - Streak fire burst triggers on streak increment/perfect day
 // - No overlap with bottom nav
+// - Won Today shows only when handled full day
+// - Perfect Day shows only when all habits done with no skips
 
 
 

@@ -3,6 +3,7 @@
   align-items: center
   justify-content: space-between
   margin-bottom: var(--space-3)
+  padding-top: env(safe-area-inset-top, 40px)
   gap: var(--space-3)
   position: relative
 
@@ -11,7 +12,7 @@
     outline-offset: 3px
     border-radius: var(--radius-md)
     background: linear-gradient(135deg, var(--theme-accent-soft), transparent)
-    box-shadow: 0 0 20px var(--theme-glow)
+    box-shadow: 0 0 30px var(--theme-glow)
     animation: perfectPulse 2.5s ease-in-out infinite
 
   h1
@@ -28,6 +29,11 @@
   display: grid
   gap: 4px
   max-width: 320px
+
+  &.level-up-glow
+    animation: levelUpGlow 2s ease
+    box-shadow: 0 0 20px var(--theme-glow)
+    border-radius: var(--radius-md)
 
 .level-badge
   display: inline-flex
@@ -83,10 +89,13 @@
   box-shadow: var(--shadow-soft)
   display: inline-flex
   align-items: center
-  max-width: 360px
 
   &.streak-pop
     animation: streakPop 0.9s ease
+
+  &.streak-fire
+    animation: streakFire 1s ease
+    box-shadow: 0 0 18px color-mix(in oklab, var(--theme-warning) 60%, transparent)
 
 .streak-count
   display: inline-flex
@@ -180,7 +189,7 @@
 
   &.perfect-day
     border-color: var(--theme-accent)
-    box-shadow: 0 0 28px var(--theme-glow)
+    box-shadow: 0 0 34px var(--theme-glow)
     background: linear-gradient(135deg, var(--theme-accent-soft), var(--theme-surface-2))
     animation: perfectPulse 2.5s ease-in-out infinite
 
@@ -608,6 +617,11 @@
     animation: none !important
     transition: none !important
 
+  .streak-fire,
+  .level-up-glow
+    animation: none !important
+    transition: none !important
+
   .reward-pulse,
   .finish-moment
     animation: none !important
@@ -675,3 +689,25 @@
   100%
     transform: translate3d(var(--confetti-drift), 120px, 0) rotate(calc(var(--confetti-rotate) + 90deg))
     opacity: 0
+
+@keyframes levelUpGlow
+  0%
+    transform: scale(1)
+    box-shadow: 0 0 0 var(--accent-20)
+  40%
+    transform: scale(1.02)
+    box-shadow: 0 0 22px var(--accent-45)
+  100%
+    transform: scale(1)
+    box-shadow: 0 0 0 var(--accent-20)
+
+@keyframes streakFire
+  0%
+    transform: scale(1)
+    box-shadow: 0 0 0 color-mix(in oklab, var(--theme-warning) 20%, transparent)
+  50%
+    transform: scale(1.04)
+    box-shadow: 0 0 24px color-mix(in oklab, var(--theme-warning) 70%, transparent)
+  100%
+    transform: scale(1)
+    box-shadow: 0 0 0 color-mix(in oklab, var(--theme-warning) 20%, transparent)

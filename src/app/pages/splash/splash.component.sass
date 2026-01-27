@@ -1,0 +1,56 @@
+.splash
+  min-height: 100vh
+  display: flex
+  align-items: center
+  justify-content: center
+  text-align: center
+  padding-top: env(safe-area-inset-top, 0px)
+  padding-bottom: env(safe-area-inset-bottom, 0px)
+  background: radial-gradient(circle at 15% 10%, rgba(55, 94, 210, 0.35), transparent 55%), radial-gradient(circle at 85% 15%, rgba(88, 58, 180, 0.25), transparent 55%), linear-gradient(160deg, #0b1327, #0f1d3a 55%, #1a1d3f)
+
+.splash-inner
+  display: flex
+  flex-direction: column
+  gap: 10px
+  align-items: center
+  justify-content: center
+  animation: splashIn 1.1s ease both
+
+.splash.is-fading .splash-inner
+  animation: splashOut 0.4s ease both
+
+.splash-icon
+  width: 96px
+  height: 96px
+  object-fit: contain
+  border-radius: 0
+  background: transparent
+
+.splash-sub
+  font-size: 0.9rem
+  color: rgba(255, 255, 255, 0.78)
+
+.reduce-motion .splash-inner
+  animation: splashFade 0.8s ease both
+
+@keyframes splashIn
+  0%
+    opacity: 0
+    transform: scale(0.96)
+  70%
+    opacity: 1
+    transform: scale(1)
+  100%
+    opacity: 1
+
+@keyframes splashFade
+  0%
+    opacity: 0
+  100%
+    opacity: 1
+
+@keyframes splashOut
+  0%
+    opacity: 1
+  100%
+    opacity: 0

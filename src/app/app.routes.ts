@@ -4,8 +4,18 @@ import { onboardingGuard } from './guards/onboarding.guard';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'today',
+    redirectTo: 'splash',
     pathMatch: 'full'
+  },
+  {
+    path: 'splash',
+    loadComponent: () => import('./pages/splash/splash.component').then(m => m.SplashComponent),
+    data: { animation: 'splash' }
+  },
+  {
+    path: 'getting-started',
+    loadComponent: () => import('./pages/onboarding/onboarding.component').then(m => m.OnboardingComponent),
+    data: { animation: 'onboarding' }
   },
   {
     path: 'onboarding',
@@ -43,7 +53,19 @@ export const routes: Routes = [
     canMatch: [onboardingGuard]
   },
   {
+    path: 'terms',
+    loadComponent: () => import('./pages/terms/terms.component').then(m => m.TermsComponent),
+    data: { animation: 'terms' },
+    canMatch: [onboardingGuard]
+  },
+  {
+    path: 'privacy',
+    loadComponent: () => import('./pages/privacy/privacy.component').then(m => m.PrivacyComponent),
+    data: { animation: 'privacy' },
+    canMatch: [onboardingGuard]
+  },
+  {
     path: '**',
-    redirectTo: 'today'
+    redirectTo: 'splash'
   }
 ];

@@ -198,11 +198,17 @@ export class HabitStoreService {
 
   completeOnboarding(): void {
     this.onboardingCompleted$.next(true);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem('onboardingComplete', 'true');
+    }
     this.saveToStorage();
   }
 
   skipOnboarding(): void {
     this.onboardingCompleted$.next(true);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem('onboardingComplete', 'true');
+    }
     this.saveToStorage();
   }
 
@@ -997,11 +1003,12 @@ export class HabitStoreService {
 
   private normalizeUserProfile(profile: UserProfile): UserProfile {
     const name = String(profile.name || '').trim();
-    const whyStatement = profile.whyStatement ?? profile.why;
+    const statement = profile.statement ?? profile.whyStatement ?? profile.why;
     return {
       ...profile,
       name,
-      whyStatement: whyStatement ? String(whyStatement).trim() : undefined,
+      statement: statement ? String(statement).trim() : undefined,
+      whyStatement: statement ? String(statement).trim() : undefined,
       why: profile.why ? String(profile.why).trim() : undefined,
       persona: profile.persona ? String(profile.persona).trim() : undefined,
       primaryGoal: profile.primaryGoal ? String(profile.primaryGoal).trim() : undefined,
