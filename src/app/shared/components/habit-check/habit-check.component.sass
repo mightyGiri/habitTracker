@@ -1,0 +1,61 @@
+.habit-check
+  width: 28px
+  height: 28px
+  border-radius: 8px
+  border: 1px solid var(--theme-border)
+  background: var(--theme-input-bg, var(--theme-surface-2))
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  transition: background var(--dur-2), border-color var(--dur-2), box-shadow var(--dur-2), transform var(--dur-1)
+  box-shadow: var(--shadow-0)
+  padding: 0
+
+  &.is-sm
+    width: 22px
+    height: 22px
+    border-radius: 6px
+
+  &:hover
+    border-color: var(--theme-accent)
+    box-shadow: var(--glow)
+
+  &.is-checked
+    background: var(--theme-accent)
+    border-color: var(--theme-accent)
+    box-shadow: var(--glow)
+
+  &.is-disabled
+    opacity: 0.5
+    cursor: not-allowed
+
+.check-mark
+  width: 10px
+  height: 6px
+  border-left: 2px solid #fff
+  border-bottom: 2px solid #fff
+  transform: rotate(-45deg)
+  opacity: 0
+  transition: opacity var(--dur-1)
+
+.habit-check.is-checked .check-mark
+  opacity: 1
+
+:host-context([data-theme="light"])
+  .habit-check
+    background: rgba(43, 110, 242, 0.10)
+    border-color: rgba(43, 110, 242, 0.25)
+    box-shadow: none
+
+    &:hover
+      border-color: var(--fill)
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--fill) 35%, transparent)
+
+    &.is-checked
+      background: var(--success)
+      border-color: var(--success)
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--success) 35%, transparent)
+
+  .check-mark
+    border-left-color: #fff
+    border-bottom-color: #fff

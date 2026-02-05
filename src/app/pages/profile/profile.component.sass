@@ -1,11 +1,121 @@
 .page-title
   margin-bottom: var(--space-3)
+  font-size: calc(var(--fs-title) * var(--font-scale))
 
 .profile-page
   padding-bottom: calc(var(--space-4) + 80px)
+  font-size: calc(var(--fs-body) * var(--font-scale))
 
 .profile-section
   margin-bottom: var(--space-2)
+
+.profile-header
+  display: grid
+  grid-template-columns: auto 1fr auto
+  align-items: center
+  gap: var(--space-2)
+  padding: var(--space-2) var(--space-3)
+  border-radius: 16px
+  background: var(--theme-surface)
+  border: 1px solid var(--theme-border)
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08)
+  margin-bottom: var(--space-3)
+
+.avatar-circle
+  width: 48px
+  height: 48px
+  border-radius: 999px
+  display: grid
+  place-items: center
+  font-weight: 700
+  color: #fff
+  background: linear-gradient(135deg, #f27a2a, #8b5cf6)
+  font-size: 1rem
+
+.profile-meta
+  display: grid
+  gap: 4px
+
+.profile-name
+  font-size: calc(var(--fs-title) * var(--font-scale))
+  font-weight: 700
+  color: var(--theme-text)
+
+.profile-subtitle
+  font-size: calc(var(--fs-muted) * var(--font-scale))
+  color: var(--theme-text-muted)
+
+.edit-pill
+  border: 1px solid var(--theme-border)
+  background: transparent
+  color: var(--theme-text)
+  padding: 6px 14px
+  border-radius: 999px
+  font-size: calc(var(--fs-muted) * var(--font-scale))
+  cursor: pointer
+  white-space: nowrap
+
+.edit-pill:hover
+  border-color: var(--theme-accent)
+  color: var(--theme-accent)
+
+.settings-section
+  margin-bottom: var(--space-3)
+
+.settings-list
+  display: grid
+  gap: 4px
+  border-radius: 16px
+  background: var(--theme-surface)
+  border: 1px solid var(--theme-border)
+  padding: 6px 0
+
+.settings-row
+  display: grid
+  grid-template-columns: 120px 1fr
+  gap: 12px
+  align-items: center
+  padding: 10px var(--space-3)
+  border-bottom: 1px solid var(--theme-border)
+
+  &:last-child
+    border-bottom: 0
+
+.row-label
+  color: var(--theme-text-muted)
+  font-size: calc(var(--fs-label) * var(--font-scale))
+  text-transform: uppercase
+  letter-spacing: 0.08em
+
+.row-value
+  font-weight: 600
+  color: var(--theme-text)
+  font-size: calc(var(--fs-body) * var(--font-scale))
+  text-align: right
+
+.row-wrap
+  text-align: left
+  font-weight: 500
+
+.settings-links .row-value
+  text-align: left
+
+.link-list
+  margin-top: 10px
+  display: flex
+  flex-direction: column
+  gap: 8px
+
+.link
+  background: transparent
+  border: 0
+  padding: 0
+  text-align: left
+  color: var(--theme-text)
+  text-decoration: underline
+  font-size: calc(var(--fs-body) * var(--font-scale))
+  opacity: 0.9
+  cursor: pointer
 
 .card-body
   padding: var(--space-3)
@@ -37,23 +147,18 @@
   -webkit-box-orient: vertical
   overflow: hidden
 
-.meta-grid
-  display: grid
-  grid-template-columns: 92px 1fr
-  gap: 10px 14px
-  align-items: start
+.section-block
+  border-radius: 16px
+  background: var(--theme-surface)
+  border: 1px solid var(--theme-border)
+  margin-bottom: var(--space-2)
+  overflow: hidden
 
-.meta-label
-  color: var(--theme-text-muted)
-  font-size: 0.85em
+.section-body
+  padding: 0 var(--space-3) var(--space-3)
 
-.meta-value
-  font-weight: 600
-  color: var(--theme-text)
-  text-align: right
-
-.meta-privacy
-  text-align: left
+.section-title
+  padding: 14px var(--space-3) 0
 
 .section-toggle
   width: 100%
@@ -61,7 +166,7 @@
   align-items: center
   justify-content: space-between
   gap: var(--space-2)
-  padding: 12px var(--space-3)
+  padding: 14px var(--space-3)
   border: 0
   background: transparent
   color: var(--theme-text)
@@ -121,8 +226,10 @@
 
 .accent-swatches
   display: flex
-  gap: 10px
-  flex-wrap: wrap
+  gap: 12px
+  flex-wrap: nowrap
+  overflow-x: auto
+  padding-bottom: 4px
 
 .custom-accent
   display: flex
@@ -142,8 +249,8 @@
     outline-offset: 2px
 
 .accent-swatch
-  width: 28px
-  height: 28px
+  width: 26px
+  height: 26px
   border-radius: 999px
   border: 2px solid transparent
   cursor: pointer
@@ -201,9 +308,30 @@
   .field-grid
     grid-template-columns: 1fr
 
-  .row-between
-    flex-direction: column
-    align-items: flex-start
+  .profile-header
+    grid-template-columns: auto 1fr
+    grid-auto-rows: auto
+
+  .edit-pill
+    grid-column: 1 / -1
+    justify-self: start
+
+  .settings-row
+    grid-template-columns: 1fr
+    text-align: left
+
+  .row-value
+    text-align: left
 
   .data-actions
     grid-template-columns: 1fr
+
+:host ::ng-deep .profile-edit-modal .mat-mdc-dialog-container
+  padding: 0
+  background: transparent
+  box-shadow: none
+
+:host ::ng-deep .profile-edit-modal .mat-mdc-dialog-surface
+  padding: 0
+  background: transparent
+  box-shadow: none

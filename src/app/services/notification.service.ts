@@ -1,23 +1,21 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Subscription, combineLatest } from 'rxjs';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 import { HabitStoreService } from './habit-store.service';
 import { SettingsService } from './settings.service';
 
-const REMINDER_HOURS = [7, 10, 13, 16, 19, 21];
-const REMINDER_BASE_ID = 1001;
-const STREAK_WARNING_ID = 2001;
-const LAST_HABIT_ID = 3001;
+const REMINDER_HOURS = [7, 10, 13, 16, 19];
+const REMINDER_BASE_ID = 51000;
+const STREAK_WARNING_ID = 51050;
+const CONGRATS_ID = 51999;
+const PREF_KEY = 'notificationsEnabled';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
-  private subscription = new Subscription();
   private enabled = false;
-  private midnightTimer?: ReturnType<typeof setTimeout>;
-  private lastHabitScheduledKey: string | null = null;
   private initialized = false;
+  private lastError: string | null = null;
 
   constructor(
     private habitStore: HabitStoreService,
@@ -30,160 +28,186 @@ export class NotificationService {
       return;
     }
     this.initialized = true;
-    this.subscription.add(
-      this.settingsService.getSettings().subscribe(settings => {
-        this.enabled = settings.notificationsEnabled;
-        if (this.enabled) {
-          void this.requestPermission();
-          this.refreshSchedules();
-        } else {
-          this.cancelAll();
-        }
-      })
-    );
-    this.subscription.add(
-      combineLatest([
-        this.habitStore.getHabits(),
-        this.habitStore.getCompletions(),
-        this.habitStore.getSkips()
-      ]).subscribe(() => {
-        if (this.enabled) {
-          this.refreshSchedules();
-        }
-      })
-    );
+    this.enabled = this.isEnabled();
+    if (this.enabled) {
+      void this.resyncForToday();
+    }
   }
 
   dispose(): void {
-    this.subscription.unsubscribe();
-    if (this.midnightTimer) {
-      clearTimeout(this.midnightTimer);
-      this.midnightTimer = undefined;
-    }
+    // no-op for now
   }
 
-  private async requestPermission(): Promise<void> {
-    if (!this.isNative()) {
-      return;
+  isEnabled(): boolean {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return false;
     }
-    await LocalNotifications.requestPermissions();
+    return window.localStorage.getItem(PREF_KEY) === 'true';
   }
 
-  private refreshSchedules(): void {
-    if (!this.isNative()) {
-      return;
+  isSupported(): boolean {
+    if (this.isNative()) {
+      return true;
     }
-    const today = this.normalizeDate(new Date());
-    const todayKey = this.toIsoDateLocal(today);
-    const summary = this.habitStore.getDaySummary(today);
-    const remaining = Math.max(summary.totalCount - summary.handledCount, 0);
-    const completed = summary.totalCount > 0 && remaining === 0;
-
-    if (completed) {
-      this.cancelDaily();
-      this.cancelLastHabit();
-      this.scheduleNextDayRefresh();
-      return;
-    }
-
-    this.clearNextDayTimer();
-    this.scheduleDailyReminders();
-    this.scheduleStreakWarning();
-
-    if (summary.totalCount > 0 && remaining === 1) {
-      this.scheduleLastHabit(todayKey);
-    } else {
-      this.cancelLastHabit();
-    }
+    return typeof Notification !== 'undefined' && typeof window !== 'undefined' && window.isSecureContext === true;
   }
 
-  private scheduleDailyReminders(): void {
-    this.cancelDaily();
-    const notifications = REMINDER_HOURS.map((hour, index) => ({
-      id: REMINDER_BASE_ID + index,
-      title: 'Level-Up',
-      body: 'Do 1 habit now. Keep your streak alive.',
-      schedule: {
-        on: { hour, minute: 0 },
-        repeats: true
+  getLastError(): string | null {
+    return this.lastError;
+  }
+
+  async setEnabled(value: boolean): Promise<void> {
+    this.enabled = value;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem(PREF_KEY, value ? 'true' : 'false');
+    }
+    this.settingsService.updateSettings({ notificationsEnabled: value });
+  }
+
+  async enableForToday(): Promise<void> {
+    this.lastError = null;
+    try {
+      if (this.isNative()) {
+        const permission = await LocalNotifications.requestPermissions();
+        if (permission.display !== 'granted') {
+          this.lastError = 'denied';
+          await this.setEnabled(false);
+          return;
+        }
+        await this.setEnabled(true);
+        await this.resyncForToday();
+        return;
       }
-    }));
-    void LocalNotifications.schedule({ notifications });
+      if (typeof Notification === 'undefined' || !window.isSecureContext) {
+        this.lastError = 'unsupported';
+        await this.setEnabled(false);
+        return;
+      }
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        this.lastError = 'denied';
+        await this.setEnabled(false);
+        return;
+      }
+      await this.setEnabled(true);
+    } catch (error) {
+      this.lastError = 'failed';
+      await this.setEnabled(false);
+    }
   }
 
-  private scheduleStreakWarning(): void {
-    void LocalNotifications.schedule({
-      notifications: [
-        {
-          id: STREAK_WARNING_ID,
-          title: 'Streak danger',
-          body: 'Finish your habits today. Don\'t miss twice.',
-          schedule: {
-            on: { hour: 20, minute: 30 },
-            repeats: true
-          }
-        }
-      ]
-    });
+  async disableAll(): Promise<void> {
+    this.lastError = null;
+    await this.setEnabled(false);
+    await this.cancelAll();
   }
 
-  private scheduleLastHabit(todayKey: string): void {
-    if (this.lastHabitScheduledKey === todayKey) {
+  async resyncForToday(): Promise<void> {
+    this.lastError = null;
+    if (!this.enabled || !this.isNative()) {
       return;
     }
-    this.cancelLastHabit();
-    this.lastHabitScheduledKey = todayKey;
-    const fireAt = new Date();
-    fireAt.setMinutes(fireAt.getMinutes() + 20);
-    void LocalNotifications.schedule({
-      notifications: [
-        {
-          id: LAST_HABIT_ID,
-          title: 'One more habit',
-          body: 'One more habit = streak secured. Finish strong.',
-          schedule: { at: fireAt }
-        }
-      ]
-    });
+    try {
+      const pendingCount = this.getPendingCount();
+      if (pendingCount <= 0) {
+        await this.cancelAll();
+        await this.showCongratsNow();
+        return;
+      }
+      await this.cancelAll();
+      const notifications = this.buildReminderNotifications(pendingCount);
+      if (notifications.length > 0) {
+        await LocalNotifications.schedule({ notifications });
+      }
+      await this.scheduleStreakWarning(pendingCount);
+    } catch (error) {
+      this.lastError = 'failed';
+    }
   }
 
-  private cancelDaily(): void {
-    const notifications = REMINDER_HOURS.map((_, index) => ({ id: REMINDER_BASE_ID + index }));
-    notifications.push({ id: STREAK_WARNING_ID });
-    void LocalNotifications.cancel({ notifications });
-  }
-
-  private cancelLastHabit(): void {
-    this.lastHabitScheduledKey = null;
-    void LocalNotifications.cancel({ notifications: [{ id: LAST_HABIT_ID }] });
-  }
-
-  private cancelAll(): void {
+  async showCongratsNow(): Promise<void> {
     if (!this.isNative()) {
       return;
     }
-    this.cancelDaily();
-    this.cancelLastHabit();
-    this.clearNextDayTimer();
+    try {
+      const fireAt = new Date(Date.now() + 1000);
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: CONGRATS_ID,
+            title: 'Leveled Up',
+            body: 'Won today! Streak saved.',
+            schedule: { at: fireAt }
+          }
+        ]
+      });
+    } catch {
+      // ignore
+    }
   }
 
-  private scheduleNextDayRefresh(): void {
-    if (this.midnightTimer) {
-      clearTimeout(this.midnightTimer);
+  private buildReminderNotifications(pendingCount: number) {
+    const now = new Date();
+    const today = this.normalizeDate(now);
+    return REMINDER_HOURS.flatMap((hour, index) => {
+      const fireAt = new Date(today);
+      fireAt.setHours(hour, 0, 0, 0);
+      if (fireAt <= now) {
+        return [];
+      }
+      return [{
+        id: REMINDER_BASE_ID + index,
+        title: 'Level Up',
+        body: `${pendingCount} habits pending. Don't miss your streak.`,
+        schedule: { at: fireAt }
+      }];
+    });
+  }
+
+  private async scheduleStreakWarning(pendingCount: number): Promise<void> {
+    if (pendingCount <= 0) {
+      return;
     }
     const now = new Date();
-    const next = new Date(now);
-    next.setDate(now.getDate() + 1);
-    next.setHours(0, 1, 0, 0);
-    const delay = Math.max(next.getTime() - now.getTime(), 60_000);
-    this.midnightTimer = setTimeout(() => this.refreshSchedules(), delay);
+    const today = this.normalizeDate(now);
+    const fireAt = new Date(today);
+    fireAt.setHours(19, 0, 0, 0);
+    if (fireAt <= now) {
+      return;
+    }
+    try {
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: STREAK_WARNING_ID,
+            title: 'Level Up',
+            body: 'You are about to miss your streak. Finish now.',
+            schedule: { at: fireAt }
+          }
+        ]
+      });
+    } catch {
+      // ignore
+    }
   }
 
-  private clearNextDayTimer(): void {
-    if (this.midnightTimer) {
-      clearTimeout(this.midnightTimer);
-      this.midnightTimer = undefined;
+  private async cancelAll(): Promise<void> {
+    if (!this.isNative()) {
+      return;
     }
+    const notifications = REMINDER_HOURS.map((_, index) => ({ id: REMINDER_BASE_ID + index }));
+    notifications.push({ id: STREAK_WARNING_ID });
+    notifications.push({ id: CONGRATS_ID });
+    try {
+      await LocalNotifications.cancel({ notifications });
+    } catch {
+      // ignore
+    }
+  }
+
+  private getPendingCount(): number {
+    const summary = this.habitStore.getDaySummary(new Date());
+    return Math.max(summary.totalCount - summary.handledCount, 0);
   }
 
   private isNative(): boolean {
@@ -194,12 +218,5 @@ export class NotificationService {
     const normalized = new Date(date);
     normalized.setHours(0, 0, 0, 0);
     return normalized;
-  }
-
-  private toIsoDateLocal(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
   }
 }

@@ -73,6 +73,14 @@ import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-
               <mat-label>Minimum version (optional)</mat-label>
               <input matInput formControlName="minimumVersion" placeholder="e.g., 1 page, 5 minutes">
             </mat-form-field>
+            <div class="timer-row">
+              <div class="text-label">Timer</div>
+              <app-toggle [checked]="habitForm.get('timerEnabled')?.value" (checkedChange)="setTimerEnabled($event)"></app-toggle>
+            </div>
+            <mat-form-field appearance="fill" *ngIf="habitForm.get('timerEnabled')?.value">
+              <mat-label>Timer minutes</mat-label>
+              <input matInput type="number" min="1" max="120" formControlName="timerMinutes" placeholder="e.g., 10">
+            </mat-form-field>
             <div class="form-actions">
               <button class="btn btn-primary" type="submit" [disabled]="habitForm.invalid">
                 {{ editingHabitId ? 'Save' : 'Add' }}
@@ -88,9 +96,9 @@ import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-
           <div class="habits-list" *ngIf="habits.length > 0">
             <div class="habit-row" *ngFor="let habit of habits; let i = index; trackBy: trackByHabitId">
               <div class="habit-header">
-                <div class="habit-name">
-                  <div class="text-body">{{ habit.name }}</div>
-                  <div class="text-muted">
+                <div class="habit-left">
+                  <div class="habit-title text-body">{{ habit.name }}</div>
+                  <div class="habit-sub text-muted">
                     {{ habit.isActive ? 'Active' : 'Inactive' }}
                     <span *ngIf="habit.frequencyType">- {{ habit.frequencyType === 'daily' ? 'Daily' : 'Weekly' }}</span>
                     <span *ngIf="habit.frequencyType === 'weekly' && habit.weeklyTarget">- {{ habit.weeklyTarget }}x/week</span>
@@ -149,7 +157,9 @@ export class HabitsComponent implements OnInit, OnDestroy {
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(24), this.nameUniqueValidator]],
       frequencyType: ['daily', [Validators.required]],
       weeklyTarget: [3],
-      minimumVersion: ['']
+      minimumVersion: [''],
+      timerEnabled: [false],
+      timerMinutes: [10]
     });
   }
 
@@ -179,7 +189,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
 
   startAdd(): void {
     this.editingHabitId = null;
-    this.habitForm.reset({ frequencyType: 'daily', weeklyTarget: 3, minimumVersion: '' });
+    this.habitForm.reset({ frequencyType: 'daily', weeklyTarget: 3, minimumVersion: '', timerEnabled: false, timerMinutes: 10 });
     this.formOpen = true;
   }
 
@@ -189,7 +199,9 @@ export class HabitsComponent implements OnInit, OnDestroy {
       name: habit.name,
       frequencyType: habit.frequencyType ?? 'daily',
       weeklyTarget: habit.weeklyTarget ?? 3,
-      minimumVersion: habit.minimumVersion ?? ''
+      minimumVersion: habit.minimumVersion ?? '',
+      timerEnabled: habit.timerEnabled ?? false,
+      timerMinutes: habit.timerSeconds ? Math.max(1, Math.round(habit.timerSeconds / 60)) : 10
     });
     this.formOpen = true;
   }
@@ -197,7 +209,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
   cancelEdit(): void {
     this.formOpen = false;
     this.editingHabitId = null;
-    this.habitForm.reset({ frequencyType: 'daily', weeklyTarget: 3, minimumVersion: '' });
+    this.habitForm.reset({ frequencyType: 'daily', weeklyTarget: 3, minimumVersion: '', timerEnabled: false, timerMinutes: 10 });
   }
 
   saveHabit(): void {
@@ -211,6 +223,10 @@ export class HabitsComponent implements OnInit, OnDestroy {
       ? Math.min(7, Math.max(1, weeklyTargetRaw))
       : undefined;
     const minimumVersion = String(this.habitForm.get('minimumVersion')?.value || '').trim();
+    const timerEnabled = Boolean(this.habitForm.get('timerEnabled')?.value);
+    const timerMinutesRaw = Number(this.habitForm.get('timerMinutes')?.value);
+    const timerMinutes = Number.isFinite(timerMinutesRaw) ? Math.max(1, Math.min(120, timerMinutesRaw)) : 10;
+    const timerSeconds = timerEnabled ? timerMinutes * 60 : 0;
     if (!name) {
       return;
     }
@@ -219,12 +235,25 @@ export class HabitsComponent implements OnInit, OnDestroy {
         name,
         frequencyType,
         weeklyTarget,
-        minimumVersion
+        minimumVersion,
+        timerEnabled,
+        timerSeconds,
+        timerAutoComplete: true,
+        type: timerEnabled ? 'timer' : 'check',
+        targetSeconds: timerSeconds,
+        allowManualComplete: false
       });
     } else {
-      this.habitStore.addHabit(name, frequencyType, weeklyTarget, minimumVersion);
+      this.habitStore.addHabit(name, frequencyType, weeklyTarget, minimumVersion, 30, timerEnabled, timerSeconds, true);
     }
     this.cancelEdit();
+  }
+
+  setTimerEnabled(enabled: boolean): void {
+    this.habitForm.patchValue({ timerEnabled: enabled });
+    if (!enabled) {
+      this.habitForm.patchValue({ timerMinutes: 10 });
+    }
   }
 
   get isOverRecommended(): boolean {

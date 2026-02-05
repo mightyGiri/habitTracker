@@ -1,0 +1,53 @@
+.achievement-overlay
+  position: fixed
+  inset: 0
+  z-index: 999
+  display: flex
+  align-items: center
+  justify-content: center
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px)
+  background: color-mix(in oklab, var(--theme-bg) 70%, transparent)
+
+.achievement-card
+  width: 100%
+  max-width: 360px
+  padding: 16px
+  border-radius: 18px
+  border: 1px solid var(--theme-border)
+  background: linear-gradient(135deg, color-mix(in oklab, var(--theme-accent) 20%, transparent), var(--theme-surface))
+  box-shadow: var(--shadow-card)
+  color: var(--theme-text)
+  display: flex
+  flex-direction: column
+  gap: 8px
+
+.achievement-title
+  font-size: 1.1rem
+  font-weight: 700
+
+.achievement-subtitle
+  font-size: 0.9rem
+  color: var(--theme-text-muted)
+
+.achievement-stat
+  font-size: 0.95rem
+  font-weight: 600
+
+.achievement-highlight
+  font-size: 1rem
+  font-weight: 700
+  color: var(--theme-accent)
+
+.achievement-date
+  font-size: 0.8rem
+
+.achievement-persona
+  font-size: 0.8rem
+
+.achievement-actions
+  display: grid
+  gap: 8px
+  margin-top: 6px
+
+  .btn
+    width: 100%

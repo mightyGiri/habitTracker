@@ -1,0 +1,32 @@
+.profile-edit-dialog
+  min-width: min(420px, 88vw)
+  max-width: 520px
+  display: flex
+  flex-direction: column
+  gap: 16px
+  padding: 22px
+  border-radius: var(--radius-lg)
+  border: 1px solid color-mix(in oklab, var(--theme-border) 80%, transparent)
+  background: color-mix(in oklab, var(--theme-surface-2) 86%, transparent)
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35)
+  backdrop-filter: blur(12px)
+
+.dialog-title
+  font-size: 1.2rem
+  font-weight: 700
+  color: var(--theme-text)
+
+.dialog-subtitle
+  font-size: 0.9rem
+
+.dialog-fields
+  display: grid
+  gap: 12px
+
+.dialog-field
+  width: 100%
+
+.dialog-actions
+  display: flex
+  justify-content: flex-end
+  gap: 10px

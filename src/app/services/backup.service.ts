@@ -20,6 +20,12 @@ type BackupPayload = {
     frequencyType?: 'daily' | 'weekly';
     weeklyTarget?: number;
     minimumVersion?: string;
+    timerEnabled?: boolean;
+    timerSeconds?: number;
+    timerAutoComplete?: boolean;
+    type?: 'check' | 'timer';
+    targetSeconds?: number;
+    allowManualComplete?: boolean;
   }>;
   checks: HabitCompletion;
   skips?: HabitSkips;
@@ -48,7 +54,13 @@ export class BackupService {
         goalDays: habit.goalDays,
         frequencyType: habit.frequencyType,
         weeklyTarget: habit.weeklyTarget,
-        minimumVersion: habit.minimumVersion
+        minimumVersion: habit.minimumVersion,
+        timerEnabled: habit.timerEnabled,
+        timerSeconds: habit.timerSeconds,
+        timerAutoComplete: habit.timerAutoComplete,
+        type: habit.type,
+        targetSeconds: habit.targetSeconds,
+        allowManualComplete: habit.allowManualComplete
       })),
       checks: snapshot.completions,
       skips: snapshot.skips,
@@ -132,15 +144,21 @@ export class BackupService {
       summaryRows.push([year, monthIndex + 1, totalHabits, completedChecks, goalChecks, percent]);
     });
 
-    const habitsRows: Array<Array<string | number>> = [
-      ['HabitId', 'HabitName', 'GoalDays', 'Frequency', 'WeeklyTarget', 'MinimumVersion'],
+    const habitsRows: Array<Array<string | number | boolean>> = [
+      ['HabitId', 'HabitName', 'GoalDays', 'Frequency', 'WeeklyTarget', 'MinimumVersion', 'TimerEnabled', 'TimerSeconds', 'TimerAutoComplete', 'Type', 'TargetSeconds', 'AllowManualComplete'],
       ...snapshot.habits.map(habit => [
         habit.id,
         habit.name,
         habit.goalDays,
         habit.frequencyType || 'daily',
         habit.weeklyTarget ?? '',
-        habit.minimumVersion ?? ''
+        habit.minimumVersion ?? '',
+        habit.timerEnabled ?? false,
+        habit.timerSeconds ?? 0,
+        habit.timerAutoComplete ?? true,
+        habit.type ?? 'check',
+        habit.targetSeconds ?? 0,
+        habit.allowManualComplete ?? false
       ])
     ];
 

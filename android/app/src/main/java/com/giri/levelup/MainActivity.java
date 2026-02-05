@@ -1,4 +1,4 @@
-package com.levelup.app;
+package com.giri.levelup;
 
 import com.getcapacitor.BridgeActivity;
 

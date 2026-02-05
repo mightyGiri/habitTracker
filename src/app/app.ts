@@ -17,6 +17,7 @@ import { routeAnimations } from './shared/route-animations';
 import { BottomNavComponent } from './shared/bottom-nav/bottom-nav.component';
 import { SettingsService } from './services/settings.service';
 import { NotificationService } from './services/notification.service';
+import { TabStateService } from './services/tab-state.service';
 
 @Component({
   selector: 'app-root',
@@ -72,7 +73,8 @@ export class App implements OnInit, OnDestroy {
     private themeService: ThemeService,
     private settingsService: SettingsService,
     private router: Router,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private tabState: TabStateService
   ) {}
 
   ngOnInit(): void {
@@ -96,11 +98,16 @@ export class App implements OnInit, OnDestroy {
       this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
         this.pageTitle = this.getTitleFromUrl(this.router.url);
         this.showChrome = !this.isSplashOrOnboarding(this.router.url);
+        this.tabState.setCurrentTab(this.getTabFromUrl(this.router.url));
       })
     );
     this.pageTitle = this.getTitleFromUrl(this.router.url);
     this.showChrome = !this.isSplashOrOnboarding(this.router.url);
+    this.tabState.setCurrentTab(this.getTabFromUrl(this.router.url));
     this.notificationService.init();
+    if (this.notificationService.isEnabled()) {
+      void this.notificationService.resyncForToday();
+    }
   }
 
   ngOnDestroy(): void {
@@ -133,6 +140,17 @@ export class App implements OnInit, OnDestroy {
   }
 
   private isSplashOrOnboarding(url: string): boolean {
-    return url.startsWith('/splash') || url.startsWith('/onboarding');
+    return url.startsWith('/splash')
+      || url.startsWith('/onboarding')
+      || url.startsWith('/getting-started')
+      || url.startsWith('/welcome')
+      || url.includes('setup');
+  }
+
+  private getTabFromUrl(url: string): string {
+    if (url.startsWith('/overview')) return 'overview';
+    if (url.startsWith('/habits')) return 'habits';
+    if (url.startsWith('/profile')) return 'profile';
+    return 'today';
   }
 }

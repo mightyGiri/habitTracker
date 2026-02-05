@@ -1,7 +1,7 @@
 import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+import { HabitCheckComponent } from '../../shared/components/habit-check/habit-check.component';
 import { MatBottomSheet, MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,7 +15,7 @@ type DayOption = { dayNumber: number; dayLabel: string };
 @Component({
   selector: 'app-mobile-habits-view',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatCheckboxModule, MatBottomSheetModule, MatDialogModule, MatIconModule, DayCountPipe],
+  imports: [CommonModule, MatCardModule, MatBottomSheetModule, MatDialogModule, MatIconModule, DayCountPipe, HabitCheckComponent],
   template: `
     <section class="mobile-habits">
       <mat-card class="aesthetic-card mobile-card">
@@ -69,11 +69,10 @@ type DayOption = { dayNumber: number; dayLabel: string };
             </button>
             <div class="habit-actions" (click)="$event.stopPropagation()">
               <span class="habit-progress text-label">{{ getProgress(habit.id) }}%</span>
-              <mat-checkbox
+              <app-habit-check
                 [checked]="isChecked(selectedDayNumber, habit.id)"
-                (click)="$event.stopPropagation()"
-                (change)="toggleHabit(habit.id)">
-              </mat-checkbox>
+                (toggle)="toggleHabit(habit.id)">
+              </app-habit-check>
             </div>
           </div>
         </mat-card-content>
@@ -164,7 +163,11 @@ export class MobileHabitsViewComponent implements OnChanges {
   }
 
   getProgress(habitId: string): number {
-    return this.habitStore.getHabitCompletionPercent(habitId, this.year, this.monthIndex);
+    return this.habitStore.getMonthlyCompletionPercent(habitId, this.getMonthKey());
+  }
+
+  private getMonthKey(): string {
+    return `${this.year}-${String(this.monthIndex + 1).padStart(2, '0')}`;
   }
 
   trackByDay(index: number, day: DayOption): number {

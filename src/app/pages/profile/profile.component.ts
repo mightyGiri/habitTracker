@@ -1,8 +1,6 @@
-import { Component, OnDestroy, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnDestroy, OnInit, Inject, PLATFORM_ID, ChangeDetectorRef } from '@angular/core';
 
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-
-import { MatCardModule } from '@angular/material/card';
 
 import { MatIconModule } from '@angular/material/icon';
 
@@ -31,12 +29,14 @@ import { ImportConfirmDialogComponent, ImportConfirmDialogData } from '../../sha
 
 import { staggerFadeUp, noopAnimation } from '../../shared/list-animations';
 
-import { ProfileNameDialogComponent } from './profile-name-dialog.component';
+import { ProfileEditDialogComponent, ProfileEditResult } from './profile-edit-dialog.component';
 
 import { ProfileSettings, UserProfile } from '../../models/habit.model';
 import { ToggleComponent } from '../../shared/ui/toggle/toggle.component';
 
 import { getLevelProgress, LevelProgress } from '../../shared/level-utils';
+import { VersionService } from '../../services/version.service';
+import { NotificationService } from '../../services/notification.service';
 
 
 
@@ -62,8 +62,6 @@ type BeforeInstallPromptEvent = Event & {
 
     CommonModule,
 
-    MatCardModule,
-
     MatIconModule,
 
     MatFormFieldModule,
@@ -81,277 +79,172 @@ type BeforeInstallPromptEvent = Event & {
 
   animations: [staggerFadeUp || noopAnimation],
 
+  
   template: `
+    <div class=\"page-container profile-page\" [@.disabled]=\"reduceMotion\">
+      <h1 class=\"page-title\">Profile</h1>
 
-    <div class="page-container profile-page" [@.disabled]="reduceMotion">
+      <div class=\"profile-header\" [@staggerFadeUp]=\"animationKey\">
+        <div class=\"avatar-circle\">{{ initials }}</div>
+        <div class=\"profile-meta\">
+          <div class=\"profile-name\">{{ displayName }}</div>
+          <div class=\"profile-subtitle\">{{ profileSubtitle }}</div>
+        </div>
+        <button class=\"edit-pill\" type=\"button\" (click)=\"openEditProfileDialog()\">Edit</button>
+      </div>
 
-      <h1 class="text-title page-title">Profile</h1>
-
-
-
-      <mat-card class="aesthetic-card profile-section" [@staggerFadeUp]="animationKey">
-
-        <div class="section-header text-section">Account</div>
-
-        <mat-card-content class="card-body">
-
-          <div class="row-between">
-
-            <div>
-
-              <div class="text-body">Your name</div>
-
-              <div class="text-muted">{{ displayName }}</div>
-
-              <div class="text-muted helper-text">Good to see you here.</div>
-
-              <div class="text-muted level-row">Level {{ levelStats.level }} • {{ levelStats.totalDone }} total wins</div>
-              <div class="account-meta">
-
-                <span *ngIf="personaLabel" class="text-muted">Persona: {{ personaLabel }}</span>
-
-                <span *ngIf="goalLabel" class="text-muted">Goal: {{ goalLabel }}</span>
-
-                <span *ngIf="whyStatement" class="text-muted why-text">Why: {{ whyStatement }}</span>
-
-              </div>
-
-            </div>
-
-            <button class="btn btn-outline btn-sm edit-button" type="button" (click)="openNameDialog()">Edit</button>
-
+      <section class=\"settings-section\" [@staggerFadeUp]=\"animationKey\">
+        <div class=\"settings-list\">
+          <div class=\"settings-row\">
+            <div class=\"row-label\">Level</div>
+            <div class=\"row-value\">{{ levelStats.level }}</div>
           </div>
+          <div class=\"settings-row\">
+            <div class=\"row-label\">Total wins</div>
+            <div class=\"row-value\">{{ levelStats.totalDone }}</div>
+          </div>
+          <div class=\"settings-row\" *ngIf=\"personaLabel\">
+            <div class=\"row-label\">Persona</div>
+            <div class=\"row-value\">{{ personaLabel }}</div>
+          </div>
+          <div class=\"settings-row\" *ngIf=\"goalLabel\">
+            <div class=\"row-label\">Goal</div>
+            <div class=\"row-value\">{{ goalLabel }}</div>
+          </div>
+          <div class=\"settings-row\" *ngIf=\"whyStatement\">
+            <div class=\"row-label\">Why</div>
+            <div class=\"row-value row-wrap\">{{ whyStatement }}</div>
+          </div>
+        </div>
+      </section>
 
-        </mat-card-content>
-
-      </mat-card>
-
-
-
-      <mat-card class="aesthetic-card profile-section" [@staggerFadeUp]="animationKey">
-
-        <button class="section-toggle" type="button" (click)="dataOpen = !dataOpen">
-
-          <span class="text-section">Data & Backup</span>
-
+      <section class=\"section-block\" [@staggerFadeUp]=\"animationKey\">
+        <button class=\"section-toggle\" type=\"button\" (click)=\"dataOpen = !dataOpen\">
+          <span class=\"text-section\">Data & Backup</span>
           <mat-icon>{{ dataOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
-
         </button>
-
-        <mat-card-content class="card-body" *ngIf="dataOpen">
-
-          <div class="section-helper text-muted">Offline-first. Export a backup anytime.</div>
-
-          <div class="data-actions">
-
-            <button class="btn btn-outline btn-sm" type="button" (click)="exportJson()">Export backup (JSON)</button>
-
-            <button class="btn btn-outline btn-sm" type="button" (click)="triggerImportJson(importInput)">Restore backup (JSON)</button>
-
-            <button class="btn btn-outline btn-sm" type="button" (click)="exportCsv()">Export as CSV</button>
-
-            <button class="btn btn-outline btn-sm" type="button" (click)="exportXlsx()" [disabled]="exportingXlsx">
-
+        <div class=\"section-body\" *ngIf=\"dataOpen\">
+          <div class=\"section-helper text-muted\">Offline-first. Export a backup anytime.</div>
+          <div class=\"data-actions\">
+            <button class=\"btn btn-outline btn-sm\" type=\"button\" (click)=\"exportJson()\">Export backup (JSON)</button>
+            <button class=\"btn btn-outline btn-sm\" type=\"button\" (click)=\"triggerImportJson(importInput)\">Restore backup (JSON)</button>
+            <button class=\"btn btn-outline btn-sm\" type=\"button\" (click)=\"exportCsv()\">Export as CSV</button>
+            <button class=\"btn btn-outline btn-sm\" type=\"button\" (click)=\"exportXlsx()\" [disabled]=\"exportingXlsx\">
               {{ exportingXlsx ? 'Exporting...' : 'Export as Excel' }}
-
             </button>
-
           </div>
-
           <input
-
             #importInput
-
-            type="file"
-
+            type=\"file\"
             hidden
+            class=\"visually-hidden\"
+            accept=\".json,application/json\"
+            (change)=\"onImportJson($event)\">
+        </div>
+      </section>
 
-            class="visually-hidden"
-
-            accept=".json,application/json"
-
-            (change)="onImportJson($event)">
-
-        </mat-card-content>
-
-      </mat-card>
-
-
-
-      <mat-card class="aesthetic-card profile-section" [@staggerFadeUp]="animationKey">
-
-        <button class="section-toggle" type="button" (click)="personalizationOpen = !personalizationOpen">
-
-          <span class="text-section">Personalization</span>
-
+      <section class=\"section-block\" [@staggerFadeUp]=\"animationKey\">
+        <button class=\"section-toggle\" type=\"button\" (click)=\"personalizationOpen = !personalizationOpen\">
+          <span class=\"text-section\">Personalization</span>
           <mat-icon>{{ personalizationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
-
         </button>
-
-        <mat-card-content class="card-body" *ngIf="personalizationOpen">
-
-          <div class="section-helper text-muted">Optional. Focus on habits first.</div>
-
-          <div class="field-grid">
-
-            <div class="control-group">
-
-              <mat-form-field appearance="fill" class="appearance-field">
-
+        <div class=\"section-body\" *ngIf=\"personalizationOpen\">
+          <div class=\"section-helper text-muted\">Optional. Focus on habits first.</div>
+          <div class=\"field-grid\">
+            <div class=\"control-group\">
+              <mat-form-field appearance=\"fill\" class=\"appearance-field\">
                 <mat-label>Theme</mat-label>
-
-                <mat-select [value]="themeMode" (selectionChange)="updateThemeMode($event.value)">
-
-                  <mat-option value="dark">Dark</mat-option>
-
-                  <mat-option value="light">Light</mat-option>
-
+                <mat-select [value]=\"themeMode\" (selectionChange)=\"updateThemeMode($event.value)\">
+                  <mat-option value=\"dark\">Dark</mat-option>
+                  <mat-option value=\"light\">Light</mat-option>
                 </mat-select>
-
               </mat-form-field>
-
             </div>
-
-            <div class="control-group">
-
-              <div class="compact-label text-label">
-
+            <div class=\"control-group\">
+              <div class=\"compact-label text-label\">
                 Font size: {{ fontSizeLabel }}
-
               </div>
-
               <input
-
-                type="range"
-
-                min="12"
-
-                max="18"
-
-                step="1"
-
-                class="font-slider"
-
-                [value]="fontSizePx"
-
-                (input)="setFontSizeFromRange($event)">
-
+                type=\"range\"
+                min=\"12\"
+                max=\"18\"
+                step=\"1\"
+                class=\"font-slider\"
+                [value]=\"fontSizePx\"
+                (input)=\"setFontSizeFromRange($event)\">
             </div>
-            <div class="control-group">
-              <div class="compact-label text-label">Notifications</div>
-              <app-toggle [checked]="notificationsEnabled" (checkedChange)="toggleNotifications($event)"></app-toggle>
+            <div class=\"control-group\">
+              <div class=\"compact-label text-label\">Notifications</div>
+              <app-toggle [checked]=\"notificationsEnabled\" (checkedChange)=\"toggleNotifications($event)\"></app-toggle>
             </div>
           </div>
-
-          <div class="font-family-row">
-
-            <mat-form-field appearance="fill" class="appearance-field">
-
+          <div class=\"font-family-row\">
+            <mat-form-field appearance=\"fill\" class=\"appearance-field\">
               <mat-label>Font Family</mat-label>
-
-              <mat-select [value]="fontFamily" (selectionChange)="updateFontFamily($event.value)">
-
-                <mat-option value="system">System UI</mat-option>
-
-                <mat-option value="inter">Inter</mat-option>
-
-                <mat-option value="roboto">Roboto</mat-option>
-
-                <mat-option value="poppins">Poppins</mat-option>
-
-                <mat-option value="montserrat">Montserrat</mat-option>
-
+              <mat-select [value]=\"fontFamily\" (selectionChange)=\"updateFontFamily($event.value)\">
+                <mat-option value=\"system\">System UI</mat-option>
+                <mat-option value=\"inter\">Inter</mat-option>
+                <mat-option value=\"roboto\">Roboto</mat-option>
+                <mat-option value=\"poppins\">Poppins</mat-option>
+                <mat-option value=\"montserrat\">Montserrat</mat-option>
               </mat-select>
-
             </mat-form-field>
-
           </div>
 
-
-
-          <div class="accent-row">
-
-            <div class="text-body">Accent</div>
-
-            <div class="accent-swatches">
-
+          <div class=\"accent-row\">
+            <div class=\"text-body\">Accent</div>
+            <div class=\"accent-swatches\">
               <button
-
-                class="accent-swatch"
-
-                *ngFor="let preset of accentPresets"
-
-                [style.background]="preset.color"
-
-                [class.is-active]="isAccentPresetActive(preset.id)"
-
-                (click)="setAccentPreset(preset.id)"
-
-                [attr.aria-label]="preset.name">
-
-                <span class="swatch-check" *ngIf="isAccentPresetActive(preset.id)">&#x2713;</span>
-
+                class=\"accent-swatch\"
+                *ngFor=\"let preset of accentPresets\"
+                [style.background]=\"preset.color\"
+                [class.is-active]=\"isAccentPresetActive(preset.id)\"
+                (click)=\"setAccentPreset(preset.id)\"
+                [attr.aria-label]=\"preset.name\">
+                <span class=\"swatch-check\" *ngIf=\"isAccentPresetActive(preset.id)\">&#x2713;</span>
               </button>
-
             </div>
-
-            <div class="custom-accent" [class.is-active]="accent.type === 'custom'">
-
-              <label class="text-label">Custom</label>
-
-              <input type="color" [value]="customAccent" (input)="setCustomAccent($event)">
-
+            <div class=\"custom-accent\" [class.is-active]=\"accent.type === 'custom'\">
+              <label class=\"text-label\">Custom</label>
+              <input type=\"color\" [value]=\"customAccent\" (input)=\"setCustomAccent($event)\">
             </div>
-
           </div>
-
-        </mat-card-content>
-
-      </mat-card>
-
-
-
-      <mat-card class="aesthetic-card profile-section" [@staggerFadeUp]="animationKey">
-
-        <div class="section-header text-section">Help & About</div>
-
-        <mat-card-content class="card-body">
-
-          <div class="meta-grid">
-
-            <div class="meta-label">Built by</div>
-
-            <div class="meta-value">Giri</div>
-
-            <div class="meta-label">Version</div>
-
-            <div class="meta-value">{{ appVersion }}</div>
-
-            <div class="meta-label">Privacy</div>
-
-            <div class="meta-value meta-privacy">Offline-first. No cloud. No tracking.</div>
-
-            <div class="meta-label">Links</div>
-
-            <div class="meta-value">
-
-              <div class="help-links">
-                <button class="link-button" type="button" routerLink="/about">About app</button>
-                <button class="link-button" type="button" routerLink="/terms">Terms</button>
-                <button class="link-button" type="button" routerLink="/privacy">Privacy</button>
-              </div>
-
+        </div>
+      </section>
+      <section class="section-block" [@staggerFadeUp]="animationKey">
+        <button class="section-toggle" type="button" (click)="helpOpen = !helpOpen">
+          <span class="text-section">Help & About</span>
+          <mat-icon>{{ helpOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </button>
+        <div class="section-body" *ngIf="helpOpen">
+          <div class="settings-list">
+            <div class="settings-row">
+              <div class="row-label">Built by</div>
+              <div class="row-value">Giri</div>
             </div>
-
+            <div class="settings-row">
+              <div class="row-label">Version</div>
+              <div class="row-value">v{{ version$ | async }}<span *ngIf="build$ | async as build"> · Build {{ build }}</span></div>
+            </div>
+            <div class="settings-row">
+              <div class="row-label">Privacy</div>
+              <div class="row-value row-wrap">Beta version. Offline-first. No cloud. No tracking.</div>
+            </div>
           </div>
+          <div class="link-list">
+            <button class="link" type="button" routerLink="/about">About app</button>
+            <button class="link" type="button" routerLink="/terms">Terms</button>
+            <button class="link" type="button" routerLink="/privacy">Privacy</button>
+          </div>
+        </div>
+      </section>
 
-        </mat-card-content>
 
-      </mat-card>
 
     </div>
 
   `,
+
 
   styleUrls: ['./profile.component.sass']
 
@@ -373,10 +266,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   fontFamily: FontFamilyId = 'system';
   notificationsEnabled = false;
+  notificationsSupported = false;
+  notificationsLoading = false;
 
   customAccent = '#f27a2a';
 
-  appVersion = '0.1.0';
+  readonly version$;
+  readonly build$;
 
   canInstall = false;
 
@@ -397,12 +293,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
   dataOpen = false;
 
   personalizationOpen = false;
+  helpOpen = false;
 
   accentPresets: AccentPreset[] = [
 
     { id: 'orange', name: 'Orange', color: '#f27a2a' },
-
-    { id: 'purple', name: 'Purple', color: '#7b68ee' },
 
     { id: 'green', name: 'Green', color: '#3fb57a' },
 
@@ -415,8 +310,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
     { id: 'red', name: 'Red', color: '#ef4444' },
 
     { id: 'yellow', name: 'Yellow', color: '#f4b23a' },
-
-    { id: 'cyan', name: 'Cyan', color: '#22d3ee' },
 
     { id: 'violet', name: 'Violet', color: '#8b5cf6' }
 
@@ -446,9 +339,18 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
     private themeService: ThemeService,
 
+    private versionService: VersionService,
+
+    private notificationService: NotificationService,
+
+    private cdr: ChangeDetectorRef,
+
     @Inject(PLATFORM_ID) private platformId: Object
 
-  ) {}
+  ) {
+    this.version$ = this.versionService.getVersion$();
+    this.build$ = this.versionService.getBuild$();
+  }
 
 
 
@@ -482,7 +384,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
           this.customAccent = settings.accent.value;
 
         }
-
+        this.notificationsSupported = this.notificationService.isSupported();
+        if (!this.notificationsSupported) {
+          this.notificationsEnabled = false;
+          this.settingsService.updateSettings({ notificationsEnabled: false });
+        }
       })
 
     );
@@ -659,32 +565,60 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
 
 
-  openNameDialog(): void {
-
-    const dialogRef = this.dialog.open<ProfileNameDialogComponent, { displayName: string }, string | null>(
-
-      ProfileNameDialogComponent,
-
-      {
-
-        data: { displayName: this.displayName }
-
-      }
-
-    );
-
-    dialogRef.afterClosed().subscribe(result => {
-
-      if (result === null) {
-
-        return;
-
-      }
-
-      this.habitStore.setProfile({ ...this.profile, displayName: result });
-
+  openEditProfileDialog(): void {
+    const dialogRef = this.dialog.open<ProfileEditDialogComponent, {
+      displayName: string;
+      persona: string;
+      goal: string;
+      why: string;
+    }, ProfileEditResult | null>(ProfileEditDialogComponent, {
+      data: {
+        displayName: this.displayName,
+        persona: this.personaLabel,
+        goal: this.goalLabel,
+        why: this.whyStatement
+      },
+      panelClass: ['profile-edit-modal']
     });
 
+    dialogRef.afterClosed().subscribe(result => {
+      if (!result) {
+        return;
+      }
+      const displayName = result.displayName.trim();
+      const persona = result.persona.trim();
+      const goal = result.goal.trim();
+      const why = result.why.trim();
+
+      this.displayName = displayName || this.displayName;
+      this.personaLabel = persona || '';
+      this.goalLabel = goal || '';
+      this.whyStatement = why || '';
+
+      this.profile = { ...this.profile, displayName: displayName || undefined };
+      const baseProfile = this.userProfile ?? { name: 'Guest', createdAt: Date.now() };
+      this.userProfile = {
+        ...baseProfile,
+        name: displayName || baseProfile.name || 'Guest',
+        persona: persona || undefined,
+        primaryGoal: goal || undefined,
+        whyStatement: why || undefined,
+        why: why || undefined
+      };
+
+      this.habitStore.setProfile(this.profile);
+
+      const existing = this.userProfile;
+      this.habitStore.setUserProfile({
+        name: displayName || existing?.name || 'Guest',
+        persona: persona || undefined,
+        primaryGoal: goal || undefined,
+        whyStatement: why || undefined,
+        why: why || undefined,
+        createdAt: existing?.createdAt ?? Date.now()
+      });
+      this.cdr.detectChanges();
+    });
   }
 
 
@@ -907,8 +841,59 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
 
 
-  toggleNotifications(enabled: boolean): void {
-    this.settingsService.updateSettings({ notificationsEnabled: enabled });
+  async toggleNotifications(enabled: boolean): Promise<void> {
+    if (this.notificationsLoading) {
+      return;
+    }
+    this.notificationsSupported = this.notificationService.isSupported();
+    if (!this.notificationsSupported) {
+      this.notificationsEnabled = false;
+      this.settingsService.updateSettings({ notificationsEnabled: false });
+      this.snackBar.open('Notifications require HTTPS and a supported browser.', 'Close', { duration: 2500 });
+      return;
+    }
+    this.notificationsLoading = true;
+    if (enabled) {
+      await this.notificationService.setEnabled(true);
+      await this.notificationService.enableForToday();
+      const error = this.notificationService.getLastError();
+      if (error) {
+        this.notificationsEnabled = false;
+        this.settingsService.updateSettings({ notificationsEnabled: false });
+        const message = error === 'denied'
+          ? 'Permission denied. Enable from browser settings.'
+          : 'Notifications not supported on this device.';
+        this.snackBar.open(message, 'Close', { duration: 3000 });
+      } else {
+        this.notificationsEnabled = true;
+        this.snackBar.open('Notifications enabled ✅', 'Close', { duration: 2000 });
+      }
+    } else {
+      await this.notificationService.setEnabled(false);
+      await this.notificationService.disableAll();
+      this.notificationsEnabled = false;
+      this.snackBar.open('Notifications off', 'Close', { duration: 1500 });
+    }
+    this.notificationsLoading = false;
+    this.cdr.markForCheck();
+  }
+
+  get initials(): string {
+    const name = (this.displayName || 'Player').trim();
+    if (!name) {
+      return 'P';
+    }
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) {
+      return parts[0].slice(0, 1).toUpperCase();
+    }
+    const first = parts[0].slice(0, 1);
+    const last = parts[parts.length - 1].slice(0, 1);
+    return `${first}${last}`.toUpperCase();
+  }
+
+  get profileSubtitle(): string {
+    return this.personaLabel || this.goalLabel || this.whyStatement || 'Build consistency';
   }
 
   private resolveDisplayName(profile: ProfileSettings, userProfile: UserProfile | null): string {

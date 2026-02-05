@@ -5,6 +5,13 @@ export interface Habit {
   frequencyType?: 'daily' | 'weekly';
   weeklyTarget?: number;
   minimumVersion?: string;
+  timerEnabled?: boolean;
+  timerSeconds?: number;
+  timerAutoComplete?: boolean;
+  type?: 'check' | 'timer';
+  targetSeconds?: number;
+  allowManualComplete?: boolean;
+  timerCompleted?: boolean;
   color?: string;
   createdAt: number;
   isActive: boolean;
@@ -37,6 +44,16 @@ export interface HabitSkips {
   [dateKey: string]: Record<string, HabitSkip>; // "YYYY-MM-DD" -> habitId -> skip meta
 }
 
+export interface TimerState {
+  elapsedSeconds: number;
+  running: boolean;
+  lastStartTimestamp?: number;
+}
+
+export interface TimerStateMap {
+  [dateKey: string]: Record<string, TimerState>;
+}
+
 export interface UserProfile {
   name: string;
   persona?: string;
@@ -49,6 +66,8 @@ export interface UserProfile {
 
 export interface ProfileSettings {
   displayName?: string;
+  dailyWinTarget?: number;
+  requiredHabitsCount?: number;
 }
 
 export interface MonthlyTotals {

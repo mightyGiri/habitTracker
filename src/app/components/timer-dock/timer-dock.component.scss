@@ -1,0 +1,49 @@
+.timer-dock {
+  margin: 14px 12px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(20, 30, 55, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(120, 160, 255, 0.25);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  color: var(--theme-text);
+}
+
+.time {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.status-line {
+  font-size: 0.9rem;
+  color: var(--theme-text-muted);
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.timer-dock ion-button {
+  height: 36px;
+  --border-radius: 14px;
+}
+
+.timer-dock .btn {
+  height: 36px;
+  border-radius: 14px;
+}

@@ -10,10 +10,10 @@ import { ThemeService } from '../../services/theme.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="splash page-container" [class.reduce-motion]="reduceMotion" [class.is-fading]="isFadingOut">
+    <div class="splash" [class.reduce-motion]="reduceMotion" [class.is-fading]="isFadingOut">
       <div class="splash-inner">
         <img class="splash-icon" src="icons/app_icon_192x192.png" alt="Level-Up logo">
-        <div class="splash-sub">A 15-second daily level-up game</div>
+        <div class="splash-sub">Level Up every freaking day</div>
       </div>
     </div>
   `,
@@ -36,8 +36,7 @@ export class SplashComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    const onboardingComplete = this.habitStore.onboardingCompletedSync();
-    const delay = onboardingComplete ? 1200 : 3000;
+    const delay = 3000;
     this.delayTimer = setTimeout(() => {
       this.delayDone = true;
       this.tryNavigate();
@@ -75,9 +74,8 @@ export class SplashComponent implements OnInit, OnDestroy {
     this.hasNavigated = true;
     this.isFadingOut = true;
     this.fadeTimer = setTimeout(() => {
-      const next = this.habitStore.onboardingCompletedSync() ? '/today' : '/getting-started';
-      void this.router.navigate([next]);
-    }, this.reduceMotion ? 0 : 400);
+    void this.router.navigate(['/today']);
+  }, this.reduceMotion ? 0 : 400);
   }
 }
 

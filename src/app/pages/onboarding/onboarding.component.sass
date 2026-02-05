@@ -35,6 +35,36 @@
 .intro-list li
   padding: 6px 2px
 
+.theme-grid
+  display: grid
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr))
+  gap: 12px
+
+.theme-card
+  border: 1px solid var(--border-subtle)
+  background: rgba(10, 14, 26, 0.6)
+  color: var(--text-1)
+  padding: 14px
+  border-radius: var(--radius-md)
+  text-align: left
+  cursor: pointer
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease
+
+  &:hover
+    transform: translateY(-1px)
+    border-color: var(--app-accent)
+
+  &.is-active
+    border-color: var(--app-accent)
+    box-shadow: 0 0 0 1px var(--accent-35) inset, 0 0 16px var(--accent-20)
+
+.theme-card-title
+  font-weight: 700
+  margin-bottom: 4px
+
+.theme-card-sub
+  font-size: 0.85rem
+
 .final-step
   min-height: calc(100vh - 120px)
   align-content: center
