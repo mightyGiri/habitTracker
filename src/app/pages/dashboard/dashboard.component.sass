@@ -4,10 +4,29 @@
   justify-content: space-between
   margin-bottom: var(--space-2)
   padding-top: env(safe-area-inset-top, 32px)
+  padding-bottom: 14px
+  padding-left: 14px
+  padding-right: 14px
   gap: var(--space-2)
   position: relative
-  border: 1px solid color-mix(in oklab, var(--system-border) 60%, transparent)
-  box-shadow: var(--system-shadow-deep), inset 0 0 12px rgba(0, 0, 0, 0.35)
+  border: 1px solid color-mix(in oklab, var(--system-border) 75%, transparent)
+  background: linear-gradient(145deg, rgba(8, 12, 22, 0.78), rgba(10, 16, 30, 0.62))
+  box-shadow: 0 0 22px color-mix(in oklab, var(--system-glow) 28%, transparent), var(--system-shadow-deep), inset 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 0 18px rgba(0, 0, 0, 0.45)
+  backdrop-filter: blur(12px)
+  -webkit-backdrop-filter: blur(12px)
+  overflow: hidden
+
+  &::after
+    content: ''
+    position: absolute
+    inset: 0
+    background: radial-gradient(circle at 20% 20%, rgba(6, 8, 14, 0.2), transparent 55%), linear-gradient(180deg, rgba(0, 0, 0, 0.25), transparent 60%)
+    pointer-events: none
+    z-index: 0
+
+  > *
+    position: relative
+    z-index: 1
 
   &.perfect-day
     outline: 1px solid var(--theme-accent)
@@ -31,21 +50,27 @@
     cursor: pointer
 
   .title-name
-    font-size: 1.2rem
-    font-weight: 700
+    font-size: 1.25rem
+    font-weight: 800
     line-height: 1.1
+    color: #f2f6ff
+    text-shadow: 0 0 10px rgba(140, 170, 255, 0.25), 0 0 18px rgba(140, 170, 255, 0.12)
 
   .today-date
     margin-top: 2px
-    opacity: 0.8
+    opacity: 0.95
+    color: #e8efff
+    text-shadow: 0 0 8px rgba(120, 150, 255, 0.2)
 
 .today-subtitle
   font-style: italic
   margin-top: 4px
-  opacity: 0.85
+  opacity: 0.92
+  color: #e2eaff
+  text-shadow: 0 0 8px rgba(120, 150, 255, 0.18)
 
 .quote-line
-  opacity: 0.85
+  opacity: 0.92
 
 .today-status
   margin-top: 6px
@@ -55,6 +80,8 @@
   display: grid
   gap: 4px
   max-width: 320px
+  color: #e8efff
+  text-shadow: 0 0 8px rgba(120, 150, 255, 0.16)
 
   &.level-up-glow
     animation: levelUpGlow 2s ease
@@ -66,12 +93,12 @@
   align-items: center
   padding: 4px 10px
   border-radius: 999px
-  border: 1px solid color-mix(in oklab, var(--system-border) 65%, transparent)
-  background: color-mix(in oklab, var(--system-surface-2) 70%, transparent)
-  color: var(--theme-text)
-  font-size: 0.85rem
+  border: 1px solid color-mix(in oklab, var(--system-border) 80%, transparent)
+  background: rgba(8, 12, 22, 0.75)
+  color: #ffffff
+  font-size: 1.1rem
   font-weight: 700
-  box-shadow: 0 0 12px var(--system-glow-soft)
+  box-shadow: 0 0 16px var(--system-glow-soft), inset 0 0 0 1px rgba(255, 255, 255, 0.08)
 
   &.lv-celebrate
     box-shadow: 0 0 18px var(--theme-glow)
@@ -85,6 +112,8 @@
 
 .level-progress
   max-width: 200px
+  border-radius: 999px
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08)
 
   &.progress-near
     box-shadow: 0 0 12px color-mix(in oklab, var(--theme-success) 45%, transparent)
@@ -100,6 +129,10 @@
   align-items: center
   gap: 8px
 
+.glow-white
+  color: #ffffff
+  text-shadow: 0 0 8px color-mix(in oklab, var(--system-glow) 55%, transparent), 0 0 18px color-mix(in oklab, var(--system-glow) 28%, transparent)
+
 .primary-chip
   box-shadow: 0 0 18px var(--system-glow-soft), inset 0 0 0 1px color-mix(in oklab, white 12%, transparent)
   border-color: color-mix(in oklab, var(--system-border) 70%, transparent)
@@ -110,12 +143,12 @@
   gap: 6px
   padding: 6px 12px
   border-radius: 999px
-  border: 1px solid color-mix(in oklab, var(--system-border) 55%, transparent)
-  background: linear-gradient(135deg, color-mix(in oklab, var(--system-glow) 22%, transparent), color-mix(in oklab, var(--theme-success) 20%, transparent))
-  color: var(--theme-text)
+  border: 1px solid color-mix(in oklab, var(--system-border) 75%, transparent)
+  background: linear-gradient(135deg, rgba(10, 14, 26, 0.85), color-mix(in oklab, var(--theme-success) 26%, transparent))
+  color: #ffffff
   font-size: 0.8rem
   font-weight: 600
-  box-shadow: 0 0 14px var(--system-glow-soft), inset 0 0 0 1px color-mix(in oklab, white 8%, transparent)
+  box-shadow: 0 0 18px var(--system-glow-soft), inset 0 0 0 1px rgba(255, 255, 255, 0.08)
   text-transform: uppercase
   letter-spacing: 0.08em
 
@@ -125,9 +158,9 @@
 .streak-badge
   padding: 6px 10px
   border-radius: 999px
-  border: 1px solid color-mix(in oklab, var(--system-border) 55%, transparent)
-  background: color-mix(in oklab, var(--system-surface-2) 70%, transparent)
-  box-shadow: 0 0 12px var(--system-glow-soft), inset 0 0 0 1px color-mix(in oklab, white 8%, transparent)
+  border: 1px solid color-mix(in oklab, var(--system-border) 75%, transparent)
+  background: rgba(10, 14, 26, 0.75)
+  box-shadow: 0 0 18px var(--system-glow-soft), inset 0 0 0 1px rgba(255, 255, 255, 0.08)
   display: inline-flex
   align-items: center
 
@@ -144,7 +177,7 @@
   gap: 6px
   font-size: 1rem
   font-weight: 700
-  color: var(--theme-text)
+  color: #ffffff
 
 .status-row
   margin-top: 8px
@@ -316,13 +349,18 @@
 .system-modal-overlay
   position: fixed
   inset: 0
-  display: flex
-  align-items: center
-  justify-content: center
-  padding: 24px
+  width: 100vw
+  height: 100vh
+  height: 100dvh
+  display: grid
+  place-items: center
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 24px calc(env(safe-area-inset-bottom, 0px) + 16px)
   background: rgba(6, 8, 14, 0.62)
   backdrop-filter: blur(6px)
-  z-index: 2000
+  z-index: 3000
+  transform: none
+  will-change: opacity
+  isolation: isolate
   animation: systemOverlayFade 3s ease both
 
 .system-modal-card
@@ -332,7 +370,7 @@
   padding: 22px 26px 24px
   border-radius: 18px
   border: 1px solid color-mix(in oklab, var(--system-border) 70%, transparent)
-  background: rgba(10, 14, 26, 0.72)
+  background: rgba(8, 10, 18, 0.75)
   color: var(--theme-text)
   text-align: center
   box-shadow: var(--system-shadow-deep), 0 0 22px var(--system-glow-soft), inset 0 0 18px rgba(0, 0, 0, 0.45)
@@ -361,32 +399,50 @@
   position: absolute
   top: 10px
   right: 10px
-  width: 32px
-  height: 32px
+  width: 44px
+  height: 44px
   padding: 0
   font-size: 14px
+  color: #ffffff
+  box-shadow: 0 0 12px rgba(160, 120, 255, 0.25)
+
+  &:hover
+    box-shadow: 0 0 18px rgba(160, 120, 255, 0.35)
+
+  &:active
+    transform: translateY(1px)
+    box-shadow: 0 0 10px rgba(160, 120, 255, 0.2)
 
 .system-modal-system
   font-size: 0.7rem
   letter-spacing: 0.4em
   font-weight: 600
   text-transform: uppercase
-  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
+  color: #ffffff
 
 .system-modal-title
   margin-top: 6px
   font-size: 1.6rem
-  font-weight: 800
+  font-weight: 900
   letter-spacing: 0.12em
   text-transform: uppercase
-  color: var(--theme-text)
+  color: #ffffff
 
 .system-modal-level
   margin-top: 10px
   font-size: 1rem
   font-weight: 600
   letter-spacing: 0.08em
-  color: color-mix(in oklab, var(--system-glow) 70%, white 20%)
+  color: #ffffff
+
+.system-label
+  text-shadow: 0 0 8px rgba(160, 120, 255, 0.35), 0 0 18px rgba(160, 120, 255, 0.18)
+
+.system-title
+  text-shadow: 0 0 10px rgba(160, 120, 255, 0.45), 0 0 24px rgba(160, 120, 255, 0.22)
+
+.system-subtitle
+  text-shadow: 0 0 8px rgba(160, 120, 255, 0.3), 0 0 18px rgba(160, 120, 255, 0.16)
 
 .system-modal-particles
   position: absolute

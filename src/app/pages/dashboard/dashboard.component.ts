@@ -47,30 +47,49 @@ type ConfettiPiece = {
   imports: [CommonModule, MatCardModule, MatIconModule, MatSnackBarModule, MatDialogModule, DayCountPipe, ProgressBarComponent, HabitCheckComponent],
   animations: [staggerFadeUp || noopAnimation],
   template: `
+    <div class="system-modal-overlay" *ngIf="showLevelUpModal">
+      <div class="system-modal-card" role="dialog" aria-live="polite" aria-label="Level up">
+        <button class="system-modal-close glass-btn glass-btn--ghost" type="button" aria-label="Dismiss level up" (click)="dismissLevelUpModal()">
+          &#x2715;
+        </button>
+        <div class="system-modal-system system-label">SYSTEM</div>
+        <div class="system-modal-title system-title">LEVEL UP</div>
+        <div class="system-modal-level system-subtitle">Lv {{ levelUpFrom }} &#x2192; Lv {{ levelUpTo }}</div>
+        <div class="system-modal-particles" aria-hidden="true">
+          <span class="system-modal-spark"></span>
+          <span class="system-modal-spark"></span>
+          <span class="system-modal-spark"></span>
+          <span class="system-modal-spark"></span>
+          <span class="system-modal-spark"></span>
+          <span class="system-modal-spark"></span>
+        </div>
+      </div>
+    </div>
+
     <div class="page-container system-vignette-layer" [@.disabled]="reduceMotion" [class.reduce-motion]="reduceMotion">
       <ng-container *ngIf="ready$ | async; else loading">
       <section class="today-header arcane-card" [class.perfect-day]="isPerfectTodaySelected">
         <div>
           <button class="title-link" type="button" (click)="goToProfile()">
             <span class="title-name">{{ userName }}</span>
-            <span class="level-badge arcane-pill glass-pill primary-chip" [class.lv-celebrate]="headerLevelUpCelebrating">Lv {{ levelStats.level }}</span>
+            <span class="level-badge arcane-pill glass-pill primary-chip glow-white" [class.lv-celebrate]="headerLevelUpCelebrating">Lv {{ levelStats.level }}</span>
           </button>
           <div class="text-muted today-date">
             {{ isEditingToday ? todayLabel : ('Editing: ' + todayLabel) }}
           </div>
           <div class="text-muted today-subtitle quote-line">{{ dailyMotivation }}</div>
           <div class="next-level-block" [class.level-up-glow]="levelUpAnimating">
-            <div class="level-next text-muted">{{ nextLevelLabel }}</div>
+            <div class="level-next text-muted" [class.glow-white]="nextLevelRemaining === 0">{{ nextLevelLabel }}</div>
             <div class="level-progress" [class.progress-near]="displayedHeaderProgress >= 0.9">
               <app-progress-bar [value]="displayedHeaderProgress" [height]="4"></app-progress-bar>
             </div>
           </div>
 
           <div class="status-row" *ngIf="selectedIsPerfect || selectedIsWon || streakCount > 0">
-            <div class="perfect-chip arcane-pill glass-pill primary-chip" *ngIf="selectedIsPerfect" [class.celebrate]="celebrateBadge">Perfect Day &#x1F525;</div>
+            <div class="perfect-chip arcane-pill glass-pill primary-chip" *ngIf="selectedIsPerfect" [class.celebrate]="celebrateBadge" [class.glow-white]="selectedIsPerfect || celebrateBadge">Perfect Day &#x1F525;</div>
             <div class="perfect-chip arcane-pill glass-pill" *ngIf="selectedIsWon && !selectedIsPerfect">Won Today &#x1F525;</div>
-            <div class="streak-badge arcane-pill glass-pill" *ngIf="streakCount > 0" [class.streak-pop]="streakCelebrating" [class.streak-fire]="streakFireAnimating">
-              <div class="streak-count">&#x1F525; {{ streakCount | dayCount }}</div>
+            <div class="streak-badge arcane-pill glass-pill glow-white" *ngIf="streakCount > 0" [class.streak-pop]="streakCelebrating" [class.streak-fire]="streakFireAnimating">
+              <div class="streak-count">&#x1F525; {{ streakCount | dayCount }} in a row </div>
             </div>
           </div>
         </div>
@@ -123,25 +142,6 @@ type ConfettiPiece = {
       </div>
       <div class="hero-progress">
         <app-progress-bar [value]="selectedSummary.percentHandled / 100" [height]="6"></app-progress-bar>
-      </div>
-
-      <div class="system-modal-overlay" *ngIf="showLevelUpModal">
-        <div class="system-modal-card" role="dialog" aria-live="polite" aria-label="Level up">
-          <button class="system-modal-close glass-btn glass-btn--ghost" type="button" aria-label="Dismiss level up" (click)="dismissLevelUpModal()">
-            &#x2715;
-          </button>
-          <div class="system-modal-system">SYSTEM</div>
-          <div class="system-modal-title">LEVEL UP</div>
-          <div class="system-modal-level">Lv {{ levelUpFrom }} &#x2192; Lv {{ levelUpTo }}</div>
-          <div class="system-modal-particles" aria-hidden="true">
-            <span class="system-modal-spark"></span>
-            <span class="system-modal-spark"></span>
-            <span class="system-modal-spark"></span>
-            <span class="system-modal-spark"></span>
-            <span class="system-modal-spark"></span>
-            <span class="system-modal-spark"></span>
-          </div>
-        </div>
       </div>
 
       <mat-card class="aesthetic-card today-list-card" [@staggerFadeUp]="animationKey" #todaySection [class.perfect-day]="isPerfectTodaySelected" [class.finish-moment]="finishMomentActive">
@@ -485,7 +485,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
           this.levelUpModalTimer = setTimeout(() => {
             this.showLevelUpModal = false;
             this.cdr.markForCheck();
-          }, 3000);
+          }, 5000);
           this.cdr.markForCheck();
           this.lastSeenLevel = newLevel;
         } else {
@@ -1203,7 +1203,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.levelUpAnimating = true;
     this.levelUpTimer = setTimeout(() => {
       this.levelUpAnimating = false;
-    }, 2000);
+    }, 8000);
   }
 
   dismissLevelUpModal(): void {
