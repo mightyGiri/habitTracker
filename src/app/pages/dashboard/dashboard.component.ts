@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, Inj
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { ProgressBarComponent } from '../../shared/progress-bar.component';
+import { HabitCheckComponent } from '../../shared/components/habit-check/habit-check.component';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -17,7 +18,7 @@ import { getDailyMotivation } from '../../shared/daily-motivations';
 import { getLevelProgress, LevelProgress } from '../../shared/level-utils';
 import { plural } from '../../shared/plural';
 import { DayCountPipe } from '../../shared/day-count.pipe';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -43,65 +44,63 @@ type ConfettiPiece = {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatIconModule, MatSnackBarModule, MatDialogModule, DayCountPipe, ProgressBarComponent],
+  imports: [CommonModule, MatCardModule, MatIconModule, MatSnackBarModule, MatDialogModule, DayCountPipe, ProgressBarComponent, HabitCheckComponent],
   animations: [staggerFadeUp || noopAnimation],
   template: `
-    <div class="page-container" [@.disabled]="reduceMotion" [class.reduce-motion]="reduceMotion">
+    <div class="page-container system-vignette-layer" [@.disabled]="reduceMotion" [class.reduce-motion]="reduceMotion">
       <ng-container *ngIf="ready$ | async; else loading">
-      <section class="today-header" [class.perfect-day]="isPerfectTodaySelected">
+      <section class="today-header arcane-card" [class.perfect-day]="isPerfectTodaySelected">
         <div>
-          <h1 class="text-title">Level-Up</h1>
+          <button class="title-link" type="button" (click)="goToProfile()">
+            <span class="title-name">{{ userName }}</span>
+            <span class="level-badge arcane-pill glass-pill primary-chip" [class.lv-celebrate]="headerLevelUpCelebrating">Lv {{ levelStats.level }}</span>
+          </button>
           <div class="text-muted today-date">
             {{ isEditingToday ? todayLabel : ('Editing: ' + todayLabel) }}
           </div>
-          <div class="text-muted today-subtitle">{{ dailyMotivation }}</div>
-          <div class="level-block" [class.level-up-glow]="levelUpAnimating">
-            <div class="level-badge">{{ levelBadgeText }}</div>
-            <div class="level-xp text-muted">{{ levelXpText }}</div>
-            <div class="level-next text-muted">XP progress to Level {{ levelStats.nextLevel }}</div>
-            <div class="level-progress">
-              <app-progress-bar [value]="levelStats.progressPercent" [height]="4"></app-progress-bar>
-            </div>
-            <div class="level-progress-text text-muted">
-              {{ levelStats.progressInLevel }}/{{ levelStats.requiredThisLevel }} XP in this level
+          <div class="text-muted today-subtitle quote-line">{{ dailyMotivation }}</div>
+          <div class="next-level-block" [class.level-up-glow]="levelUpAnimating">
+            <div class="level-next text-muted">{{ nextLevelLabel }}</div>
+            <div class="level-progress" [class.progress-near]="displayedHeaderProgress >= 0.9">
+              <app-progress-bar [value]="displayedHeaderProgress" [height]="4"></app-progress-bar>
             </div>
           </div>
 
           <div class="status-row" *ngIf="selectedIsPerfect || selectedIsWon || streakCount > 0">
-            <div class="perfect-chip" *ngIf="selectedIsPerfect" [class.celebrate]="celebrateBadge">Perfect Day &#x1F525;</div>
-            <div class="perfect-chip" *ngIf="selectedIsWon && !selectedIsPerfect">Won Today &#x1F525;</div>
-            <div class="streak-badge" *ngIf="streakCount > 0" [class.streak-pop]="streakCelebrating" [class.streak-fire]="streakFireAnimating">
+            <div class="perfect-chip arcane-pill glass-pill primary-chip" *ngIf="selectedIsPerfect" [class.celebrate]="celebrateBadge">Perfect Day &#x1F525;</div>
+            <div class="perfect-chip arcane-pill glass-pill" *ngIf="selectedIsWon && !selectedIsPerfect">Won Today &#x1F525;</div>
+            <div class="streak-badge arcane-pill glass-pill" *ngIf="streakCount > 0" [class.streak-pop]="streakCelebrating" [class.streak-fire]="streakFireAnimating">
               <div class="streak-count">&#x1F525; {{ streakCount | dayCount }}</div>
             </div>
           </div>
-          <div class="streak-hint text-muted" *ngIf="streakCount === 0">Start your level journey today</div>
         </div>
-        <div class="date-carousel">
-          <button class="carousel-arrow" type="button" aria-label="Previous week" (click)="shiftDateWindow(-7)">
+        <div class="date-carousel arcane-card arcane-card--tight" *ngIf="canUseDateCarousel">
+          <button class="carousel-arrow arcane-btn arcane-btn--ghost" type="button" aria-label="Previous week" (click)="shiftDateWindow(-7)">
             <mat-icon>chevron_left</mat-icon>
           </button>
           <div class="carousel-track" role="listbox" aria-label="Select day">
             <button
-              class="day-chip"
+              class="day-chip arcane-pill glass-pill"
               type="button"
               *ngFor="let chip of dateChips"
               [class.perfect-day]="chip.isPerfect"
               [class.is-selected]="isSameDate(chip.date, selectedDate)"
+              [class.arcane-pill--active]="isSameDate(chip.date, selectedDate)"
               (click)="setSelectedDate(chip.date)"
               [attr.aria-selected]="isSameDate(chip.date, selectedDate)">
               {{ chip.label }}
             </button>
           </div>
-          <button class="carousel-arrow" type="button" aria-label="Next week" (click)="shiftDateWindow(7)">
+          <button class="carousel-arrow arcane-btn arcane-btn--ghost" type="button" aria-label="Next week" (click)="shiftDateWindow(7)">
             <mat-icon>chevron_right</mat-icon>
           </button>
-          <button class="jump-today" type="button" *ngIf="!isEditingToday" (click)="goToday()">
+          <button class="jump-today arcane-btn arcane-btn--primary" type="button" *ngIf="!isEditingToday" (click)="goToday()">
             Jump to Today
           </button>
         </div>
       </section>
 
-      <div class="today-cue" *ngIf="isEditingToday && !isSelectedDayFinalized">
+      <div class="today-cue arcane-card arcane-card--tight" *ngIf="isEditingToday && !isSelectedDayFinalized">
         <ng-container *ngIf="doneToday === 0; else cueKeepGoing">
           <div class="cue-title">Ready to level up today?</div>
           <div class="cue-sub text-muted">Do 1 habit now. Momentum starts small.</div>
@@ -112,7 +111,7 @@ type ConfettiPiece = {
         </ng-template>
       </div>
 
-      <div class="today-hero" [class.perfect-day]="isPerfectTodaySelected">
+      <div class="today-hero arcane-card" [class.perfect-day]="isPerfectTodaySelected">
         <div class="hero-text">
           <div class="hero-title">Today</div>
           <div class="hero-subtitle">{{ heroStatusLine }}</div>
@@ -124,6 +123,25 @@ type ConfettiPiece = {
       </div>
       <div class="hero-progress">
         <app-progress-bar [value]="selectedSummary.percentHandled / 100" [height]="6"></app-progress-bar>
+      </div>
+
+      <div class="system-modal-overlay" *ngIf="showLevelUpModal">
+        <div class="system-modal-card" role="dialog" aria-live="polite" aria-label="Level up">
+          <button class="system-modal-close glass-btn glass-btn--ghost" type="button" aria-label="Dismiss level up" (click)="dismissLevelUpModal()">
+            &#x2715;
+          </button>
+          <div class="system-modal-system">SYSTEM</div>
+          <div class="system-modal-title">LEVEL UP</div>
+          <div class="system-modal-level">Lv {{ levelUpFrom }} &#x2192; Lv {{ levelUpTo }}</div>
+          <div class="system-modal-particles" aria-hidden="true">
+            <span class="system-modal-spark"></span>
+            <span class="system-modal-spark"></span>
+            <span class="system-modal-spark"></span>
+            <span class="system-modal-spark"></span>
+            <span class="system-modal-spark"></span>
+            <span class="system-modal-spark"></span>
+          </div>
+        </div>
       </div>
 
       <mat-card class="aesthetic-card today-list-card" [@staggerFadeUp]="animationKey" #todaySection [class.perfect-day]="isPerfectTodaySelected" [class.finish-moment]="finishMomentActive">
@@ -151,26 +169,24 @@ type ConfettiPiece = {
               [class.is-skipped]="isSelectedDaySkipped(habit.id)"
               [class.is-next]="isNextHabit(habit.id)"
               [class.reward-pulse]="inlineRewardHabitId === habit.id"
-              (click)="toggleHabitForSelectedDay(habit)"
-              (keydown.enter)="toggleHabitForSelectedDay(habit)"
-              (keydown.space)="toggleHabitForSelectedDay(habit); $event.preventDefault()"
+              (click)="onHabitCardActivate(habit, $event)"
+              (keydown.enter)="onHabitCardActivate(habit, $event)"
+              (keydown.space)="onHabitCardActivate(habit, $event); $event.preventDefault()"
               [attr.aria-label]="'Toggle ' + habit.name + ' for today'"
               [attr.id]="'habit-' + habit.id">
               <div class="today-item-info">
                 <div class="today-item-name">{{ habit.name }}</div>
                 <div class="today-item-sub text-muted">{{ habitProgressMap[habit.id] || 0 }}% this month</div>
                 <span class="skipped-chip" *ngIf="isSelectedDaySkipped(habit.id)">Skipped</span>
-                <span class="inline-reward" *ngIf="inlineRewardHabitId === habit.id">+1 Level · {{ habit.name }}</span>
+                <span class="inline-reward" *ngIf="inlineRewardHabitId === habit.id"> ++Aura </span>
               </div>
               <div class="today-item-meta">
                 <span class="today-item-percent text-label">{{ habitProgressMap[habit.id] || 0 }}%</span>
-                <input
-                  type="checkbox"
-                  class="today-checkbox"
+                <app-habit-check
                   [checked]="isTodayChecked(habit.id)"
-                  (click)="$event.stopPropagation()"
-                  (change)="toggleHabitForSelectedDay(habit); $event.stopPropagation()"
+                  (toggle)="toggleHabitForSelectedDay(habit)"
                   [attr.aria-label]="'Toggle ' + habit.name">
+                </app-habit-check>
               </div>
             </button>
           </div>
@@ -194,7 +210,7 @@ type ConfettiPiece = {
       <mat-card class="aesthetic-card insights-card">
         <div class="insights-header">
           <span class="insights-chip text-section">Insights</span>
-        <button class="btn btn-outline btn-sm charts-toggle" type="button" (click)="toggleInsights()">
+        <button class="btn btn-outline btn-sm charts-toggle glass-btn glass-btn--ghost" type="button" (click)="toggleInsights()">
           {{ insightsOpen ? 'Hide Insights' : 'Show Insights' }}
         </button>
       </div>
@@ -306,6 +322,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   private confettiTimer?: ReturnType<typeof setTimeout>;
   inlineRewardHabitId: string | null = null;
   private inlineRewardTimer?: ReturnType<typeof setTimeout>;
+  showLevelUpModal = false;
+  levelUpFrom = 0;
+  levelUpTo = 0;
+  private lastSeenLevel?: number;
+  private levelUpModalTimer?: ReturnType<typeof setTimeout>;
   finishMomentMessage = '';
   finishMomentActive = false;
   private finishMomentTimer?: ReturnType<typeof setTimeout>;
@@ -322,6 +343,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   private streakFireTimer?: ReturnType<typeof setTimeout>;
   levelUpAnimating = false;
   private levelUpTimer?: ReturnType<typeof setTimeout>;
+  displayedHeaderProgress = 0;
+  headerLevelUpCelebrating = false;
+  private previousHeaderLevel = 0;
+  private headerLevelUpTimer?: ReturnType<typeof setTimeout>;
   private previousLevel = 0;
   private previousTodayPerfect = false;
   private levelStatsReady = false;
@@ -340,6 +365,18 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   get dailyMotivation(): string {
     return getDailyMotivation(this.todayDate.getDate());
+  }
+
+  get userName(): string {
+    return this.habitStore.getCurrentUsername() || 'Player';
+  }
+
+  get canUseDateCarousel(): boolean {
+    const name = (this.userName || '').trim();
+    if (!name) {
+      return false;
+    }
+    return name.toLowerCase() === 'giri';
   }
 
   get heroStatusLine(): string {
@@ -412,6 +449,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     private dialog: MatDialog,
     private cdr: ChangeDetectorRef,
     private route: ActivatedRoute,
+    private router: Router,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -434,13 +472,39 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         }
         this.selectedMonthYear = monthYear;
         this.levelStats = levelStats;
+        const newLevel = levelStats.level;
+        if (this.lastSeenLevel === undefined) {
+          this.lastSeenLevel = newLevel;
+        } else if (newLevel > this.lastSeenLevel) {
+          this.levelUpFrom = this.lastSeenLevel;
+          this.levelUpTo = newLevel;
+          this.showLevelUpModal = true;
+          if (this.levelUpModalTimer) {
+            clearTimeout(this.levelUpModalTimer);
+          }
+          this.levelUpModalTimer = setTimeout(() => {
+            this.showLevelUpModal = false;
+            this.cdr.markForCheck();
+          }, 3000);
+          this.cdr.markForCheck();
+          this.lastSeenLevel = newLevel;
+        } else {
+          this.lastSeenLevel = newLevel;
+        }
+        const nextHeaderProgress = this.nextLevelProgress;
         if (this.levelStatsReady && levelStats.level > this.previousLevel) {
           this.triggerLevelUpGlow();
+        }
+        if (this.levelStatsReady && levelStats.level > this.previousHeaderLevel) {
+          this.startHeaderLevelUpSequence(nextHeaderProgress);
+        } else if (!this.headerLevelUpCelebrating) {
+          this.displayedHeaderProgress = nextHeaderProgress;
         }
         if (!this.levelStatsReady) {
           this.levelStatsReady = true;
         }
         this.previousLevel = levelStats.level;
+        this.previousHeaderLevel = levelStats.level;
         this.habits = habits
           .filter(habit => habit.isActive)
           .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
@@ -565,7 +629,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
+    if (this.levelUpModalTimer) {
+      clearTimeout(this.levelUpModalTimer);
+    }
     if (isPlatformBrowser(this.platformId)) {
+      if (this.headerLevelUpTimer) {
+        clearTimeout(this.headerLevelUpTimer);
+      }
       this.lineChart?.destroy();
       this.doughnutChart?.destroy();
       if (this.resizeListener) {
@@ -637,6 +707,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  onHabitCardActivate(habit: Habit, event: Event): void {
+    this.toggleHabitForSelectedDay(habit);
+  }
+
   toggleHabitForSelectedDay(habit: Habit): void {
     this.toggleTodayHabit(habit.id);
   }
@@ -677,6 +751,34 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     if (typeof window !== 'undefined' && window.localStorage) {
       window.localStorage.setItem('pwa_install_banner_dismissed', 'true');
     }
+  }
+
+  get nextLevelRemaining(): number {
+    const remaining = typeof this.levelStats.remainingToNext === 'number'
+      ? this.levelStats.remainingToNext
+      : (this.levelStats.requiredThisLevel - this.levelStats.progressInLevel);
+    return Math.max(0, Math.floor(remaining));
+  }
+
+  get nextLevelLabel(): string {
+    const remaining = this.nextLevelRemaining;
+    if (remaining === 1) {
+      return '1 more habit to Level Up';
+    }
+    return `${remaining} more ${plural(remaining, 'habit')} to Level Up`;
+  }
+
+  get nextLevelProgress(): number {
+    const raw = this.levelStats.progressPercent;
+    if (typeof raw === 'number') {
+      return raw > 1 ? Math.min(raw / 100, 1) : Math.max(raw, 0);
+    }
+    const span = Math.max(this.levelStats.requiredThisLevel, 1);
+    return Math.min(Math.max(this.levelStats.progressInLevel / span, 0), 1);
+  }
+
+  goToProfile(): void {
+    this.router.navigateByUrl('/profile');
   }
 
   trackByHabitId(index: number, habit: TopHabit): string {
@@ -1101,6 +1203,35 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.levelUpAnimating = true;
     this.levelUpTimer = setTimeout(() => {
       this.levelUpAnimating = false;
+    }, 2000);
+  }
+
+  dismissLevelUpModal(): void {
+    if (this.levelUpModalTimer) {
+      clearTimeout(this.levelUpModalTimer);
+    }
+    this.showLevelUpModal = false;
+    this.cdr.markForCheck();
+  }
+
+
+  private startHeaderLevelUpSequence(nextProgress: number): void {
+    if (this.headerLevelUpTimer) {
+      clearTimeout(this.headerLevelUpTimer);
+    }
+    if (this.reduceMotion) {
+      this.headerLevelUpCelebrating = false;
+      this.displayedHeaderProgress = nextProgress;
+      this.cdr.markForCheck();
+      return;
+    }
+    this.displayedHeaderProgress = 1;
+    this.headerLevelUpCelebrating = true;
+    this.cdr.markForCheck();
+    this.headerLevelUpTimer = setTimeout(() => {
+      this.headerLevelUpCelebrating = false;
+      this.displayedHeaderProgress = nextProgress;
+      this.cdr.markForCheck();
     }, 2000);
   }
 

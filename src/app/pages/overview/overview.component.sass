@@ -7,6 +7,8 @@
   display: flex
   flex-direction: column
   gap: 12px
+  border: 1px solid color-mix(in oklab, var(--system-border) 60%, transparent)
+  box-shadow: var(--system-shadow-deep), inset 0 0 16px rgba(0, 0, 0, 0.35)
 
 .hero-grid
   display: grid
@@ -19,15 +21,16 @@
   gap: 6px
   padding: 10px 12px
   border-radius: var(--radius-md)
-  background: var(--theme-surface-2)
-  border: 1px solid var(--theme-border)
+  background: transparent
+  border: 1px solid color-mix(in oklab, var(--system-border) 35%, transparent)
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, white 6%, transparent)
 
 .hero-action
   gap: 8px
 
 .hero-label
   font-size: 0.75rem
-  color: var(--theme-text-muted)
+  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
   letter-spacing: 0.08em
   text-transform: uppercase
 
@@ -38,6 +41,7 @@
 
 .details-button
   width: 100%
+  box-shadow: 0 0 14px var(--system-glow-soft)
 
 .details-section
   display: grid
@@ -72,7 +76,7 @@
   font-size: 0.7rem
   text-transform: uppercase
   letter-spacing: 0.08em
-  color: var(--theme-text-muted)
+  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
   text-align: center
 
 .calendar-cell
@@ -80,8 +84,8 @@
   min-height: 60px
   padding: 8px
   border-radius: 12px
-  border: 1px solid var(--theme-border)
-  background: var(--theme-surface-2)
+  border: 1px solid color-mix(in oklab, var(--system-border) 45%, transparent)
+  background: rgba(10, 14, 26, 0.45)
   color: var(--theme-text)
   display: flex
   flex-direction: column
@@ -92,7 +96,7 @@
 
   &:hover
     transform: translateY(-1px)
-    box-shadow: 0 0 14px var(--theme-glow)
+    box-shadow: 0 0 16px var(--system-glow-soft)
 
   &.is-empty
     background: transparent
@@ -100,7 +104,7 @@
     cursor: default
 
   &.is-selected
-    box-shadow: 0 0 0 2px var(--theme-accent), 0 0 16px var(--theme-glow)
+    box-shadow: 0 0 0 2px var(--system-border), 0 0 16px var(--system-glow-soft)
 
   &.is-perfect,
   &.perfect-day
@@ -149,8 +153,8 @@
   align-items: center
   gap: 10px
   padding: 8px 0
-  border-bottom: 1px solid var(--theme-border)
-  color: var(--theme-text-muted)
+  border-bottom: 1px solid color-mix(in oklab, var(--system-border) 35%, transparent)
+  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
 
   &:last-child
     border-bottom: none
@@ -159,7 +163,7 @@
   text-transform: uppercase
   font-size: 0.7rem
   letter-spacing: 0.08em
-  color: var(--theme-text-muted)
+  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
 
 .week-label
   font-weight: 700
@@ -175,8 +179,8 @@
   position: relative
   height: 8px
   border-radius: 999px
-  background: var(--theme-surface-2)
-  border: 1px solid var(--theme-border)
+  background: rgba(10, 14, 26, 0.45)
+  border: 1px solid color-mix(in oklab, var(--system-border) 45%, transparent)
   overflow: hidden
 
 .week-bar-fill

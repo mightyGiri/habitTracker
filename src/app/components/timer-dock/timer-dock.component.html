@@ -1,8 +1,11 @@
-<ng-container *ngIf="state$ | async as state">
+<ng-container *ngIf="session$ | async as state">
   <section class="timer-dock" *ngIf="isActive(state)">
     <div class="row">
+      <div class="dock-info">
+        <div class="habit-name">{{ getHabitName(state.habitId) }}</div>
+        <div class="status-line">{{ getStatusLine(state) }}</div>
+      </div>
       <div class="time">{{ formatTime(state.remainingSeconds) }}</div>
-      <div class="status-line">{{ getStatusLine(state) }}</div>
     </div>
     <div class="actions">
       <button class="btn btn-outline btn-sm" type="button" (click)="togglePause(state)" data-timer-primary>

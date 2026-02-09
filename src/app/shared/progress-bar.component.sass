@@ -3,21 +3,21 @@
   width: 100%
   border-radius: 999px
   overflow: hidden
-  background: var(--surface-2, #1a2236)
+  background: color-mix(in oklab, var(--arcane-border-soft) 55%, transparent)
   box-shadow: var(--shadow-0, none)
 
 .app-progress__track
   position: absolute
   inset: 0
-  background: var(--accent-weak, rgba(76, 141, 255, 0.2))
-  opacity: 0.35
+  background: color-mix(in oklab, var(--arcane-glow) 10%, transparent)
+  opacity: 0.5
 
 .app-progress__fill
   position: absolute
   inset: 0
   width: 0%
-  background: linear-gradient(90deg, var(--accent, #4c8dff), var(--accent-strong, #2f5fcc))
-  box-shadow: 0 0 10px var(--theme-glow, rgba(76, 141, 255, 0.35))
+  background: linear-gradient(90deg, color-mix(in oklab, var(--arcane-glow) 70%, transparent), var(--arcane-border))
+  box-shadow: 0 0 12px var(--arcane-glow-soft)
   transition: width 280ms ease
 
 .app-progress__label

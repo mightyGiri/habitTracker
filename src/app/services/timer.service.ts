@@ -225,10 +225,6 @@ export class TimerService implements OnDestroy {
       running: false
     });
     this.habitStore.setHabitTimerCompleted(session.habitId, true);
-    const date = this.dateFromKey(session.dateKey);
-    if (date) {
-      this.habitStore.setCompleted(session.habitId, date, true);
-    }
     this.completedEvents.next(finished);
     this.clearSessionSoon();
     setTimeout(() => this.completionGuard.delete(session.habitId), 1000);

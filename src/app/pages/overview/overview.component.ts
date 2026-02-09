@@ -43,37 +43,37 @@ type WeekSummary = {
       <h1 class="text-title page-title">Overview</h1>
       <ng-container *ngIf="ready$ | async; else loading">
         <ng-container *ngIf="hasAnyData; else emptyState">
-          <mat-card class="aesthetic-card overview-hero" [@staggerFadeUp]="animationKey">
+          <mat-card class="aesthetic-card overview-hero arcane-card" [@staggerFadeUp]="animationKey">
             <div class="hero-grid">
-              <div class="hero-block">
+              <div class="hero-block arcane-card--tight">
                 <div class="hero-label">Streak</div>
                 <div class="hero-value">{{ currentStreak | dayCount }}</div>
               </div>
-              <div class="hero-block">
+              <div class="hero-block arcane-card--tight">
                 <div class="hero-label">Level</div>
-                <div class="hero-value">Level {{ levelStats.level }}</div>
+                <div class="hero-value"><span class="glass-pill">Lv {{ levelStats.level }}</span></div>
                 <div class="text-muted">Total wins: {{ levelStats.totalDone }}</div>
                 <div class="text-muted">Next: Level {{ levelStats.nextLevel }} in {{ levelStats.remainingToNext }} wins</div>
               </div>
-              <div class="hero-block">
+              <div class="hero-block arcane-card--tight">
                 <div class="hero-label">Wins</div>
                 <div class="hero-value">You leveled up {{ weekAttendanceCount }} of {{ weekTotalDays | dayCount }}</div>
               </div>
-              <div class="hero-block hero-action">
+              <div class="hero-block hero-action arcane-card--tight">
                 <div class="hero-label">Next best action</div>
                 <div class="hero-value">{{ nextBestActionText }}</div>
-                <button class="btn btn-primary btn-sm" type="button" (click)="goToTodayAction()" [disabled]="todayRemainingCount === 0">
+                <button class="btn btn-primary btn-sm glass-btn glass-btn--primary" type="button" (click)="goToTodayAction()" [disabled]="todayRemainingCount === 0">
                   Go to Today
                 </button>
               </div>
             </div>
-            <button class="btn btn-outline btn-sm details-button" type="button" (click)="toggleInsights()">
+            <button class="btn btn-outline btn-sm details-button glass-btn glass-btn--ghost" type="button" (click)="toggleInsights()">
               {{ insightsOpen ? 'Hide Details' : 'Show Details' }}
             </button>
           </mat-card>
 
           <div class="details-section" [class.is-collapsed]="!insightsOpen">
-            <mat-card class="aesthetic-card calendar-card" [@staggerFadeUp]="animationKey">
+            <mat-card class="aesthetic-card calendar-card arcane-card" [@staggerFadeUp]="animationKey">
               <div class="card-header text-section">Monthly Calendar</div>
               <mat-card-content class="card-body">
                 <div class="calendar-grid">
@@ -82,7 +82,7 @@ type WeekSummary = {
                     <button
                       *ngIf="cell.dayNumber"
                       type="button"
-                      class="calendar-cell {{ cell.intensityClass }}"
+                      class="calendar-cell glass-btn glass-btn--ghost {{ cell.intensityClass }}"
                       [class.is-selected]="cell.isSelected"
                       [class.is-perfect]="cell.isPerfect"
                       [class.perfect-day]="cell.isPerfect"
@@ -100,7 +100,7 @@ type WeekSummary = {
               </mat-card-content>
             </mat-card>
 
-            <mat-card class="aesthetic-card summary-card" [@staggerFadeUp]="animationKey">
+            <mat-card class="aesthetic-card summary-card arcane-card" [@staggerFadeUp]="animationKey">
               <div class="card-header text-section">Weekly Summary</div>
               <mat-card-content class="card-body">
                 <div class="weekly-row weekly-header">
@@ -113,8 +113,8 @@ type WeekSummary = {
                 <div class="weekly-row" *ngFor="let week of weeklySummaries; trackBy: trackByWeek">
                   <span class="week-label">W{{ week.weekIndex + 1 }}</span>
                   <span class="week-metric">{{ week.done }}/{{ week.goal }}</span>
-                  <div class="week-bar">
-                    <div class="week-bar-fill" [style.width.%]="week.percent"></div>
+                  <div class="week-bar arcane-progress">
+                    <div class="week-bar-fill arcane-progress__bar" [style.width.%]="week.percent"></div>
                   </div>
                   <span class="week-percent">{{ week.percent }}%</span>
                   <span class="week-perfect">&#x1F525;{{ week.perfectDays }}</span>
@@ -124,11 +124,11 @@ type WeekSummary = {
           </div>
         </ng-container>
         <ng-template #emptyState>
-          <mat-card class="aesthetic-card empty-state" [@staggerFadeUp]="animationKey">
+          <mat-card class="aesthetic-card empty-state arcane-card" [@staggerFadeUp]="animationKey">
             <mat-card-content>
               <div class="empty-title">Start with 1 habit today</div>
               <div class="text-muted">Small steps build your streak.</div>
-              <button class="btn btn-primary btn-sm" type="button" (click)="goToTodayAction()">
+              <button class="btn btn-primary btn-sm glass-btn glass-btn--primary" type="button" (click)="goToTodayAction()">
                 Go to Today
               </button>
             </mat-card-content>

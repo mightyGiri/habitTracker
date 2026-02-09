@@ -16,9 +16,9 @@
   gap: var(--space-2)
   padding: var(--space-2) var(--space-3)
   border-radius: 16px
-  background: var(--theme-surface)
-  border: 1px solid var(--theme-border)
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08)
+  background: rgba(10, 14, 26, 0.65)
+  border: 1px solid color-mix(in oklab, var(--system-border) 60%, transparent)
+  box-shadow: var(--system-shadow-deep), inset 0 0 18px rgba(0, 0, 0, 0.35)
   margin-bottom: var(--space-3)
 
 .avatar-circle
@@ -43,11 +43,11 @@
 
 .profile-subtitle
   font-size: calc(var(--fs-muted) * var(--font-scale))
-  color: var(--theme-text-muted)
+  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
 
 .edit-pill
-  border: 1px solid var(--theme-border)
-  background: transparent
+  border: 1px solid color-mix(in oklab, var(--system-border) 60%, transparent)
+  background: rgba(10, 14, 26, 0.4)
   color: var(--theme-text)
   padding: 6px 14px
   border-radius: 999px
@@ -56,8 +56,9 @@
   white-space: nowrap
 
 .edit-pill:hover
-  border-color: var(--theme-accent)
-  color: var(--theme-accent)
+  border-color: var(--system-border)
+  color: var(--theme-text)
+  box-shadow: 0 0 14px var(--system-glow-soft)
 
 .settings-section
   margin-bottom: var(--space-3)
@@ -66,8 +67,8 @@
   display: grid
   gap: 4px
   border-radius: 16px
-  background: var(--theme-surface)
-  border: 1px solid var(--theme-border)
+  background: rgba(10, 14, 26, 0.6)
+  border: 1px solid color-mix(in oklab, var(--system-border) 55%, transparent)
   padding: 6px 0
 
 .settings-row
@@ -76,13 +77,13 @@
   gap: 12px
   align-items: center
   padding: 10px var(--space-3)
-  border-bottom: 1px solid var(--theme-border)
+  border-bottom: 1px solid color-mix(in oklab, var(--system-border) 35%, transparent)
 
   &:last-child
     border-bottom: 0
 
 .row-label
-  color: var(--theme-text-muted)
+  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
   font-size: calc(var(--fs-label) * var(--font-scale))
   text-transform: uppercase
   letter-spacing: 0.08em
@@ -149,8 +150,8 @@
 
 .section-block
   border-radius: 16px
-  background: var(--theme-surface)
-  border: 1px solid var(--theme-border)
+  background: rgba(10, 14, 26, 0.6)
+  border: 1px solid color-mix(in oklab, var(--system-border) 55%, transparent)
   margin-bottom: var(--space-2)
   overflow: hidden
 
@@ -172,6 +173,14 @@
   color: var(--theme-text)
   cursor: pointer
   font: inherit
+  border-radius: 12px
+  transition: box-shadow 160ms ease, border-color 160ms ease, transform 160ms ease
+
+  &:hover
+    box-shadow: 0 0 14px var(--system-glow-soft)
+
+  &:active
+    transform: translateY(1px)
 
 .data-actions
   display: grid
@@ -180,13 +189,14 @@
 
   .btn
     width: 100%
-    background: var(--theme-surface)
-    color: var(--theme-text-muted)
-    border-color: var(--theme-border)
+    background: rgba(10, 14, 26, 0.45)
+    color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
+    border-color: color-mix(in oklab, var(--system-border) 45%, transparent)
 
   .btn:hover
     color: var(--theme-text)
-    border-color: var(--theme-accent)
+    border-color: var(--system-border)
+    box-shadow: 0 0 14px var(--system-glow-soft)
 
 .field-grid
   display: grid
@@ -254,15 +264,15 @@
   border-radius: 999px
   border: 2px solid transparent
   cursor: pointer
-  box-shadow: 0 0 0 1px var(--theme-border)
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--system-border) 45%, transparent)
   position: relative
   display: inline-flex
   align-items: center
   justify-content: center
 
   &.is-active
-    border-color: var(--app-accent)
-    box-shadow: var(--glow)
+    border-color: var(--system-border)
+    box-shadow: 0 0 14px var(--system-glow-soft)
 
 .swatch-check
   color: var(--theme-text)

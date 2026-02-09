@@ -34,14 +34,14 @@ import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-
     <div class="page-container" [@.disabled]="reduceMotion">
       <h1 class="text-title page-title">Your Habits</h1>
       <ng-container *ngIf="ready$ | async; else loading">
-      <mat-card class="aesthetic-card habits-card">
+      <mat-card class="aesthetic-card habits-card arcane-card">
         <mat-card-content>
-          <div class="habits-guidance" [class.is-warning]="isOverRecommended">
+          <div class="habits-guidance arcane-card--tight" [class.is-warning]="isOverRecommended">
             <div class="text-body">{{ guidanceMessage }}</div>
             <div class="text-muted">Active: {{ activeCount }} / Recommended: 6</div>
           </div>
           <div class="habits-toolbar">
-            <button class="add-habit-btn btn btn-primary btn-sm" type="button" (click)="startAdd()" aria-label="Add habit">
+            <button class="add-habit-btn btn btn-primary btn-sm glass-btn glass-btn--primary" type="button" (click)="startAdd()" aria-label="Add habit">
               <mat-icon>add</mat-icon>
               Add Habit
             </button>
@@ -73,19 +73,11 @@ import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-
               <mat-label>Minimum version (optional)</mat-label>
               <input matInput formControlName="minimumVersion" placeholder="e.g., 1 page, 5 minutes">
             </mat-form-field>
-            <div class="timer-row">
-              <div class="text-label">Timer</div>
-              <app-toggle [checked]="habitForm.get('timerEnabled')?.value" (checkedChange)="setTimerEnabled($event)"></app-toggle>
-            </div>
-            <mat-form-field appearance="fill" *ngIf="habitForm.get('timerEnabled')?.value">
-              <mat-label>Timer minutes</mat-label>
-              <input matInput type="number" min="1" max="120" formControlName="timerMinutes" placeholder="e.g., 10">
-            </mat-form-field>
             <div class="form-actions">
-              <button class="btn btn-primary" type="submit" [disabled]="habitForm.invalid">
+              <button class="btn btn-primary glass-btn glass-btn--primary" type="submit" [disabled]="habitForm.invalid">
                 {{ editingHabitId ? 'Save' : 'Add' }}
               </button>
-              <button class="btn btn-outline" type="button" (click)="cancelEdit()">Cancel</button>
+              <button class="btn btn-outline glass-btn glass-btn--ghost" type="button" (click)="cancelEdit()">Cancel</button>
             </div>
           </form>
 
@@ -94,7 +86,7 @@ import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-
           </div>
 
           <div class="habits-list" *ngIf="habits.length > 0">
-            <div class="habit-row" *ngFor="let habit of habits; let i = index; trackBy: trackByHabitId">
+            <div class="habit-row arcane-card--tight" *ngFor="let habit of habits; let i = index; trackBy: trackByHabitId">
               <div class="habit-header">
                 <div class="habit-left">
                   <div class="habit-title text-body">{{ habit.name }}</div>
@@ -105,19 +97,19 @@ import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-
                     <span *ngIf="habit.minimumVersion">- {{ habit.minimumVersion }}</span>
                   </div>
                 </div>
-                <app-toggle [checked]="habit.isActive" (checkedChange)="toggleActive(habit.id)"></app-toggle>
+                <app-toggle class="glass-toggle" [checked]="habit.isActive" (checkedChange)="toggleActive(habit.id)"></app-toggle>
               </div>
               <div class="habit-actions">
-                <button class="btn btn-icon" type="button" (click)="moveHabit(i, i - 1)" [disabled]="i === 0" aria-label="Move habit up">
+                <button class="btn btn-icon glass-btn glass-btn--ghost" type="button" (click)="moveHabit(i, i - 1)" [disabled]="i === 0" aria-label="Move habit up">
                   <mat-icon>arrow_upward</mat-icon>
                 </button>
-                <button class="btn btn-icon" type="button" (click)="moveHabit(i, i + 1)" [disabled]="i === habits.length - 1" aria-label="Move habit down">
+                <button class="btn btn-icon glass-btn glass-btn--ghost" type="button" (click)="moveHabit(i, i + 1)" [disabled]="i === habits.length - 1" aria-label="Move habit down">
                   <mat-icon>arrow_downward</mat-icon>
                 </button>
-                <button class="btn btn-icon" type="button" (click)="startEdit(habit)" aria-label="Edit habit">
+                <button class="btn btn-icon glass-btn glass-btn--ghost" type="button" (click)="startEdit(habit)" aria-label="Edit habit">
                   <mat-icon>edit</mat-icon>
                 </button>
-                <button class="btn btn-icon" type="button" (click)="confirmDelete(habit)" aria-label="Delete habit">
+                <button class="btn btn-icon glass-btn glass-btn--ghost" type="button" (click)="confirmDelete(habit)" aria-label="Delete habit">
                   <mat-icon>delete</mat-icon>
                 </button>
               </div>

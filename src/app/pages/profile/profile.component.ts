@@ -84,20 +84,20 @@ type BeforeInstallPromptEvent = Event & {
     <div class=\"page-container profile-page\" [@.disabled]=\"reduceMotion\">
       <h1 class=\"page-title\">Profile</h1>
 
-      <div class=\"profile-header\" [@staggerFadeUp]=\"animationKey\">
+      <div class=\"profile-header arcane-card\" [@staggerFadeUp]=\"animationKey\">
         <div class=\"avatar-circle\">{{ initials }}</div>
         <div class=\"profile-meta\">
           <div class=\"profile-name\">{{ displayName }}</div>
           <div class=\"profile-subtitle\">{{ profileSubtitle }}</div>
         </div>
-        <button class=\"edit-pill\" type=\"button\" (click)=\"openEditProfileDialog()\">Edit</button>
+        <button class=\"edit-pill glass-btn glass-btn--ghost\" type=\"button\" (click)=\"openEditProfileDialog()\">Edit</button>
       </div>
 
-      <section class=\"settings-section\" [@staggerFadeUp]=\"animationKey\">
+      <section class=\"settings-section arcane-card\" [@staggerFadeUp]=\"animationKey\">
         <div class=\"settings-list\">
           <div class=\"settings-row\">
             <div class=\"row-label\">Level</div>
-            <div class=\"row-value\">{{ levelStats.level }}</div>
+            <div class=\"row-value\"><span class=\"glass-pill\">Lv {{ levelStats.level }}</span></div>
           </div>
           <div class=\"settings-row\">
             <div class=\"row-label\">Total wins</div>
@@ -118,18 +118,18 @@ type BeforeInstallPromptEvent = Event & {
         </div>
       </section>
 
-      <section class=\"section-block\" [@staggerFadeUp]=\"animationKey\">
-        <button class=\"section-toggle\" type=\"button\" (click)=\"dataOpen = !dataOpen\">
+      <section class=\"section-block arcane-card\" [@staggerFadeUp]=\"animationKey\">
+        <button class=\"section-toggle glass-btn glass-btn--ghost\" type=\"button\" (click)=\"dataOpen = !dataOpen\">
           <span class=\"text-section\">Data & Backup</span>
           <mat-icon>{{ dataOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
         </button>
         <div class=\"section-body\" *ngIf=\"dataOpen\">
           <div class=\"section-helper text-muted\">Offline-first. Export a backup anytime.</div>
           <div class=\"data-actions\">
-            <button class=\"btn btn-outline btn-sm\" type=\"button\" (click)=\"exportJson()\">Export backup (JSON)</button>
-            <button class=\"btn btn-outline btn-sm\" type=\"button\" (click)=\"triggerImportJson(importInput)\">Restore backup (JSON)</button>
-            <button class=\"btn btn-outline btn-sm\" type=\"button\" (click)=\"exportCsv()\">Export as CSV</button>
-            <button class=\"btn btn-outline btn-sm\" type=\"button\" (click)=\"exportXlsx()\" [disabled]=\"exportingXlsx\">
+            <button class=\"btn btn-outline btn-sm glass-btn glass-btn--ghost\" type=\"button\" (click)=\"exportJson()\">Export backup (JSON)</button>
+            <button class=\"btn btn-outline btn-sm glass-btn glass-btn--ghost\" type=\"button\" (click)=\"triggerImportJson(importInput)\">Restore backup (JSON)</button>
+            <button class=\"btn btn-outline btn-sm glass-btn glass-btn--ghost\" type=\"button\" (click)=\"exportCsv()\">Export as CSV</button>
+            <button class=\"btn btn-outline btn-sm glass-btn glass-btn--ghost\" type=\"button\" (click)=\"exportXlsx()\" [disabled]=\"exportingXlsx\">
               {{ exportingXlsx ? 'Exporting...' : 'Export as Excel' }}
             </button>
           </div>
@@ -143,8 +143,8 @@ type BeforeInstallPromptEvent = Event & {
         </div>
       </section>
 
-      <section class=\"section-block\" [@staggerFadeUp]=\"animationKey\">
-        <button class=\"section-toggle\" type=\"button\" (click)=\"personalizationOpen = !personalizationOpen\">
+      <section class=\"section-block arcane-card\" [@staggerFadeUp]=\"animationKey\">
+        <button class=\"section-toggle glass-btn glass-btn--ghost\" type=\"button\" (click)=\"personalizationOpen = !personalizationOpen\">
           <span class=\"text-section\">Personalization</span>
           <mat-icon>{{ personalizationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
         </button>
@@ -211,8 +211,8 @@ type BeforeInstallPromptEvent = Event & {
           </div>
         </div>
       </section>
-      <section class="section-block" [@staggerFadeUp]="animationKey">
-        <button class="section-toggle" type="button" (click)="helpOpen = !helpOpen">
+      <section class="section-block arcane-card" [@staggerFadeUp]="animationKey">
+        <button class="section-toggle glass-btn glass-btn--ghost" type="button" (click)="helpOpen = !helpOpen">
           <span class="text-section">Help & About</span>
           <mat-icon>{{ helpOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
         </button>

@@ -16,6 +16,17 @@
   letter-spacing: 1px;
 }
 
+.dock-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.habit-name {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
 .status-line {
   font-size: 0.9rem;
   color: var(--theme-text-muted);

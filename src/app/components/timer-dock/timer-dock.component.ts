@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TimerService, TimerSession } from '../../services/timer.service';
+import { HabitStoreService } from '../../services/habit-store.service';
 
 @Component({
   selector: 'app-timer-dock',
@@ -11,14 +12,21 @@ import { TimerService, TimerSession } from '../../services/timer.service';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TimerDockComponent {
-  readonly state$;
+  readonly session$;
 
-  constructor(private timerService: TimerService) {
-    this.state$ = this.timerService.state$;
+  constructor(
+    private timerService: TimerService,
+    private habitStore: HabitStoreService
+  ) {
+    this.session$ = this.timerService.getSession();
   }
 
   isActive(session: TimerSession | null): boolean {
     return Boolean(session && (session.status === 'running' || session.status === 'paused'));
+  }
+
+  getHabitName(habitId: string): string {
+    return this.habitStore.getHabitsSync().find(habit => habit.id === habitId)?.name || 'Timer';
   }
 
   getStatusLine(session: TimerSession): string {
@@ -26,7 +34,7 @@ export class TimerDockComponent {
   }
 
   getPrimaryLabel(session: TimerSession): string {
-    return session.status === 'running' ? 'Pause' : 'Resume';
+    return session.status === 'running' ? 'Pause' : 'Start';
   }
 
   togglePause(session: TimerSession): void {
