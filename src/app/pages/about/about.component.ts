@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
+import { combineLatest, map } from 'rxjs';
 import { VersionService } from '../../services/version.service';
 
 @Component({
@@ -24,9 +25,7 @@ import { VersionService } from '../../services/version.service';
         <img class="app-icon" src="/icons/app_icon_192x192.png" alt="Level-Up app icon">
         <div>
           <div class="app-name">Level-Up</div>
-          <div class="app-version">
-            Version {{ version$ | async }}<span *ngIf="build$ | async as build"> · Build {{ build }}</span>
-          </div>
+          <div class="app-version">{{ versionLabel$ | async }}</div>
         </div>
       </div>
 
@@ -61,11 +60,14 @@ import { VersionService } from '../../services/version.service';
   styleUrls: ['./about.component.sass']
 })
 export class AboutComponent {
-  readonly version$;
-  readonly build$;
+  readonly versionLabel$;
 
   constructor(private versionService: VersionService) {
-    this.version$ = this.versionService.getVersion$();
-    this.build$ = this.versionService.getBuild$();
+    this.versionLabel$ = combineLatest([
+      this.versionService.getVersion$(),
+      this.versionService.getBuild$()
+    ]).pipe(
+      map(([version, build]) => build !== null ? `Version ${version} (Build ${build})` : `Version ${version}`)
+    );
   }
 }

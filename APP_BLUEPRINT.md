@@ -152,7 +152,7 @@ Profile "Personalization" uses `NotificationService` toggling (see `profile.comp
 
 ## Versioning / Release
 Sources:
-- `package.json` version: `1.3`
+- `package.json` version: `1.4`
 - `src/assets/version.json` provides version/build/releaseDate
 - `VersionService` reads `assets/version.json` and exposes `getVersion$()` / `getBuild$()`
 - Profile/About pages bind to VersionService

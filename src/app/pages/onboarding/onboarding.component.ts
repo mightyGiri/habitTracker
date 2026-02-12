@@ -4,19 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { filter, take } from 'rxjs';
 import { HabitStoreService } from '../../services/habit-store.service';
-import { ThemeService, AppTheme } from '../../services/theme.service';
-import { SettingsService } from '../../services/settings.service';
+import { ThemeService } from '../../services/theme.service';
 import { UserProfile } from '../../models/habit.model';
 
-type OnboardingStep = 0 | 1 | 2 | 3 | 4;
-
-type ThemeOption = {
-  key: string;
-  label: string;
-  description: string;
-  theme: AppTheme;
-  accent?: 'blue' | 'green';
-};
+type OnboardingStep = 0 | 1 | 2 | 3;
 
 @Component({
   selector: 'app-onboarding',
@@ -27,26 +18,6 @@ type ThemeOption = {
       <div class="onboarding-shell">
         <ng-container [ngSwitch]="step">
           <section *ngSwitchCase="0" class="onboarding-step">
-            <h1 class="text-title center-title">Choose your default theme</h1>
-            <p class="text-muted center-subtitle">You can change this anytime in Profile.</p>
-            <div class="theme-grid">
-              <button
-                class="theme-card"
-                type="button"
-                *ngFor="let option of themeOptions"
-                [class.is-active]="selectedThemeKey === option.key"
-                (click)="selectTheme(option)">
-                <div class="theme-card-title">{{ option.label }}</div>
-                <div class="theme-card-sub text-muted">{{ option.description }}</div>
-              </button>
-            </div>
-            <div class="onboarding-actions">
-              <button class="btn btn-primary" type="button" (click)="goNext()" [disabled]="!selectedThemeKey">Continue</button>
-              <button class="btn btn-ghost" type="button" (click)="skip()">Skip for now</button>
-            </div>
-          </section>
-
-          <section *ngSwitchCase="1" class="onboarding-step">
             <h1 class="text-title center-title">Getting started</h1>
             <ul class="intro-list">
               <li>Small levels. Big change.</li>
@@ -61,7 +32,7 @@ type ThemeOption = {
             </div>
           </section>
 
-          <section *ngSwitchCase="2" class="onboarding-step">
+          <section *ngSwitchCase="1" class="onboarding-step">
             <h1 class="text-title center-title">Choose your persona</h1>
             <p class="text-muted center-subtitle">We'll tailor your tone.</p>
             <label class="text-label why-label" for="name-input">Name</label>
@@ -90,7 +61,7 @@ type ThemeOption = {
             </div>
           </section>
 
-          <section *ngSwitchCase="3" class="onboarding-step">
+          <section *ngSwitchCase="2" class="onboarding-step">
             <h1 class="text-title center-title">Your primary goal</h1>
             <p class="text-muted center-subtitle">Pick the focus for your habits.</p>
             <div class="pill-row">
@@ -120,7 +91,7 @@ type ThemeOption = {
             </div>
           </section>
 
-          <section *ngSwitchCase="4" class="onboarding-step final-step">
+          <section *ngSwitchCase="3" class="onboarding-step final-step">
             <h1 class="text-title center-title">You're all set, {{ displayName }}.</h1>
             <p class="text-muted center-subtitle">The first step to win is to start now.</p>
             <p class="text-muted center-subtitle">{{ personaFinalLine }}</p>
@@ -139,13 +110,6 @@ type ThemeOption = {
 })
 export class OnboardingComponent implements OnInit {
   step: OnboardingStep = 0;
-  selectedThemeKey: string | null = null;
-  themeOptions: ThemeOption[] = [
-    { key: 'dark', label: 'Dark', description: 'Focused, low-glare', theme: 'dark' },
-    { key: 'light', label: 'Light', description: 'Clean and bright', theme: 'light' },
-    { key: 'blue', label: 'Blue', description: 'Light with blue accent', theme: 'light', accent: 'blue' },
-    { key: 'mint', label: 'Mint', description: 'Light with mint accent', theme: 'light', accent: 'green' }
-  ];
   personas: Array<UserProfile['persona']> = [
     'Developer',
     'Fitness',
@@ -176,11 +140,11 @@ export class OnboardingComponent implements OnInit {
   constructor(
     private router: Router,
     private habitStore: HabitStoreService,
-    private themeService: ThemeService,
-    private settingsService: SettingsService
+    private themeService: ThemeService
   ) {}
 
   ngOnInit(): void {
+    this.themeService.setTheme('dark');
     this.habitStore.getReady().pipe(
       filter(ready => ready),
       take(1)
@@ -189,22 +153,14 @@ export class OnboardingComponent implements OnInit {
         void this.router.navigate(['/today']);
       }
     });
-    const savedThemeKey = this.themeService.getSavedThemeKey();
-    if (savedThemeKey) {
-      this.selectedThemeKey = savedThemeKey;
-      this.step = 1;
-    }
   }
 
   goNext(): void {
-    if (this.step < 4) {
-      if (this.step === 0 && !this.selectedThemeKey) {
+    if (this.step < 3) {
+      if (this.step === 1 && !this.canProceedPersona) {
         return;
       }
-      if (this.step === 2 && !this.canProceedPersona) {
-        return;
-      }
-      if (this.step === 3 && !this.canProceedGoal) {
+      if (this.step === 2 && !this.canProceedGoal) {
         return;
       }
       this.step = (this.step + 1) as OnboardingStep;
@@ -220,29 +176,15 @@ export class OnboardingComponent implements OnInit {
   }
 
   skip(): void {
-    this.ensureThemeSelected();
+    this.themeService.setTheme('dark');
     this.habitStore.skipOnboarding();
     void this.router.navigate(['/today']);
   }
 
   finish(): void {
-    this.ensureThemeSelected();
+    this.themeService.setTheme('dark');
     this.saveProfile(this.persona, this.goal, this.statement);
     void this.router.navigate(['/today']);
-  }
-
-  selectTheme(option: ThemeOption): void {
-    this.selectedThemeKey = option.key;
-    this.themeService.setTheme(option.theme, option.key);
-    if (option.accent) {
-      this.settingsService.updateSettings({ accent: { type: 'preset', value: option.accent } });
-    }
-  }
-
-  private ensureThemeSelected(): void {
-    if (!this.selectedThemeKey) {
-      this.selectTheme(this.themeOptions[0]);
-    }
   }
 
   private saveProfile(persona: UserProfile['persona'] | null, goal: UserProfile['primaryGoal'] | null, statement: string): void {
@@ -276,11 +218,11 @@ export class OnboardingComponent implements OnInit {
   }
 
   get showNameError(): boolean {
-    return this.step === 2 && this.trimmedName.length === 0;
+    return this.step === 1 && this.trimmedName.length === 0;
   }
 
   get showPersonaError(): boolean {
-    return this.step === 2 && !this.personaSelected && this.trimmedName.length >= 2;
+    return this.step === 1 && !this.personaSelected && this.trimmedName.length >= 2;
   }
 
   get goalSelected(): boolean {
@@ -296,11 +238,11 @@ export class OnboardingComponent implements OnInit {
   }
 
   get showGoalError(): boolean {
-    return this.step === 3 && !this.goalSelected;
+    return this.step === 2 && !this.goalSelected;
   }
 
   get showStatementError(): boolean {
-    return this.step === 3 && this.goalSelected && this.statementLength < this.statementMin;
+    return this.step === 2 && this.goalSelected && this.statementLength < this.statementMin;
   }
 
   private trimStatement(value: string): string {

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
-export type AppTheme = 'dark' | 'light';
+export type AppTheme = 'dark';
 
 const STORAGE_KEY = 'habit_tracker_theme';
 const THEME_KEY = 'themeKey';
@@ -32,39 +32,26 @@ export class ThemeService {
     return this.reduceMotion$.value;
   }
 
-  toggleTheme(): void {
-    const next: AppTheme = this.theme$.value === 'dark' ? 'light' : 'dark';
-    this.setTheme(next);
-  }
-
-  setTheme(theme: AppTheme, themeKey?: string): void {
-    this.theme$.next(theme);
+  setTheme(theme: AppTheme = 'dark', themeKey?: string): void {
+    this.theme$.next('dark');
     if (typeof document !== 'undefined') {
-      document.documentElement.setAttribute('data-theme', theme);
-    }
-    if (typeof window !== 'undefined' && window.localStorage) {
-      localStorage.setItem(STORAGE_KEY, theme);
-      if (themeKey) {
-        localStorage.setItem(THEME_KEY, themeKey);
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.documentElement.classList.remove('light-theme');
+      document.documentElement.classList.add('dark-theme');
+      if (typeof document.body !== 'undefined') {
+        document.body.classList.remove('light-theme');
+        document.body.classList.add('dark-theme');
       }
     }
-  }
-
-  getSavedThemeKey(): string | null {
-    if (typeof window === 'undefined' || !window.localStorage) {
-      return null;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(THEME_KEY);
+      localStorage.removeItem('theme');
     }
-    return localStorage.getItem(THEME_KEY);
   }
 
   private initTheme(): void {
-    let stored: AppTheme | null = null;
-    let storedKey: string | null = null;
-    if (typeof window !== 'undefined' && window.localStorage) {
-      stored = (localStorage.getItem(STORAGE_KEY) as AppTheme) || null;
-      storedKey = localStorage.getItem(THEME_KEY);
-    }
-    this.setTheme(stored || 'dark', storedKey || stored || 'dark');
+    this.setTheme('dark', 'dark');
   }
 
   private initReducedMotion(): void {

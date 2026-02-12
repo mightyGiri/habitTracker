@@ -15,13 +15,13 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { RouterModule } from '@angular/router';
 
-import { Subscription } from 'rxjs';
+import { Subscription, combineLatest, map } from 'rxjs';
 
 import { BackupService } from '../../services/backup.service';
 
 import { HabitStoreService } from '../../services/habit-store.service';
 
-import { SettingsService, ThemeMode, FontSizePx, AccentId, AccentSetting, FontFamilyId } from '../../services/settings.service';
+import { SettingsService, FontSizePx, AccentId, AccentSetting, FontFamilyId } from '../../services/settings.service';
 
 import { ThemeService } from '../../services/theme.service';
 
@@ -152,15 +152,6 @@ type BeforeInstallPromptEvent = Event & {
           <div class=\"section-helper text-muted\">Optional. Focus on habits first.</div>
           <div class=\"field-grid\">
             <div class=\"control-group\">
-              <mat-form-field appearance=\"fill\" class=\"appearance-field\">
-                <mat-label>Theme</mat-label>
-                <mat-select [value]=\"themeMode\" (selectionChange)=\"updateThemeMode($event.value)\">
-                  <mat-option value=\"dark\">Dark</mat-option>
-                  <mat-option value=\"light\">Light</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
-            <div class=\"control-group\">
               <div class=\"compact-label text-label\">
                 Font size: {{ fontSizeLabel }}
               </div>
@@ -178,7 +169,7 @@ type BeforeInstallPromptEvent = Event & {
               <app-toggle [checked]=\"notificationsEnabled\" (checkedChange)=\"toggleNotifications($event)\"></app-toggle>
             </div>
           </div>
-          <div class=\"font-family-row\">
+          <!-- <div class=\"font-family-row\">
             <mat-form-field appearance=\"fill\" class=\"appearance-field\">
               <mat-label>Font Family</mat-label>
               <mat-select [value]=\"fontFamily\" (selectionChange)=\"updateFontFamily($event.value)\">
@@ -189,7 +180,7 @@ type BeforeInstallPromptEvent = Event & {
                 <mat-option value=\"montserrat\">Montserrat</mat-option>
               </mat-select>
             </mat-form-field>
-          </div>
+          </div> -->
 
           <div class=\"accent-row\">
             <div class=\"text-body\">Accent</div>
@@ -224,7 +215,7 @@ type BeforeInstallPromptEvent = Event & {
             </div>
             <div class="settings-row">
               <div class="row-label">Version</div>
-              <div class="row-value">v{{ version$ | async }}<span *ngIf="build$ | async as build"> · Build {{ build }}</span></div>
+              <div class="row-value">{{ versionLabel$ | async }}</div>
             </div>
             <div class="settings-row">
               <div class="row-label">Privacy</div>
@@ -258,8 +249,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   exportingXlsx = false;
 
-  themeMode: ThemeMode = 'dark';
-
   accent: AccentSetting = { type: 'preset', value: 'orange' };
 
   fontSizePx: FontSizePx = 16;
@@ -271,8 +260,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   customAccent = '#f27a2a';
 
-  readonly version$;
-  readonly build$;
+  readonly versionLabel$;
 
   canInstall = false;
 
@@ -348,8 +336,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
     @Inject(PLATFORM_ID) private platformId: Object
 
   ) {
-    this.version$ = this.versionService.getVersion$();
-    this.build$ = this.versionService.getBuild$();
+    this.versionLabel$ = combineLatest([
+      this.versionService.getVersion$(),
+      this.versionService.getBuild$()
+    ]).pipe(
+      map(([version, build]) => build !== null ? `Version ${version} (Build ${build})` : `Version ${version}`)
+    );
   }
 
 
@@ -369,8 +361,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.subscription.add(
 
       this.settingsService.getSettings().subscribe(settings => {
-
-        this.themeMode = settings.themeMode;
 
         this.accent = settings.accent;
 
@@ -464,14 +454,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
       window.removeEventListener('beforeinstallprompt', this.installListener);
 
     }
-
-  }
-
-
-
-  updateThemeMode(mode: ThemeMode): void {
-
-    this.settingsService.updateSettings({ themeMode: mode });
 
   }
 
@@ -623,22 +605,24 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
 
 
-  exportJson(): void {
-
+  async exportJson(): Promise<void> {
     try {
-
-      this.backupService.exportJsonBackup();
-
-      this.snackBar.open('Export completed', 'Close', { duration: 2000 });
-
+      const result = await this.backupService.exportBackup();
+      if (result.status === 'success') {
+        const locationSuffix = result.location ? ` (${result.location})` : '';
+        this.snackBar.open(`Backup exported successfully${locationSuffix}`, 'Close', { duration: 3000 });
+        return;
+      }
+      if (result.status === 'cancelled') {
+        this.snackBar.open('Export cancelled', 'Close', { duration: 2000 });
+        return;
+      }
+      console.error('Export failed', result.error);
+      this.snackBar.open('Export failed', 'Close', { duration: 2500 });
     } catch (error) {
-
       console.error('Export failed', error);
-
-      this.snackBar.open('Export failed', 'Close', { duration: 2000 });
-
+      this.snackBar.open('Export failed', 'Close', { duration: 2500 });
     }
-
   }
 
 
@@ -761,13 +745,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
           this.habitStore.restoreFromBackup(parsed, result);
 
-          if (parsed.appSettings?.theme === 'dark' || parsed.appSettings?.theme === 'light') {
-
-            this.settingsService.updateSettings({ themeMode: parsed.appSettings.theme });
-
-          }
-
-          if (Array.isArray(parsed.habits) && parsed.habits.length === 0) {
+            if (Array.isArray(parsed.habits) && parsed.habits.length === 0) {
 
             this.snackBar.open('Import completed (no habits found)', 'Close', { duration: 2500 });
 
@@ -915,6 +893,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 // - Data & Backup and Personalization sections collapse/expand.
 
 // - No overflow behind bottom nav on small screens.
+
 
 
 

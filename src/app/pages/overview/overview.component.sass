@@ -147,6 +147,37 @@
   .card-body
     padding: var(--space-3)
 
+.selected-date-card
+  .card-body
+    padding: var(--space-3)
+
+.selected-date-columns
+  display: grid
+  grid-template-columns: repeat(2, minmax(0, 1fr))
+  gap: 12px
+
+.selected-date-group
+  border: 1px solid color-mix(in oklab, var(--system-border) 35%, transparent)
+  border-radius: var(--radius-md)
+  padding: 10px 12px
+  background: color-mix(in oklab, var(--theme-surface) 85%, transparent)
+
+.selected-date-title
+  margin: 0 0 8px
+  font-size: 0.85rem
+  font-weight: 700
+  color: var(--theme-text)
+
+.selected-date-list
+  margin: 0
+  padding-left: 18px
+  display: grid
+  gap: 6px
+  color: var(--theme-text)
+
+.selected-date-empty
+  margin: 0
+
 .weekly-row
   display: grid
   grid-template-columns: 60px 90px 1fr 52px 70px
@@ -215,6 +246,9 @@
 @media (max-width: 640px)
   .calendar-grid
     gap: 6px
+
+  .selected-date-columns
+    grid-template-columns: 1fr
 
   .weekly-row
     grid-template-columns: 1fr 1fr

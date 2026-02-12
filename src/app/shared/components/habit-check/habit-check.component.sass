@@ -40,22 +40,3 @@
 
 .habit-check.is-checked .check-mark
   opacity: 1
-
-:host-context([data-theme="light"])
-  .habit-check
-    background: rgba(43, 110, 242, 0.10)
-    border-color: rgba(43, 110, 242, 0.25)
-    box-shadow: none
-
-    &:hover
-      border-color: var(--fill)
-      box-shadow: 0 0 0 1px color-mix(in srgb, var(--fill) 35%, transparent)
-
-    &.is-checked
-      background: var(--success)
-      border-color: var(--success)
-      box-shadow: 0 0 0 1px color-mix(in srgb, var(--success) 35%, transparent)
-
-  .check-mark
-    border-left-color: #fff
-    border-bottom-color: #fff

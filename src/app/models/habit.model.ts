@@ -1,6 +1,7 @@
 export interface Habit {
   id: string;
   name: string;
+  createdAtDateKey: string;
   goalDays: number;
   frequencyType?: 'daily' | 'weekly';
   weeklyTarget?: number;

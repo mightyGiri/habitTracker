@@ -1,9 +1,12 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HabitStoreService } from './habit-store.service';
-import { ThemeService } from './theme.service';
-import { HabitCompletion, HabitSkips, UserProfile, ProfileSettings } from '../models/habit.model';
+import { HabitCompletion, HabitSkips, UserProfile, ProfileSettings, TimerStateMap } from '../models/habit.model';
 import { DateUtils } from '../shared/date-utils';
 import * as XLSX from 'xlsx';
+import { Capacitor } from '@capacitor/core';
+import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 type BackupPayload = {
   schemaVersion: number;
@@ -13,64 +16,143 @@ type BackupPayload = {
     selectedYear?: number;
     selectedMonthIndex?: number;
   };
-  habits: Array<{
-    id: string;
-    name: string;
-    goalDays: number;
-    frequencyType?: 'daily' | 'weekly';
-    weeklyTarget?: number;
-    minimumVersion?: string;
-    timerEnabled?: boolean;
-    timerSeconds?: number;
-    timerAutoComplete?: boolean;
-    type?: 'check' | 'timer';
-    targetSeconds?: number;
-    allowManualComplete?: boolean;
-  }>;
+  habits: Array<Record<string, unknown>>;
   checks: HabitCompletion;
+  completions?: HabitCompletion;
   skips?: HabitSkips;
+  timerStates?: TimerStateMap;
+  selectedMonthYear?: { year: number; month: number };
   onboardingCompleted?: boolean;
   userProfile?: UserProfile;
   profile?: ProfileSettings;
+  defaultsSeeded?: boolean;
+};
+
+export type BackupExportResult = {
+  status: 'success' | 'cancelled' | 'error';
+  fileName: string;
+  location?: string;
+  error?: unknown;
 };
 
 @Injectable({ providedIn: 'root' })
 export class BackupService {
-  constructor(private habitStore: HabitStoreService, private themeService: ThemeService) {}
+  constructor(
+    private habitStore: HabitStoreService,
+    @Inject(PLATFORM_ID) private platformId: object
+  ) {}
 
-  exportJsonBackup(): void {
+  async exportBackup(): Promise<BackupExportResult> {
+    const fileName = `habit-tracker-backup-${this.getDateStamp()}.json`;
+    if (!isPlatformBrowser(this.platformId)) {
+      return {
+        status: 'error',
+        fileName,
+        error: new Error('Export is only available in browser or native app runtime.')
+      };
+    }
+
+    const payload = this.createBackupPayload();
+    const json = JSON.stringify(payload, null, 2);
+
+    try {
+      if (Capacitor.isNativePlatform()) {
+        return await this.exportJsonNative(fileName, json);
+      }
+      return await this.exportJsonWeb(fileName, json);
+    } catch (error) {
+      return { status: 'error', fileName, error };
+    }
+  }
+
+  async exportJsonBackup(): Promise<BackupExportResult> {
+    return this.exportBackup();
+  }
+
+  private createBackupPayload(): BackupPayload {
     const snapshot = this.habitStore.getSnapshotForBackup();
-    const payload: BackupPayload = {
+    return {
       schemaVersion: 1,
       exportedAt: new Date().toISOString(),
       appSettings: {
-        theme: this.themeService.getThemeSync(),
+        theme: 'dark',
         selectedYear: snapshot.selectedMonthYear?.year,
         selectedMonthIndex: snapshot.selectedMonthYear?.month
       },
-      habits: snapshot.habits.map(habit => ({
-        id: habit.id,
-        name: habit.name,
-        goalDays: habit.goalDays,
-        frequencyType: habit.frequencyType,
-        weeklyTarget: habit.weeklyTarget,
-        minimumVersion: habit.minimumVersion,
-        timerEnabled: habit.timerEnabled,
-        timerSeconds: habit.timerSeconds,
-        timerAutoComplete: habit.timerAutoComplete,
-        type: habit.type,
-        targetSeconds: habit.targetSeconds,
-        allowManualComplete: habit.allowManualComplete
-      })),
+      habits: snapshot.habits.map(habit => ({ ...habit })),
       checks: snapshot.completions,
+      completions: snapshot.completions,
       skips: snapshot.skips,
+      timerStates: snapshot.timerStates,
+      selectedMonthYear: snapshot.selectedMonthYear,
       onboardingCompleted: snapshot.onboardingCompleted,
       userProfile: snapshot.userProfile ?? undefined,
-      profile: snapshot.profile ?? undefined
+      profile: snapshot.profile ?? undefined,
+      defaultsSeeded: snapshot.defaultsSeeded
     };
+  }
 
-    const json = JSON.stringify(payload, null, 2);
-    this.downloadFile(json, `habit-tracker-backup-${this.getDateStamp()}.json`, 'application/json');
+  private async exportJsonWeb(fileName: string, json: string): Promise<BackupExportResult> {
+    const savePicker = (window as Window & {
+      showSaveFilePicker?: (options?: {
+        suggestedName?: string;
+        types?: Array<{ description?: string; accept: Record<string, string[]> }>;
+      }) => Promise<{
+        name?: string;
+        createWritable: () => Promise<{ write: (data: Blob | string) => Promise<void>; close: () => Promise<void> }>;
+      }>;
+    }).showSaveFilePicker;
+
+    if (typeof savePicker === 'function') {
+      try {
+        const handle = await savePicker({
+          suggestedName: fileName,
+          types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(json);
+        await writable.close();
+        return {
+          status: 'success',
+          fileName,
+          location: handle.name || fileName
+        };
+      } catch (error) {
+        if (this.isCancellationError(error)) {
+          return { status: 'cancelled', fileName };
+        }
+        throw error;
+      }
+    }
+
+    this.downloadFile(json, fileName, 'application/json');
+    return { status: 'success', fileName, location: 'Browser downloads' };
+  }
+
+  private async exportJsonNative(fileName: string, json: string): Promise<BackupExportResult> {
+    const write = await Filesystem.writeFile({
+      path: fileName,
+      data: json,
+      directory: Directory.Documents,
+      encoding: Encoding.UTF8,
+      recursive: true
+    });
+    const savedPath = write.uri || `Documents/${fileName}`;
+
+    try {
+      await Share.share({
+        title: 'Habit Tracker Backup',
+        text: 'Habit Tracker backup JSON',
+        files: [savedPath],
+        dialogTitle: 'Export backup'
+      });
+    } catch (shareError) {
+      if (!this.isCancellationError(shareError)) {
+        console.warn('Backup saved, but opening native share sheet failed.', shareError);
+      }
+    }
+
+    return { status: 'success', fileName, location: savedPath };
   }
 
   exportDailyCountsCsv(): void {
@@ -172,15 +254,19 @@ export class BackupService {
   }
 
   private downloadFile(contents: string, fileName: string, mimeType: string): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
     const blob = new Blob([contents], { type: mimeType });
     const url = URL.createObjectURL(blob);
 
     const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = fileName;
+    anchor.rel = 'noopener';
     anchor.click();
 
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
   private getMonthKeys(completions: HabitCompletion): Array<{ year: number; monthIndex: number }> {
@@ -223,5 +309,17 @@ export class BackupService {
 
   private getDateStamp(): string {
     return new Date().toISOString().slice(0, 10);
+  }
+
+  private isCancellationError(error: unknown): boolean {
+    if (!error) {
+      return false;
+    }
+    const maybeDom = error as { name?: string };
+    if (maybeDom.name === 'AbortError') {
+      return true;
+    }
+    const message = String((error as { message?: string }).message || error).toLowerCase();
+    return message.includes('cancel') || message.includes('dismiss');
   }
 }

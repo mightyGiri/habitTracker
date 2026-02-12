@@ -3,7 +3,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { Subscription, combineLatest, Observable } from 'rxjs';
 import { HabitStoreService } from '../../services/habit-store.service';
-import { MonthKey, MonthSlot, HabitSkips } from '../../models/habit.model';
+import { Habit, MonthKey, MonthSlot, HabitSkips } from '../../models/habit.model';
 import { DateUtils } from '../../shared/date-utils';
 import { getDailyMotivation } from '../../shared/daily-motivations';
 import { DayCountPipe } from '../../shared/day-count.pipe';
@@ -33,6 +33,13 @@ type WeekSummary = {
   perfectDays: number;
 };
 
+type SelectedDateHabits = {
+  dateKey: string;
+  date: Date | null;
+  completed: Habit[];
+  incomplete: Habit[];
+};
+
 @Component({
   selector: 'app-overview',
   standalone: true,
@@ -57,7 +64,7 @@ type WeekSummary = {
               </div>
               <div class="hero-block arcane-card--tight">
                 <div class="hero-label">Wins</div>
-                <div class="hero-value">You leveled up {{ weekAttendanceCount }} of {{ weekTotalDays | dayCount }}</div>
+                <div class="hero-value">Perfect days: {{ weekAttendanceCount }} / {{ weekTotalDays }}</div>
               </div>
               <div class="hero-block hero-action arcane-card--tight">
                 <div class="hero-label">Next best action</div>
@@ -98,6 +105,32 @@ type WeekSummary = {
                   </ng-container>
                 </div>
               </mat-card-content>
+            </mat-card>
+
+            <mat-card class="aesthetic-card summary-card arcane-card selected-date-card" [@staggerFadeUp]="animationKey">
+              <ng-container *ngIf="selectedDateHabits$ | async as selectedDateHabits">
+                <div class="card-header text-section">
+                  Habits on {{ selectedDateHabits.date ? (selectedDateHabits.date | date:'MMM d, y') : selectedDateHabits.dateKey }}
+                </div>
+                <mat-card-content class="card-body">
+                  <div class="selected-date-columns">
+                    <section class="selected-date-group">
+                      <h3 class="selected-date-title">&#x2705; Completed ({{ selectedDateHabits.completed.length }})</h3>
+                      <p class="text-muted selected-date-empty" *ngIf="selectedDateHabits.completed.length === 0">No completed habits.</p>
+                      <ul class="selected-date-list" *ngIf="selectedDateHabits.completed.length > 0">
+                        <li *ngFor="let habit of selectedDateHabits.completed; trackBy: trackByHabitId">{{ habit.name }}</li>
+                      </ul>
+                    </section>
+                    <section class="selected-date-group">
+                      <h3 class="selected-date-title">&#x274C; Not completed ({{ selectedDateHabits.incomplete.length }})</h3>
+                      <p class="text-muted selected-date-empty" *ngIf="selectedDateHabits.incomplete.length === 0">Nothing left incomplete.</p>
+                      <ul class="selected-date-list" *ngIf="selectedDateHabits.incomplete.length > 0">
+                        <li *ngFor="let habit of selectedDateHabits.incomplete; trackBy: trackByHabitId">{{ habit.name }}</li>
+                      </ul>
+                    </section>
+                  </div>
+                </mat-card-content>
+              </ng-container>
             </mat-card>
 
             <mat-card class="aesthetic-card summary-card arcane-card" [@staggerFadeUp]="animationKey">
@@ -172,6 +205,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
   private todayKey = '';
   private gridRows = 6;
   ready$!: Observable<boolean>;
+  selectedDateHabits$!: Observable<SelectedDateHabits>;
 
   private subscription: Subscription = new Subscription();
 
@@ -185,6 +219,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.todayKey = this.habitStore.toDateKey(new Date());
     this.ready$ = this.habitStore.getReady();
+    this.selectedDateHabits$ = this.habitStore.getSelectedDateHabitBreakdown();
     this.setViewportFlags();
     this.subscription.add(
       combineLatest([
@@ -227,15 +262,18 @@ export class OverviewComponent implements OnInit, OnDestroy {
     if (this.selectedMonthYear) {
       this.monthMatrix = DateUtils.getMonthMatrix(this.selectedMonthYear.year, this.selectedMonthYear.month);
       this.gridRows = this.getGridRows(this.selectedMonthYear.year, this.selectedMonthYear.month);
-      this.buildCalendar(habits, completions);
-      this.currentStreak = this.habitStore.getCurrentStreak(this.todayKey);
+      this.buildCalendar(completions);
+      const streakDateKey = this.selectedDateKey || this.todayKey;
+      this.currentStreak = this.habitStore.getStreakCount(streakDateKey);
       const monthKey = `${this.selectedMonthYear.year}-${this.selectedMonthYear.month}`;
       if (this.lastMonthKey !== monthKey) {
         this.animationKey++;
         this.lastMonthKey = monthKey;
       }
     }
-    this.weekAttendanceCount = this.getWeekAttendance(habits, completions, skips, today);
+    const weeklyWins = this.habitStore.getWeeklyWins(this.selectedDateKey || todayKey);
+    this.weekAttendanceCount = weeklyWins.wins;
+    this.weekTotalDays = weeklyWins.total;
     this.todayRemainingCount = this.habitStore.getRemainingCount(today);
     this.nextBestActionText = this.todayRemainingCount > 0
       ? getDailyMotivation(today.getDate())
@@ -243,13 +281,11 @@ export class OverviewComponent implements OnInit, OnDestroy {
     this.hasAnyData = this.activeHabitsCount > 0 && (this.completionPercent > 0 || this.perfectDaysCount > 0 || this.weekAttendanceCount > 0);
   }
 
-  private buildCalendar(habits: Array<{ id: string; isActive: boolean }>, completions: Record<string, Record<string, boolean>>): void {
+  private buildCalendar(completions: Record<string, Record<string, boolean>>): void {
     if (!this.selectedMonthYear) {
       return;
     }
     const { year, month } = this.selectedMonthYear;
-    const activeHabits = habits.filter(habit => habit.isActive);
-    const goalPerDay = activeHabits.length;
     const dayStats = new Map<number, { done: number; percent: number; isPerfect: boolean }>();
     let monthDone = 0;
     let monthGoal = 0;
@@ -258,6 +294,8 @@ export class OverviewComponent implements OnInit, OnDestroy {
     for (let day = 1; day <= DateUtils.daysInMonth(year, month); day++) {
       const date = new Date(year, month, day);
       const dateKey = this.habitStore.toDateKey(date);
+      const activeHabits = this.habitStore.getHabitsActiveOn(dateKey);
+      const goalPerDay = activeHabits.length;
       const dayMap = completions[dateKey] || {};
       const done = activeHabits.reduce((sum, habit) => sum + (dayMap[habit.id] ? 1 : 0), 0);
       const percent = goalPerDay > 0 ? Math.round((done / goalPerDay) * 100) : 0;
@@ -290,6 +328,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
       const stats = dayStats.get(slot.dayNumber) || { done: 0, percent: 0, isPerfect: false };
       const date = new Date(year, month, slot.dayNumber);
       const dateKey = this.habitStore.toDateKey(date);
+      const goalPerDay = this.habitStore.getHabitsActiveOn(dateKey).length;
       return {
         dayNumber: slot.dayNumber,
         dateKey,
@@ -316,6 +355,8 @@ export class OverviewComponent implements OnInit, OnDestroy {
         if (!stats) {
           return;
         }
+        const dateKey = this.habitStore.toDateKey(new Date(year, month, slot.dayNumber));
+        const goalPerDay = this.habitStore.getHabitsActiveOn(dateKey).length;
         done += stats.done;
         goal += goalPerDay;
         if (stats.isPerfect) {
@@ -357,6 +398,10 @@ export class OverviewComponent implements OnInit, OnDestroy {
     return cell.dateKey ?? `empty-${index}`;
   }
 
+  trackByHabitId(index: number, habit: Habit): string {
+    return habit.id;
+  }
+
   private getIntensityClass(percent: number, isPerfect: boolean): string {
     if (isPerfect) {
       return 'is-perfect';
@@ -379,36 +424,6 @@ export class OverviewComponent implements OnInit, OnDestroy {
     const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
     const totalCells = startOffset + daysInMonth;
     return Math.ceil(totalCells / 7);
-  }
-
-  private getWeekAttendance(
-    habits: Array<{ id: string; isActive: boolean }>,
-    completions: Record<string, Record<string, boolean>>,
-    skips: HabitSkips,
-    today: Date
-  ): number {
-    const activeHabits = habits.filter(habit => habit.isActive);
-    if (activeHabits.length === 0) {
-      return 0;
-    }
-    let count = 0;
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      const dateKey = this.habitStore.toDateKey(date);
-      const dayMap = completions[dateKey] || {};
-      const skipMap = skips[dateKey] || {};
-      const handled = activeHabits.reduce((sum, habit) => {
-        if (dayMap[habit.id] || skipMap[habit.id]) {
-          return sum + 1;
-        }
-        return sum;
-      }, 0);
-      if (handled > 0) {
-        count++;
-      }
-    }
-    return count;
   }
 
   private setViewportFlags(): void {

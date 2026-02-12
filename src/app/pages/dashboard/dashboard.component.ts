@@ -505,9 +505,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         }
         this.previousLevel = levelStats.level;
         this.previousHeaderLevel = levelStats.level;
-        this.habits = habits
-          .filter(habit => habit.isActive)
-          .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+        this.habits = this.habitStore.getHabitsActiveOn(dateKey);
         this.habitsCount = this.habits.length;
         this.updateData();
         this.syncSelectedDateToMonth();
@@ -649,6 +647,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private updateData(): void {
     if (this.selectedMonthYear) {
+      this.habitsCount = this.habitStore.getMaxActiveHabitsInMonth(this.selectedMonthYear.year, this.selectedMonthYear.month);
       this.daysInMonth = this.habitStore.getDaysInMonth();
       this.monthlyTotals = this.habitStore.getMonthlyTotals();
       this.dailyCounts = this.habitStore.getDailyCompletedCounts();
@@ -989,7 +988,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.remainingCount = Math.max(this.selectedSummary.totalCount - this.selectedSummary.handledCount, 0);
     this.todayRemainingCount = Math.max(this.todaySummary.totalCount - this.todaySummary.handledCount, 0);
 
-    const newStreak = this.habitStore.getCurrentStreak(this.todayDateKey);
+    const newStreak = this.habitStore.getStreakCount(this.todayDateKey);
     if (this.isSameDate(this.selectedDate, this.todayDate) && newStreak > this.previousStreakCount) {
       this.triggerStreakCelebration();
       this.triggerStreakFireBurst();

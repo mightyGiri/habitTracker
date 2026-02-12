@@ -1,10 +1,9 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Injectable, isDevMode } from '@angular/core';
+import { BehaviorSubject, Observable, combineLatest, map } from 'rxjs';
 import { Habit, MonthKey, HabitCompletion, DayCheck, MonthlyTotals, TopHabit, MonthInsights, HabitSkips, HabitSkip, UserProfile, ProfileSettings, TimerState, TimerStateMap } from '../models/habit.model';
 import { DateUtils } from '../shared/date-utils';
 import { getLevelProgress, LevelProgress } from '../shared/level-utils';
 import { StorageService, PersistedState } from './storage.service';
-import { ThemeService } from './theme.service';
 
 interface StorageData {
   habits: Habit[];
@@ -22,6 +21,7 @@ type BackupData = {
   habits: Array<{
     id: string;
     name: string;
+    createdAtDateKey?: string;
     goalDays: number;
     frequencyType?: 'daily' | 'weekly';
     weeklyTarget?: number;
@@ -43,6 +43,8 @@ type BackupData = {
   appSettings?: { selectedYear?: number; selectedMonthIndex?: number };
 };
 
+type DaySummary = { doneCount: number; skippedCount: number; handledCount: number; totalCount: number; percentDone: number; percentHandled: number };
+
 @Injectable({
   providedIn: 'root'
 })
@@ -63,25 +65,27 @@ export class HabitStoreService {
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingState: PersistedState | null = null;
 
-  constructor(private storageService: StorageService, private themeService: ThemeService) {
+  constructor(private storageService: StorageService) {
     void this.initialize();
     this.completions$.subscribe(completions => {
       this.levelStats$.next(this.buildLevelStats(completions));
     });
-    this.themeService.getTheme().subscribe(() => this.saveToStorage());
   }
 
   private async initialize(): Promise<void> {
     this.ready$.next(false);
     const state = await this.storageService.loadState();
     if (state) {
-      const normalizedHabits = this.normalizeHabits(state.habits || []);
+      const normalizedCompletions = this.normalizeCompletions(state.completions || {});
+      const normalizedSkips = this.normalizeSkips(state.skips || {});
+      const normalizedHabits = this.normalizeHabits(state.habits || [], normalizedCompletions);
       this.defaultsSeeded = state.defaultsSeeded === true || normalizedHabits.length > 0;
       if (normalizedHabits.length > 0) {
         this.habits$.next(normalizedHabits);
-        this.completions$.next(this.normalizeCompletions(state.completions || {}));
-        this.skips$.next(this.normalizeSkips(state.skips || {}));
+        this.completions$.next(normalizedCompletions);
+        this.skips$.next(normalizedSkips);
         this.timerStates$.next(this.normalizeTimerStates(state.timerStates || {}));
+        this.assertHabitDateKeys(normalizedHabits);
       } else if (!this.defaultsSeeded) {
         this.seedHabits();
         this.defaultsSeeded = true;
@@ -96,9 +100,6 @@ export class HabitStoreService {
       }
       if (state.selectedMonthYear) {
         this.selectedMonthYear$.next(state.selectedMonthYear);
-      }
-      if (state.settings?.theme) {
-        this.themeService.setTheme(state.settings.theme);
       }
       this.isHydrated = true;
       this.enforceAdminDateLock();
@@ -117,12 +118,13 @@ export class HabitStoreService {
 
   private seedHabits(): void {
     const now = Date.now();
+    const todayDateKey = this.toIsoDateLocal(new Date());
     const habits: Habit[] = [
-      { id: this.createId(), name: 'Wake up on time', goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, createdAt: now, isActive: true, sortOrder: 0 },
-      { id: this.createId(), name: 'Meditation', goalDays: 30, frequencyType: 'daily', timerEnabled: true, timerSeconds: 300, timerAutoComplete: true, type: 'timer', targetSeconds: 300, allowManualComplete: false, timerCompleted: false, createdAt: now + 1, isActive: true, sortOrder: 1 },
-      { id: this.createId(), name: 'Move (walk/exercise)', goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, createdAt: now + 2, isActive: true, sortOrder: 2 },
-      { id: this.createId(), name: 'Read', goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, createdAt: now + 3, isActive: true, sortOrder: 3 },
-      { id: this.createId(), name: 'Reflect (journal)', goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, createdAt: now + 4, isActive: true, sortOrder: 4 }
+      { id: this.createId(), name: 'Wake up on time', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, createdAt: now, isActive: true, sortOrder: 0 },
+      { id: this.createId(), name: 'Meditation', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: true, timerSeconds: 300, timerAutoComplete: true, type: 'timer', targetSeconds: 300, allowManualComplete: false, timerCompleted: false, createdAt: now + 1, isActive: true, sortOrder: 1 },
+      { id: this.createId(), name: 'Move (walk/exercise)', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, createdAt: now + 2, isActive: true, sortOrder: 2 },
+      { id: this.createId(), name: 'Read', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, createdAt: now + 3, isActive: true, sortOrder: 3 },
+      { id: this.createId(), name: 'Reflect (journal)', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, createdAt: now + 4, isActive: true, sortOrder: 4 }
     ];
     this.habits$.next(habits);
   }
@@ -156,8 +158,8 @@ export class HabitStoreService {
   }
 
   setSelectedDate(date: Date): void {
-    const safeDate = this.resolveDate(date);
-    this.selectedDateKey$.next(this.toIsoDateLocal(safeDate));
+    const normalizedDate = this.normalizeDate(date);
+    this.selectedDateKey$.next(this.toIsoDateLocal(normalizedDate));
     this.saveToStorage();
   }
 
@@ -340,6 +342,7 @@ export class HabitStoreService {
       {
         id,
         name: trimmed,
+        createdAtDateKey: this.toIsoDateLocal(new Date()),
         goalDays,
         frequencyType,
         weeklyTarget: frequencyType === 'weekly' ? weeklyTarget : undefined,
@@ -503,6 +506,10 @@ export class HabitStoreService {
   setCompleted(habitId: string, date: Date, completed: boolean): void {
     const safeDate = this.resolveDate(date);
     const dateKey = this.toIsoDateLocal(safeDate);
+    const habitIsActiveOnDate = this.getHabitsActiveOn(dateKey).some(habit => habit.id === habitId);
+    if (!habitIsActiveOnDate) {
+      return;
+    }
     const completions = { ...this.completions$.value };
     const dayMap = { ...(completions[dateKey] || {}) };
     if (completed) {
@@ -540,6 +547,10 @@ export class HabitStoreService {
   skipHabit(habitId: string, date: Date, reason: string, note?: string): void {
     const safeDate = this.resolveDate(date);
     const dateKey = this.toIsoDateLocal(safeDate);
+    const habitIsActiveOnDate = this.getHabitsActiveOn(dateKey).some(habit => habit.id === habitId);
+    if (!habitIsActiveOnDate) {
+      return;
+    }
     const skips = { ...this.skips$.value };
     const dayMap = { ...(skips[dateKey] || {}) };
     dayMap[habitId] = { reason, note, ts: Date.now() };
@@ -570,7 +581,7 @@ export class HabitStoreService {
     const dateKey = this.toIsoDateLocal(safeDate);
     const skips = { ...this.skips$.value };
     const dayMap = { ...(skips[dateKey] || {}) };
-    const activeHabits = this.habits$.value.filter(habit => habit.isActive);
+    const activeHabits = this.getHabitsActiveOn(dateKey);
     const completions = this.completions$.value[dateKey] || {};
 
     activeHabits.forEach(habit => {
@@ -587,48 +598,30 @@ export class HabitStoreService {
   }
 
   isPerfectDay(date: Date): boolean {
-    const activeHabits = this.habits$.value.filter(habit => habit.isActive);
-    if (activeHabits.length === 0) {
-      return false;
-    }
-    const dateKey = this.toIsoDateLocal(date);
-    const dayMap = this.completions$.value[dateKey] || {};
-    const skipMap = this.skips$.value[dateKey] || {};
-    const handledCount = activeHabits.reduce((sum, habit) => {
-      if (dayMap[habit.id] || skipMap[habit.id]) {
-        return sum + 1;
-      }
-      return sum;
-    }, 0);
-    return handledCount === activeHabits.length;
+    const dateKey = this.toIsoDateLocal(this.resolveDate(date));
+    const summary = this.getDaySummaryByDateKey(dateKey);
+    return summary.totalCount > 0 && summary.handledCount === summary.totalCount;
   }
 
   getRemainingCount(date: Date): number {
     const safeDate = this.resolveDate(date);
-    const activeHabits = this.habits$.value.filter(habit => habit.isActive);
-    if (activeHabits.length === 0) {
-      return 0;
-    }
     const dateKey = this.toIsoDateLocal(safeDate);
-    const dayMap = this.completions$.value[dateKey] || {};
-    const skipMap = this.skips$.value[dateKey] || {};
-    const handledCount = activeHabits.reduce((sum, habit) => {
-      if (dayMap[habit.id] || skipMap[habit.id]) {
-        return sum + 1;
-      }
-      return sum;
-    }, 0);
-    return Math.max(activeHabits.length - handledCount, 0);
+    const summary = this.getDaySummaryByDateKey(dateKey);
+    return Math.max(summary.totalCount - summary.handledCount, 0);
   }
 
-  getDaySummary(date: Date): { doneCount: number; skippedCount: number; handledCount: number; totalCount: number; percentDone: number; percentHandled: number } {
+  getDaySummary(date: Date): DaySummary {
     const safeDate = this.resolveDate(date);
-    const activeHabits = this.habits$.value.filter(habit => habit.isActive);
+    const dateKey = this.toIsoDateLocal(safeDate);
+    return this.getDaySummaryByDateKey(dateKey);
+  }
+
+  private getDaySummaryByDateKey(dateKey: string): DaySummary {
+    const activeHabits = this.getHabitsActiveOn(dateKey);
     const totalCount = activeHabits.length;
     if (totalCount === 0) {
       return { doneCount: 0, skippedCount: 0, handledCount: 0, totalCount: 0, percentDone: 0, percentHandled: 0 };
     }
-    const dateKey = this.toIsoDateLocal(safeDate);
     const dayMap = this.completions$.value[dateKey] || {};
     const skipMap = this.skips$.value[dateKey] || {};
     const doneCount = activeHabits.reduce((sum, habit) => sum + (dayMap[habit.id] ? 1 : 0), 0);
@@ -639,51 +632,63 @@ export class HabitStoreService {
     return { doneCount, skippedCount, handledCount, totalCount, percentDone, percentHandled };
   }
 
-  getStreakCount(endingDate: Date): number {
-    const activeHabits = this.habits$.value.filter(habit => habit.isActive);
-    if (activeHabits.length === 0) {
+  getStreakCount(dateKey: string): number {
+    const normalizedDateKey = this.normalizeDateKey(dateKey);
+    if (!normalizedDateKey) {
+      return 0;
+    }
+    const endingDate = this.dateFromKey(normalizedDateKey);
+    if (!endingDate) {
       return 0;
     }
     let streak = 0;
     const cursor = new Date(endingDate);
-    for (let i = 0; i < 365; i++) {
-      if (this.isPerfectDay(cursor)) {
-        streak++;
-      } else {
+    while (true) {
+      const cursorDateKey = this.toIsoDateLocal(cursor);
+      const summary = this.getDaySummaryByDateKey(cursorDateKey);
+      const isPerfect = summary.totalCount > 0 && summary.handledCount >= summary.totalCount;
+      if (!isPerfect) {
         break;
       }
+      streak++;
       cursor.setDate(cursor.getDate() - 1);
     }
     return streak;
   }
 
-  getCurrentStreak(todayKey?: string): number {
-    const activeHabits = this.habits$.value.filter(habit => habit.isActive);
-    if (activeHabits.length === 0) {
-      return 0;
+  getWeeklyWins(endDateKey: string): { wins: number; total: number } {
+    const normalizedEndDateKey = this.normalizeDateKey(endDateKey);
+    if (!normalizedEndDateKey) {
+      return { wins: 0, total: 7 };
+    }
+    const endDate = this.dateFromKey(normalizedEndDateKey);
+    if (!endDate) {
+      return { wins: 0, total: 7 };
     }
 
-    const today = todayKey ? this.dateFromKey(todayKey) : this.normalizeDate(new Date());
-    if (!today) {
-      return 0;
-    }
-
-    const startDate = new Date(today);
-    if (!this.isPerfectDay(startDate)) {
-      startDate.setDate(startDate.getDate() - 1);
-    }
-
-    let streak = 0;
-    const cursor = new Date(startDate);
-    for (let i = 0; i < 365; i++) {
-      if (this.isPerfectDay(cursor)) {
-        streak++;
-      } else {
-        break;
+    let wins = 0;
+    const total = 7;
+    const cursor = new Date(endDate);
+    for (let i = 0; i < total; i++) {
+      const cursorDateKey = this.toIsoDateLocal(cursor);
+      const summary = this.getDaySummaryByDateKey(cursorDateKey);
+      const isPerfectDay = summary.totalCount > 0 && summary.handledCount >= summary.totalCount;
+      if (isPerfectDay) {
+        wins++;
       }
       cursor.setDate(cursor.getDate() - 1);
     }
-    return streak;
+
+    return { wins, total };
+  }
+
+  getCurrentStreak(todayKey?: string): number {
+    const fallbackDateKey = this.toIsoDateLocal(new Date());
+    const targetDateKey = this.normalizeDateKey(todayKey || fallbackDateKey);
+    if (!targetDateKey) {
+      return 0;
+    }
+    return this.getStreakCount(targetDateKey);
   }
 
   isCheckedForDate(year: number, monthIndex: number, dayNumber: number, habitId: string): boolean {
@@ -703,7 +708,7 @@ export class HabitStoreService {
     const skips = { ...this.skips$.value };
     if (checked) {
       const dayMap: Record<string, boolean> = {};
-      this.habits$.value.filter(habit => habit.isActive).forEach(habit => {
+      this.getHabitsActiveOn(dateKey).forEach(habit => {
         dayMap[habit.id] = true;
       });
       completions[dateKey] = dayMap;
@@ -718,13 +723,47 @@ export class HabitStoreService {
 
   getHabitsForDate(date: Date): Array<{ habit: Habit; checked: boolean }> {
     const safeDate = this.resolveDate(date);
-    const habits = this.habits$.value.filter(habit => habit.isActive).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     const dateKey = this.toIsoDateLocal(safeDate);
+    const habits = this.getHabitsForDateKey(dateKey);
     const dayMap = this.completions$.value[dateKey] || {};
     return habits.map(habit => ({
       habit,
       checked: dayMap[habit.id] === true
     }));
+  }
+
+  getHabitsActiveOn(dateKey: string): Habit[] {
+    const normalizedDateKey = this.normalizeDateKey(dateKey) || this.toIsoDateLocal(new Date());
+    return this.habits$.value
+      .filter(habit => this.isHabitActiveOnDateKey(habit, normalizedDateKey))
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  }
+
+  getHabitsForDateKey(dateKey: string): Habit[] {
+    return this.getHabitsActiveOn(dateKey);
+  }
+
+  getCompletedHabitsForDate(dateKey: string): Habit[] {
+    const habits = this.getHabitsForDateKey(dateKey);
+    const dayMap = this.completions$.value[dateKey] || {};
+    return habits.filter(habit => dayMap[habit.id] === true);
+  }
+
+  getIncompleteHabitsForDate(dateKey: string): Habit[] {
+    const habits = this.getHabitsForDateKey(dateKey);
+    const dayMap = this.completions$.value[dateKey] || {};
+    return habits.filter(habit => dayMap[habit.id] !== true);
+  }
+
+  getSelectedDateHabitBreakdown(): Observable<{ dateKey: string; date: Date | null; completed: Habit[]; incomplete: Habit[] }> {
+    return combineLatest([this.selectedDateKey$, this.habits$, this.completions$]).pipe(
+      map(([dateKey]) => ({
+        dateKey,
+        date: this.dateFromKey(dateKey),
+        completed: this.getCompletedHabitsForDate(dateKey),
+        incomplete: this.getIncompleteHabitsForDate(dateKey)
+      }))
+    );
   }
 
   toggleHabitForDate(habitId: string, date: Date): void {
@@ -740,7 +779,7 @@ export class HabitStoreService {
     const skips = { ...this.skips$.value };
     if (checked) {
       const dayMap: Record<string, boolean> = {};
-      this.habits$.value.filter(habit => habit.isActive).forEach(habit => {
+      this.getHabitsActiveOn(dateKey).forEach(habit => {
         dayMap[habit.id] = true;
       });
       completions[dateKey] = dayMap;
@@ -758,17 +797,30 @@ export class HabitStoreService {
     return DateUtils.daysInMonth(year, month);
   }
 
+  getMaxActiveHabitsInMonth(year: number, monthIndex: number): number {
+    const daysInMonth = DateUtils.daysInMonth(year, monthIndex);
+    let max = 0;
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateKey = this.toIsoDateLocal(new Date(year, monthIndex, day));
+      const count = this.getHabitsActiveOn(dateKey).length;
+      if (count > max) {
+        max = count;
+      }
+    }
+    return max;
+  }
+
   getDailyCompletedCounts(): number[] {
     const monthKey = this.selectedMonthYear$.value;
-    const completions = this.completions$.value;
     const daysInMonth = this.getDaysInMonth();
     const counts: number[] = [];
 
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(monthKey.year, monthKey.month, day);
       const dateKey = this.toIsoDateLocal(date);
-      const dayMap = completions[dateKey] || {};
-      counts.push(Object.values(dayMap).filter(Boolean).length);
+      const dayMap = this.completions$.value[dateKey] || {};
+      const activeHabits = this.getHabitsActiveOn(dateKey);
+      counts.push(activeHabits.reduce((sum, habit) => sum + (dayMap[habit.id] ? 1 : 0), 0));
     }
 
     return counts;
@@ -789,23 +841,29 @@ export class HabitStoreService {
     if (daysInMonth <= 0) {
       return 0;
     }
-    const completions = this.completions$.value;
     let completedDays = 0;
+    let eligibleDays = 0;
 
     for (let day = 1; day <= daysInMonth; day++) {
       const dateKey = this.toIsoDateLocal(new Date(year, monthIndex, day));
-      if (completions[dateKey]?.[habitId]) {
+      const existsThatDay = this.getHabitsActiveOn(dateKey).some(habit => habit.id === habitId);
+      if (!existsThatDay) {
+        continue;
+      }
+      eligibleDays++;
+      if (this.completions$.value[dateKey]?.[habitId]) {
         completedDays++;
       }
     }
 
-    return Math.round((completedDays / daysInMonth) * 100);
+    if (eligibleDays === 0) {
+      return 0;
+    }
+    return Math.round((completedDays / eligibleDays) * 100);
   }
 
   getMonthInsights(year: number, monthIndex: number): MonthInsights {
     const daysInMonth = DateUtils.daysInMonth(year, monthIndex);
-    const completions = this.completions$.value;
-    const habitsCount = this.habits$.value.length;
     const today = new Date();
     let lastDayIndex = daysInMonth;
 
@@ -827,8 +885,9 @@ export class HabitStoreService {
 
     for (let day = 1; day <= lastDayIndex; day++) {
       const dateKey = this.toIsoDateLocal(new Date(year, monthIndex, day));
-      const dayMap = completions[dateKey] || {};
-      const count = Object.values(dayMap).filter(Boolean).length;
+      const dayMap = this.completions$.value[dateKey] || {};
+      const activeHabits = this.getHabitsActiveOn(dateKey);
+      const count = activeHabits.reduce((sum, habit) => sum + (dayMap[habit.id] ? 1 : 0), 0);
       if (count > bestCount) {
         bestCount = count;
         bestDay = day;
@@ -837,7 +896,7 @@ export class HabitStoreService {
         worstCount = count;
         worstDay = day;
       }
-      if (habitsCount > 0 && this.isPerfectDay(new Date(year, monthIndex, day))) {
+      if (activeHabits.length > 0 && this.isPerfectDay(new Date(year, monthIndex, day))) {
         perfectDays++;
       }
     }
@@ -845,8 +904,8 @@ export class HabitStoreService {
     let currentStreak = 0;
     for (let day = lastDayIndex; day >= 1; day--) {
       const dateKey = this.toIsoDateLocal(new Date(year, monthIndex, day));
-      const dayMap = completions[dateKey] || {};
-      if (Object.values(dayMap).filter(Boolean).length > 0) {
+      const summary = this.getDaySummaryByDateKey(dateKey);
+      if (summary.doneCount > 0) {
         currentStreak++;
       } else {
         break;
@@ -871,8 +930,8 @@ export class HabitStoreService {
   }
 
   getMonthlyTotals(): MonthlyTotals {
-    const habits = this.habits$.value.filter(habit => habit.isActive);
-    const daysInMonth = this.getDaysInMonth();
+    const { year, month } = this.selectedMonthYear$.value;
+    const habits = this.habits$.value.filter(habit => this.isHabitActiveInMonth(habit, year, month));
     const goal = habits.reduce((sum, h) => sum + h.goalDays, 0);
     const completed = this.getDailyCompletedCounts().reduce((sum, count) => sum + count, 0);
     const left = goal - completed;
@@ -882,8 +941,9 @@ export class HabitStoreService {
   }
 
   getTopHabits(limit: number): TopHabit[] {
-    const habits = this.habits$.value.filter(habit => habit.isActive);
-    const monthKey = this.monthKeyToString(this.selectedMonthYear$.value);
+    const monthState = this.selectedMonthYear$.value;
+    const habits = this.habits$.value.filter(habit => this.isHabitActiveInMonth(habit, monthState.year, monthState.month));
+    const monthKey = this.monthKeyToString(monthState);
 
     const topHabits: TopHabit[] = habits.map(habit => {
       const completionPercent = this.getMonthlyCompletionPercent(habit.id, monthKey);
@@ -938,6 +998,7 @@ export class HabitStoreService {
   }
 
   restoreFromBackup(backup: BackupData, mode: 'replace' | 'merge' = 'replace'): void {
+    const incomingChecks = this.normalizeCompletions(backup.checks || {});
     const normalizedHabits = (backup.habits || [])
       .filter(habit => habit && typeof habit.id === 'string')
       .map(habit => {
@@ -952,9 +1013,11 @@ export class HabitStoreService {
           const type = (habit as Habit).type ?? habit.type ?? (timerEnabled ? 'timer' : 'check');
           const targetSeconds = Math.max(0, Number((habit as Habit).targetSeconds ?? habit.targetSeconds ?? timerSeconds) || 0);
           const allowManualComplete = (habit as Habit).allowManualComplete ?? habit.allowManualComplete ?? false;
+          const fallbackDateKey = this.inferCreatedAtDateKey(habit.id, incomingChecks, this.toIsoDateLocal(new Date()));
           return {
             id: habit.id,
             name: String(habit.name || '').trim() || 'Habit',
+            createdAtDateKey: this.normalizeDateKey(habit.createdAtDateKey) || fallbackDateKey,
             goalDays: Math.max(1, Number(habit.goalDays) || 1),
             frequencyType,
             weeklyTarget,
@@ -971,7 +1034,6 @@ export class HabitStoreService {
           };
         });
 
-    const incomingChecks = this.normalizeCompletions(backup.checks || {});
     const incomingSkips = this.normalizeSkips(backup.skips || {});
 
     if (mode === 'merge') {
@@ -1016,6 +1078,7 @@ export class HabitStoreService {
       });
 
       this.habits$.next(mergedHabits);
+      this.assertHabitDateKeys(mergedHabits);
       this.defaultsSeeded = mergedHabits.length > 0;
       this.completions$.next(mergedCompletions);
       this.skips$.next(mergedSkips);
@@ -1066,6 +1129,7 @@ export class HabitStoreService {
     });
 
     this.habits$.next(this.sortHabits(normalizedHabits));
+    this.assertHabitDateKeys(normalizedHabits);
     this.defaultsSeeded = normalizedHabits.length > 0;
     this.completions$.next(cleanedCompletions);
     this.skips$.next(cleanedSkips);
@@ -1102,11 +1166,8 @@ export class HabitStoreService {
         onboardingCompleted: this.onboardingCompleted$.value,
         userProfile: this.userProfile$.value ?? undefined,
         profile: this.profile$.value,
-        defaultsSeeded: this.defaultsSeeded,
-      settings: {
-        theme: this.themeService.getThemeSync()
-      }
-    };
+        defaultsSeeded: this.defaultsSeeded
+      };
 
     this.pendingState = data;
     if (this.saveTimer) {
@@ -1126,7 +1187,8 @@ export class HabitStoreService {
     return [...habits].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
   }
 
-  private normalizeHabits(habits: Habit[]): Habit[] {
+  private normalizeHabits(habits: Habit[], completions: HabitCompletion = {}): Habit[] {
+    const todayDateKey = this.toIsoDateLocal(new Date());
     return habits.map((habit, index) => {
       const legacy = habit as Habit & { frequency?: 'daily' | 'weekly'; minimum?: string };
       const frequencyType = this.normalizeFrequencyType(habit.frequencyType || legacy.frequency);
@@ -1149,9 +1211,11 @@ export class HabitStoreService {
       const migratedType: 'check' | 'timer' = shouldMigrateDrinkWater ? 'timer' : type;
       const migratedTimerEnabled = shouldMigrateDrinkWater ? true : timerEnabled;
       const migratedTimerSeconds = shouldMigrateDrinkWater ? 300 : timerSeconds;
+      const fallbackDateKey = this.inferCreatedAtDateKey(habit.id, completions, todayDateKey);
       return {
         ...habit,
         name: nextName,
+        createdAtDateKey: this.normalizeDateKey(habit.createdAtDateKey) || fallbackDateKey,
         goalDays: habit.goalDays ?? 30,
         frequencyType,
         weeklyTarget,
@@ -1357,6 +1421,57 @@ export class HabitStoreService {
   private getSelectedMonthDayParts(dayNumber: number): { year: number; month: number; day: number } {
     const { year, month } = this.selectedMonthYear$.value;
     return { year, month, day: dayNumber };
+  }
+
+  private isHabitActiveOnDateKey(habit: Habit, dateKey: string): boolean {
+    if (!habit.isActive) {
+      return false;
+    }
+    const createdAtDateKey = this.normalizeDateKey(habit.createdAtDateKey);
+    if (!createdAtDateKey) {
+      return true;
+    }
+    return createdAtDateKey <= dateKey;
+  }
+
+  private isHabitActiveInMonth(habit: Habit, year: number, monthIndex: number): boolean {
+    if (!habit.isActive) {
+      return false;
+    }
+    const createdAtDateKey = this.normalizeDateKey(habit.createdAtDateKey);
+    if (!createdAtDateKey) {
+      return true;
+    }
+    const monthEndKey = this.toIsoDateLocal(new Date(year, monthIndex + 1, 0));
+    return createdAtDateKey <= monthEndKey;
+  }
+
+  private inferCreatedAtDateKey(habitId: string, completions: HabitCompletion, fallbackDateKey: string): string {
+    const inferredFromCompletions = Object.keys(completions)
+      .filter(dateKey => Boolean(completions[dateKey]?.[habitId]))
+      .sort()[0];
+    return this.normalizeDateKey(inferredFromCompletions) || fallbackDateKey;
+  }
+
+  private normalizeDateKey(value: unknown): string | null {
+    if (typeof value !== 'string') {
+      return null;
+    }
+    const trimmed = value.trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return null;
+    }
+    return trimmed;
+  }
+
+  private assertHabitDateKeys(habits: Habit[]): void {
+    if (!isDevMode()) {
+      return;
+    }
+    const invalid = habits.find(habit => !this.normalizeDateKey(habit.createdAtDateKey));
+    if (invalid) {
+      console.warn('[HabitStoreService] Habit missing valid createdAtDateKey', invalid.id);
+    }
   }
 
   private toIsoDateLocal(date: Date): string {

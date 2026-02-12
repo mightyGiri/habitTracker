@@ -1,3 +1,5 @@
+import { computeLevelStats, getRequiredDone } from './level-utils';
+
 export type LevelProgressState = {
   level: number;
   nextLevel: number;
@@ -8,35 +10,23 @@ export type LevelProgressState = {
 };
 
 export function threshold(level: number): number {
-  const safeLevel = Math.floor(level);
-  if (safeLevel <= 0) return 0;
-  if (safeLevel <= 5) return (safeLevel * (safeLevel + 1)) / 2;
-  return 15 + (safeLevel - 5) * 5;
+  return getRequiredDone(level);
 }
 
 export function getLevelFromCount(count: number): number {
-  const safeCount = Math.max(0, Math.floor(count));
-  if (safeCount <= 0) return 0;
-  let level = 0;
-  while (safeCount >= threshold(level + 1)) {
-    level += 1;
-  }
-  return level;
+  return computeLevelStats(count).level;
 }
 
 export function getLevelProgressFromCount(count: number): LevelProgressState {
-  const safeCount = Math.max(0, Math.floor(count));
-  const level = getLevelFromCount(safeCount);
-  const nextLevel = level + 1;
-  const currentThreshold = threshold(level);
-  const nextThreshold = threshold(nextLevel);
-  const span = Math.max(1, nextThreshold - currentThreshold);
-  const progressPct = Math.min(100, Math.max(0, ((safeCount - currentThreshold) / span) * 100));
-  const remaining = Math.max(0, nextThreshold - safeCount);
+  const progress = computeLevelStats(count);
+  const currentThreshold = progress.requiredForNext - progress.requiredThisLevel;
+  const nextThreshold = progress.requiredForNext;
+  const progressPct = progress.progressPercent * 100;
+  const remaining = progress.remainingToNext;
 
   return {
-    level,
-    nextLevel,
+    level: progress.level,
+    nextLevel: progress.nextLevel,
     currentThreshold,
     nextThreshold,
     remaining,

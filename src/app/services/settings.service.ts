@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { ThemeService, AppTheme } from './theme.service';
+import { ThemeService } from './theme.service';
 
-export type ThemeMode = 'light' | 'dark';
+export type ThemeMode = 'dark';
 export type FontSizePx = number;
 export type AccentId =
   | 'orange'
@@ -32,7 +32,6 @@ const STORAGE_KEY = 'habit_tracker_settings';
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
   private settings$ = new BehaviorSubject<AppSettings>(this.getDefaults());
-  private mediaQuery?: MediaQueryList;
   private presetMap: Record<AccentId, string> = {
     orange: '#f27a2a',
     purple: '#7b68ee',
@@ -57,9 +56,6 @@ export class SettingsService {
     const loaded = this.load();
     this.settings$.next(loaded);
     this.applySettings(loaded);
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    }
   }
 
   getSettings() {
@@ -71,7 +67,7 @@ export class SettingsService {
   }
 
   updateSettings(patch: Partial<AppSettings>): void {
-    const next = { ...this.settings$.value, ...patch };
+    const next = { ...this.settings$.value, ...patch, themeMode: 'dark' as const };
     this.settings$.next(next);
     this.save(next);
     this.applySettings(next);
@@ -85,9 +81,9 @@ export class SettingsService {
   }
 
   private applyThemeMode(mode: ThemeMode): void {
-    this.themeService.setTheme(mode as AppTheme);
-    this.setRootAttribute('data-theme', mode);
-    this.setBodyClass(mode);
+    this.themeService.setTheme('dark');
+    this.setRootAttribute('data-theme', 'dark');
+    this.setBodyClass('dark');
   }
 
   private applyAccent(accent: AccentSetting): void {
@@ -134,12 +130,7 @@ export class SettingsService {
       if (parsed.accent?.type === 'custom' && typeof parsed.accent?.value !== 'string') {
         parsed.accent = { type: 'preset', value: 'orange' };
       }
-      if (parsed.themeMode === 'system') {
-        const prefersDark = typeof window !== 'undefined' && window.matchMedia
-          ? window.matchMedia('(prefers-color-scheme: dark)').matches
-          : true;
-        parsed.themeMode = prefersDark ? 'dark' : 'light';
-      }
+      parsed.themeMode = 'dark';
       if (parsed.fontSizePx === undefined && parsed.fontScale !== undefined) {
         parsed.fontSizePx = Number(parsed.fontScale);
       }
@@ -161,7 +152,7 @@ export class SettingsService {
       if (!parsed.fontFamily) {
         parsed.fontFamily = 'system';
       }
-      return { ...this.getDefaults(), ...parsed } as AppSettings;
+      return { ...this.getDefaults(), ...parsed, themeMode: 'dark' } as AppSettings;
     } catch {
       return this.getDefaults();
     }
@@ -197,7 +188,7 @@ export class SettingsService {
       return;
     }
     document.body.classList.remove('theme-dark', 'theme-light');
-    document.body.classList.add(mode === 'dark' ? 'theme-dark' : 'theme-light');
+    document.body.classList.add(mode === 'dark' ? 'theme-dark' : 'theme-dark');
   }
 
   private setRootStyle(name: string, value: string): void {
