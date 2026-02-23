@@ -1,0 +1,24 @@
+<div class="monarch-scrim" *ngIf="open" (click)="onScrimClick($event)">
+  <div class="monarch-modal" role="dialog" aria-modal="true" [attr.aria-label]="title" (click)="$event.stopPropagation()">
+    <button class="x-btn" type="button" aria-label="Close" (click)="onClose()">
+      &#x2715;
+    </button>
+    <h2 class="modal-title">{{ title }}</h2>
+    <p class="modal-message">{{ message }}</p>
+    <div class="modal-actions">
+      <button
+        *ngIf="secondaryText"
+        type="button"
+        class="modal-btn modal-btn--secondary"
+        (click)="onSecondary()">
+        {{ secondaryText }}
+      </button>
+      <button
+        type="button"
+        class="modal-btn modal-btn--primary"
+        (click)="onPrimary()">
+        {{ primaryText }}
+      </button>
+    </div>
+  </div>
+</div>

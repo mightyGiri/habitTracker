@@ -25,8 +25,6 @@ import { SettingsService, FontSizePx, AccentId, AccentSetting, FontFamilyId } fr
 
 import { ThemeService } from '../../services/theme.service';
 
-import { ImportConfirmDialogComponent, ImportConfirmDialogData } from '../../shared/import-confirm-dialog.component';
-
 import { staggerFadeUp, noopAnimation } from '../../shared/list-animations';
 
 import { ProfileEditDialogComponent, ProfileEditResult } from './profile-edit-dialog.component';
@@ -37,6 +35,7 @@ import { ToggleComponent } from '../../shared/ui/toggle/toggle.component';
 import { getLevelProgress, LevelProgress } from '../../shared/level-utils';
 import { VersionService } from '../../services/version.service';
 import { NotificationService } from '../../services/notification.service';
+import { ShadowMonarchModalComponent } from '../../shared/shadow-monarch-modal/shadow-monarch-modal.component';
 
 
 
@@ -74,7 +73,8 @@ type BeforeInstallPromptEvent = Event & {
 
     MatSnackBarModule,
     RouterModule,
-    ToggleComponent
+    ToggleComponent,
+    ShadowMonarchModalComponent
   ],
 
   animations: [staggerFadeUp || noopAnimation],
@@ -230,6 +230,16 @@ type BeforeInstallPromptEvent = Event & {
         </div>
       </section>
 
+      <app-shadow-monarch-modal
+        [open]="showImportModal"
+        title="Importing Backup"
+        message="Do you want to replace or merge with current data?"
+        primaryText="Replace"
+        secondaryText="Merge"
+        (primary)="onImportReplace()"
+        (secondary)="onImportMerge()"
+        (close)="closeImportModal()">
+      </app-shadow-monarch-modal>
 
 
     </div>
@@ -282,6 +292,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   personalizationOpen = false;
   helpOpen = false;
+  showImportModal = false;
+  private pendingBackupRaw: string | null = null;
+  private pendingBackup: any | null = null;
 
   accentPresets: AccentPreset[] = [
 
@@ -681,140 +694,126 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
 
 
-  onImportJson(event: Event): void {
-
+  async onImportJson(event: Event): Promise<void> {
     const target = event.target as HTMLInputElement;
-
-    const file = target.files && target.files[0];
-
+    const file = target.files?.[0];
     if (!file) {
-
       return;
-
     }
-
-    const reader = new FileReader();
-
-    reader.onload = () => {
-
-      try {
-
-        const raw = String(reader.result || '');
-
-        const parsed = JSON.parse(raw);
-
-        const validation = this.validateBackup(parsed);
-
-        if (!validation.valid) {
-
-          this.snackBar.open(validation.message, 'Close', { duration: 2500 });
-
-          return;
-
-        }
-
-
-
-        const dialogRef = this.dialog.open<ImportConfirmDialogComponent, ImportConfirmDialogData, 'replace' | 'merge' | undefined>(
-
-          ImportConfirmDialogComponent,
-
-          {
-
-            data: {
-
-              title: 'Import backup?',
-
-              message: 'This will replace your current data or merge it with the backup.'
-
-            }
-
-          }
-
-        );
-
-
-
-        dialogRef.afterClosed().subscribe(result => {
-
-          if (!result) {
-
-            return;
-
-          }
-
-          this.habitStore.restoreFromBackup(parsed, result);
-
-            if (Array.isArray(parsed.habits) && parsed.habits.length === 0) {
-
-            this.snackBar.open('Import completed (no habits found)', 'Close', { duration: 2500 });
-
-          } else {
-
-            this.snackBar.open(result === 'merge' ? 'Import completed (merged)' : 'Import completed', 'Close', { duration: 2000 });
-
-          }
-
-        });
-
-      } catch (error) {
-
-        console.error('Import failed', error);
-
-        this.snackBar.open('Invalid JSON file', 'Close', { duration: 2500 });
-
+    try {
+      const isJsonType = file.type === 'application/json';
+      const isJsonName = file.name.toLowerCase().endsWith('.json');
+      if (!isJsonType && !isJsonName) {
+        this.snackBar.open('Invalid backup file', 'Close', { duration: 2500 });
+        return;
       }
 
-    };
+      console.log('Backup import: file selected', file.name, file.size);
+      const raw = await file.text();
+      console.log('Backup import: file read success', raw.slice(0, 100));
 
-    reader.onerror = () => {
+      const parsed = JSON.parse(raw);
+      console.log('Backup import: parsed OK', Object.keys(parsed || {}));
 
-      this.snackBar.open('Failed to read file', 'Close', { duration: 2500 });
+      const normalized = this.unwrapBackupPayload(parsed);
+      const validation = this.validateBackup(normalized);
+      if (!validation.valid) {
+        this.snackBar.open('Invalid backup file', 'Close', { duration: 2500 });
+        return;
+      }
 
-    };
-
-    reader.readAsText(file);
-
-    target.value = '';
-
+      this.pendingBackupRaw = raw;
+      this.pendingBackup = normalized;
+      this.showImportModal = true;
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('Backup import: parse failed', error);
+      this.snackBar.open('Invalid backup file', 'Close', { duration: 2500 });
+    } finally {
+      target.value = '';
+    }
   }
 
 
 
   private validateBackup(data: any): { valid: boolean; message: string } {
-
-    if (!data || typeof data !== 'object') {
-
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
       return { valid: false, message: 'Invalid backup file' };
-
     }
-
-    if (data.schemaVersion !== 1) {
-
-      return { valid: false, message: 'Unsupported schema version' };
-
+    const hasTopLevelKeys =
+      Array.isArray(data.habits) ||
+      typeof data.checks === 'object' ||
+      typeof data.completions === 'object' ||
+      typeof data.skips === 'object';
+    if (!hasTopLevelKeys) {
+      return { valid: false, message: 'Missing backup fields' };
     }
-
-    if (!data.exportedAt || typeof data.exportedAt !== 'string') {
-
-      return { valid: false, message: 'Missing exportedAt' };
-
-    }
-
-    if (!Array.isArray(data.habits)) {
-
-      return { valid: false, message: 'Missing habits list' };
-
-    }
-
-    if (!data.checks || typeof data.checks !== 'object') {
-
-      return { valid: false, message: 'Missing checks data' };
-
-    }
-
     return { valid: true, message: 'OK' };
+  }
 
+  private unwrapBackupPayload(data: any): any {
+    if (data && typeof data === 'object' && !Array.isArray(data) && data.data && typeof data.data === 'object') {
+      return data.data;
+    }
+    return data;
+  }
+
+  closeImportModal(): void {
+    this.showImportModal = false;
+    this.pendingBackup = null;
+    this.pendingBackupRaw = null;
+  }
+
+  onImportReplace(): void {
+    this.applyImport('replace');
+  }
+
+  onImportMerge(): void {
+    this.applyImport('merge');
+  }
+
+  private applyImport(mode: 'replace' | 'merge'): void {
+    if (!this.pendingBackup) {
+      this.showImportModal = false;
+      return;
+    }
+    const backup = this.pendingBackup;
+    const snapshot = this.habitStore.getSnapshotForBackup();
+    const rollback = {
+      schemaVersion: 1,
+      exportedAt: new Date().toISOString(),
+      habits: snapshot.habits,
+      checks: snapshot.completions,
+      skips: snapshot.skips,
+      onboardingCompleted: snapshot.onboardingCompleted,
+      userProfile: snapshot.userProfile ?? undefined,
+      profile: snapshot.profile,
+      appSettings: {
+        selectedYear: snapshot.selectedMonthYear?.year,
+        selectedMonthIndex: snapshot.selectedMonthYear?.month
+      }
+    };
+    try {
+      console.log('Backup import: apply started', mode);
+      this.habitStore.restoreFromBackup(backup, mode);
+      console.log('Backup import: apply success');
+      this.showImportModal = false;
+      this.pendingBackup = null;
+      this.pendingBackupRaw = null;
+      this.snackBar.open(mode === 'merge' ? 'Import completed (merged)' : 'Import completed', 'Close', { duration: 2200 });
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('Backup import: apply failed', error);
+      try {
+        this.habitStore.restoreFromBackup(rollback, 'replace');
+      } catch (rollbackError) {
+        console.error('Backup import: rollback failed', rollbackError);
+      }
+      this.showImportModal = false;
+      this.pendingBackup = null;
+      this.pendingBackupRaw = null;
+      this.snackBar.open('Import failed', 'Close', { duration: 2500 });
+    }
   }
 
 

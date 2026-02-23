@@ -43,7 +43,7 @@ export class BackupService {
   ) {}
 
   async exportBackup(): Promise<BackupExportResult> {
-    const fileName = `habit-tracker-backup-${this.getDateStamp()}.json`;
+    const fileName = `LevelUp-backup-${this.getTimestampStamp()}.json`;
     if (!isPlatformBrowser(this.platformId)) {
       return {
         status: 'error',
@@ -53,6 +53,13 @@ export class BackupService {
     }
 
     const payload = this.createBackupPayload();
+    if (!payload || typeof payload !== 'object') {
+      return {
+        status: 'error',
+        fileName,
+        error: new Error('Backup payload is empty.')
+      };
+    }
     const json = JSON.stringify(payload, null, 2);
 
     try {
@@ -61,6 +68,7 @@ export class BackupService {
       }
       return await this.exportJsonWeb(fileName, json);
     } catch (error) {
+      console.error('Backup export failed:', error);
       return { status: 'error', fileName, error };
     }
   }
@@ -130,29 +138,40 @@ export class BackupService {
   }
 
   private async exportJsonNative(fileName: string, json: string): Promise<BackupExportResult> {
+    const directory = Directory.Documents;
     const write = await Filesystem.writeFile({
       path: fileName,
       data: json,
-      directory: Directory.Documents,
+      directory,
       encoding: Encoding.UTF8,
       recursive: true
     });
-    const savedPath = write.uri || `Documents/${fileName}`;
+
+    let fileUri = '';
+    try {
+      const uriResult = await Filesystem.getUri({ directory, path: fileName });
+      fileUri = uriResult.uri;
+    } catch (uriError) {
+      console.error('Backup export: getUri failed', uriError);
+    }
+    if (!fileUri) {
+      fileUri = write.uri || `file://Documents/${fileName}`;
+    }
 
     try {
       await Share.share({
-        title: 'Habit Tracker Backup',
-        text: 'Habit Tracker backup JSON',
-        files: [savedPath],
-        dialogTitle: 'Export backup'
+        title: 'LevelUp Backup',
+        text: 'Backup JSON file',
+        url: fileUri
       });
     } catch (shareError) {
       if (!this.isCancellationError(shareError)) {
-        console.warn('Backup saved, but opening native share sheet failed.', shareError);
+        console.error('Backup export: share failed', shareError);
+        return { status: 'error', fileName, error: shareError };
       }
     }
 
-    return { status: 'success', fileName, location: savedPath };
+    return { status: 'success', fileName, location: fileUri };
   }
 
   exportDailyCountsCsv(): void {
@@ -309,6 +328,16 @@ export class BackupService {
 
   private getDateStamp(): string {
     return new Date().toISOString().slice(0, 10);
+  }
+
+  private getTimestampStamp(): string {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    return `${y}${m}${d}-${hh}${mm}`;
   }
 
   private isCancellationError(error: unknown): boolean {
