@@ -346,6 +346,13 @@
 .hero-progress
   margin: 0 0 var(--space-2)
 
+.perfect-day-active
+  .today-header
+    box-shadow: 0 0 18px color-mix(in oklab, var(--theme-success) 16%, transparent), var(--system-shadow-deep), inset 0 0 0 1px rgba(255, 255, 255, 0.05)
+
+  .today-hero
+    box-shadow: 0 0 18px color-mix(in oklab, var(--theme-success) 18%, transparent)
+
 .system-modal-overlay
   position: fixed
   inset: 0
@@ -536,8 +543,8 @@
   gap: 12px
 
   &.perfect-day .today-item
-    border-color: var(--theme-accent)
-    box-shadow: 0 0 14px var(--theme-glow)
+    border-color: color-mix(in oklab, var(--theme-success) 35%, var(--theme-border))
+    box-shadow: 0 0 12px color-mix(in oklab, var(--theme-success) 18%, transparent)
 
 .today-item
   width: 100%
@@ -570,8 +577,15 @@
 
   &.is-completed
     border-color: var(--theme-success)
-    background: color-mix(in oklab, var(--theme-success) 18%, transparent)
-    box-shadow: 0 0 16px color-mix(in oklab, var(--theme-success) 45%, transparent)
+    background: color-mix(in oklab, var(--theme-success) 10%, transparent)
+    box-shadow: 0 0 12px color-mix(in oklab, var(--theme-success) 16%, transparent)
+
+  &.is-done
+    border-color: color-mix(in oklab, var(--theme-success) 42%, var(--theme-border))
+    box-shadow: 0 0 12px color-mix(in oklab, var(--theme-success) 16%, transparent)
+
+  &.done-pop
+    animation: doneRowPop 0.75s ease
 
   &.is-skipped
     border-color: var(--theme-border)
@@ -641,6 +655,36 @@
   min-width: 42px
   text-align: right
 
+.habit-check-wrap
+  position: relative
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  min-width: 28px
+  min-height: 28px
+
+.habit-check-cta
+  display: inline-flex
+  align-items: center
+  justify-content: center
+
+  &.check-pop
+    animation: checkPop 0.5s ease
+    filter: drop-shadow(0 0 8px color-mix(in oklab, var(--theme-success) 28%, transparent))
+
+.xp-float
+  position: absolute
+  right: 34px
+  top: 2px
+  pointer-events: none
+  white-space: nowrap
+  font-size: 0.72rem
+  font-weight: 700
+  letter-spacing: 0.02em
+  color: #ffffff
+  text-shadow: 0 0 10px color-mix(in oklab, var(--theme-accent) 24%, transparent)
+  animation: xpRise 0.85s ease-out forwards
+
 .today-checkbox
   width: 24px
   height: 24px
@@ -666,6 +710,91 @@
 
 .insights-card
   margin-bottom: var(--space-3)
+
+.win-overlay
+  position: fixed
+  inset: 0
+  z-index: 3200
+  pointer-events: none
+  display: grid
+  place-items: center
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 20px calc(env(safe-area-inset-bottom, 0px) + 16px)
+
+.win-overlay__backdrop
+  position: absolute
+  inset: 0
+  background: rgba(6, 8, 14, 0.4)
+  backdrop-filter: blur(3px)
+  -webkit-backdrop-filter: blur(3px)
+  animation: winOverlayFade 0.2s ease
+
+.win-overlay__card
+  position: relative
+  pointer-events: auto
+  width: min(380px, calc(100vw - 40px))
+  border-radius: 18px
+  padding: 20px 20px 18px
+  border: 1px solid color-mix(in oklab, var(--system-border) 56%, transparent)
+  background: linear-gradient(180deg, rgba(9, 12, 20, 0.94), rgba(10, 14, 24, 0.88))
+  box-shadow: var(--system-shadow-deep), 0 0 18px color-mix(in oklab, var(--theme-accent) 10%, transparent)
+  text-align: center
+  animation: winOverlayPop 0.22s ease-out
+
+.win-overlay__close
+  position: absolute
+  top: 8px
+  right: 8px
+  width: 40px
+  height: 40px
+  padding: 0
+  color: #fff
+
+.win-overlay__label
+  color: #fff
+  font-size: 0.68rem
+  font-weight: 700
+  letter-spacing: 0.28em
+  text-transform: uppercase
+  opacity: 0.95
+
+.win-overlay__title
+  margin-top: 6px
+  color: #fff
+  font-size: 1.45rem
+  line-height: 1.05
+  font-weight: 800
+  letter-spacing: 0.08em
+  text-transform: uppercase
+
+.win-overlay__subtitle
+  margin-top: 10px
+  color: rgba(255, 255, 255, 0.86)
+  font-size: 0.9rem
+
+.win-overlay__level-row
+  margin-top: 12px
+  display: flex
+  align-items: center
+  justify-content: center
+  gap: 10px
+
+.win-overlay__lv-pill
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  min-height: 34px
+  padding: 6px 12px
+  border-radius: 999px
+  border: 1px solid color-mix(in oklab, var(--theme-accent) 28%, transparent)
+  background: color-mix(in oklab, var(--theme-surface-2) 78%, transparent)
+  color: #fff
+  font-weight: 700
+  box-shadow: 0 0 10px color-mix(in oklab, var(--theme-accent) 8%, transparent)
+
+.win-overlay__lv-arrow
+  color: rgba(255, 255, 255, 0.9)
+  font-weight: 700
+  text-shadow: 0 0 10px color-mix(in oklab, var(--theme-accent) 12%, transparent)
 
 .insights-header
   display: flex
@@ -778,6 +907,10 @@
     min-height: 52px
     padding: 10px 12px
 
+  .xp-float
+    right: 30px
+    top: 0
+
   .charts-toggle
     width: 100%
     text-align: center
@@ -861,6 +994,14 @@
     animation: none !important
     transition: none !important
 
+  .xp-float,
+  .today-item.done-pop,
+  .habit-check-cta.check-pop,
+  .win-overlay__backdrop,
+  .win-overlay__card
+    animation: none !important
+    transition: none !important
+
 @keyframes systemOverlayFade
   0%
     opacity: 0
@@ -933,6 +1074,47 @@
   100%
     box-shadow: 0 0 0 var(--accent-20)
     transform: scale(1)
+
+@keyframes xpRise
+  0%
+    opacity: 0
+    transform: translateY(6px)
+  15%
+    opacity: 1
+    transform: translateY(0)
+  100%
+    opacity: 0
+    transform: translateY(-24px)
+
+@keyframes checkPop
+  0%
+    transform: scale(1)
+  35%
+    transform: scale(1.08)
+  100%
+    transform: scale(1)
+
+@keyframes doneRowPop
+  0%
+    box-shadow: 0 0 0 color-mix(in oklab, var(--theme-success) 0%, transparent)
+  30%
+    box-shadow: 0 0 18px color-mix(in oklab, var(--theme-success) 22%, transparent)
+  100%
+    box-shadow: 0 0 12px color-mix(in oklab, var(--theme-success) 16%, transparent)
+
+@keyframes winOverlayFade
+  from
+    opacity: 0
+  to
+    opacity: 1
+
+@keyframes winOverlayPop
+  from
+    opacity: 0
+    transform: translateY(8px) scale(0.985)
+  to
+    opacity: 1
+    transform: translateY(0) scale(1)
 
 @keyframes finishMoment
   0%
