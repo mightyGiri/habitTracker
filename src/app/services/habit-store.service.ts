@@ -215,8 +215,17 @@ export class HabitStoreService {
     return this.profile$.value;
   }
 
+  getProfileSettingsSync(): ProfileSettings {
+    return this.getProfileSync();
+  }
+
   setProfile(profile: ProfileSettings): void {
     this.profile$.next(profile);
+    this.saveToStorage();
+  }
+
+  updateProfileSettings(patch: Partial<ProfileSettings>): void {
+    this.profile$.next({ ...this.profile$.value, ...patch });
     this.saveToStorage();
   }
 
@@ -228,7 +237,7 @@ export class HabitStoreService {
   getCurrentUsername(): string {
     const profileName = this.profile$.value.displayName?.trim();
     const userName = this.userProfile$.value?.name?.trim();
-    return profileName || userName || 'Guest';
+    return profileName || userName || 'Player';
   }
 
   isAdmin(): boolean {

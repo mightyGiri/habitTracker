@@ -18,17 +18,50 @@ type OnboardingStep = 0 | 1 | 2 | 3;
       <div class="onboarding-shell">
         <ng-container [ngSwitch]="step">
           <section *ngSwitchCase="0" class="onboarding-step">
-            <h1 class="text-title center-title">Getting started</h1>
-            <ul class="intro-list">
-              <li>Small levels. Big change.</li>
-              <li>Open -> tap -> level up -> leave.</li>
-              <li>Keep the chain alive.</li>
-              <li>Your identity grows with repetition.</li>
-              <li>Small wins. Real change.</li>
-            </ul>
-            <div class="onboarding-actions">
-              <button class="btn btn-primary" type="button" (click)="goNext()">Next</button>
-              <button class="btn btn-ghost" type="button" (click)="skip()">Skip for now</button>
+            <div class="quick-setup-card aesthetic-card arcane-card">
+              <div class="quick-setup-inner">
+                <h1 class="text-title center-title">Quick setup</h1>
+                <p class="text-muted center-subtitle">Start fast. Personalize anytime.</p>
+
+                <label class="text-label why-label" for="quick-name-input">Display name</label>
+                <input
+                  id="quick-name-input"
+                  type="text"
+                  class="onboarding-input"
+                  [(ngModel)]="name"
+                  maxlength="20"
+                  placeholder="Your name">
+                <div class="text-muted validation-error" *ngIf="showQuickNameError">Name is required (min 2 characters).</div>
+
+                <label class="text-label why-label" for="daily-target-input">Daily habit target</label>
+                <input
+                  id="daily-target-input"
+                  type="number"
+                  class="onboarding-input"
+                  [(ngModel)]="dailyTarget"
+                  min="1"
+                  max="12"
+                  (ngModelChange)="onDailyTargetChange($event)">
+                <div class="text-muted helper-text">Choose 1-12 habits per day (recommended: 5).</div>
+
+                <label class="toggle-row" for="reminders-input">
+                  <span class="text-label">Reminders</span>
+                  <input
+                    id="reminders-input"
+                    type="checkbox"
+                    [(ngModel)]="remindersEnabled">
+                </label>
+
+                <div class="onboarding-actions quick-actions">
+                  <button class="btn btn-primary" type="button" (click)="startNow()" [disabled]="!canStartQuick">
+                    Start Now
+                  </button>
+                  <button class="btn btn-outline" type="button" (click)="personalize()" [disabled]="!canStartQuick">
+                    Personalize
+                  </button>
+                </div>
+                <button class="btn btn-ghost skip-link" type="button" (click)="skip()">Skip</button>
+              </div>
             </div>
           </section>
 
@@ -57,7 +90,7 @@ type OnboardingStep = 0 | 1 | 2 | 3;
             <div class="text-muted validation-error" *ngIf="showPersonaError">Please choose a persona.</div>
             <div class="onboarding-actions split">
               <button class="btn btn-outline" type="button" (click)="goBack()">Back</button>
-              <button class="btn btn-primary" type="button" (click)="goNext()" [disabled]="!canProceedPersona">Next</button>
+              <button class="btn btn-primary" type="button" (click)="goNext()" [disabled]="!canProceedPersona">Continue</button>
             </div>
           </section>
 
@@ -133,6 +166,8 @@ export class OnboardingComponent implements OnInit {
   persona: UserProfile['persona'] | null = null;
   goal: UserProfile['primaryGoal'] | null = null;
   name = '';
+  dailyTarget = 5;
+  remindersEnabled = false;
   statement = '';
   readonly statementLimit = 140;
   readonly statementMin = 3;
@@ -157,6 +192,9 @@ export class OnboardingComponent implements OnInit {
 
   goNext(): void {
     if (this.step < 3) {
+      if (this.step === 0 && !this.canStartQuick) {
+        return;
+      }
       if (this.step === 1 && !this.canProceedPersona) {
         return;
       }
@@ -176,15 +214,33 @@ export class OnboardingComponent implements OnInit {
   }
 
   skip(): void {
-    this.themeService.setTheme('dark');
-    this.habitStore.skipOnboarding();
-    void this.router.navigate(['/today']);
+    this.name = 'Player';
+    this.dailyTarget = 5;
+    this.remindersEnabled = false;
+    this.completeAndGoToday('skip');
   }
 
   finish(): void {
     this.themeService.setTheme('dark');
+    this.saveQuickSetup();
     this.saveProfile(this.persona, this.goal, this.statement);
     void this.router.navigate(['/today']);
+  }
+
+  startNow(): void {
+    if (!this.canStartQuick) {
+      return;
+    }
+    this.completeAndGoToday('complete');
+  }
+
+  personalize(): void {
+    if (!this.canStartQuick) {
+      return;
+    }
+    this.themeService.setTheme('dark');
+    this.saveQuickSetup();
+    this.step = 1;
   }
 
   private saveProfile(persona: UserProfile['persona'] | null, goal: UserProfile['primaryGoal'] | null, statement: string): void {
@@ -203,6 +259,14 @@ export class OnboardingComponent implements OnInit {
 
   get trimmedName(): string {
     return this.name.trim();
+  }
+
+  get canStartQuick(): boolean {
+    return this.trimmedName.length >= 2;
+  }
+
+  get showQuickNameError(): boolean {
+    return this.step === 0 && this.trimmedName.length > 0 && this.trimmedName.length < 2;
   }
 
   get nameValid(): boolean {
@@ -247,6 +311,52 @@ export class OnboardingComponent implements OnInit {
 
   private trimStatement(value: string): string {
     return value.trim().slice(0, this.statementLimit);
+  }
+
+  onDailyTargetChange(value: number | string): void {
+    this.dailyTarget = this.clampDailyTarget(value);
+  }
+
+  private clampDailyTarget(value: number | string): number {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) {
+      return 5;
+    }
+    return Math.max(1, Math.min(12, Math.round(parsed)));
+  }
+
+  private saveQuickSetup(): void {
+    const displayName = this.trimmedName || 'Player';
+    const dailyWinTarget = this.clampDailyTarget(this.dailyTarget);
+    const remindersEnabled = Boolean(this.remindersEnabled);
+
+    this.habitStore.updateProfileSettings({
+      displayName,
+      dailyWinTarget,
+      remindersEnabled
+    });
+
+    const existing = this.habitStore.getUserProfileSync();
+    this.habitStore.setUserProfile({
+      name: displayName,
+      persona: existing?.persona,
+      primaryGoal: existing?.primaryGoal,
+      statement: existing?.statement,
+      whyStatement: existing?.whyStatement,
+      why: existing?.why,
+      createdAt: existing?.createdAt ?? Date.now()
+    });
+  }
+
+  private completeAndGoToday(mode: 'skip' | 'complete'): void {
+    this.themeService.setTheme('dark');
+    this.saveQuickSetup();
+    if (mode === 'skip') {
+      this.habitStore.skipOnboarding();
+    } else {
+      this.habitStore.completeOnboarding();
+    }
+    void this.router.navigate(['/today']);
   }
 
   get displayName(): string {
