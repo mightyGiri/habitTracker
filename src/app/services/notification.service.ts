@@ -1,25 +1,25 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { Subscription, combineLatest, debounceTime, filter } from 'rxjs';
 import { HabitStoreService } from './habit-store.service';
-import { SettingsService } from './settings.service';
 
-const REMINDER_HOURS = [7, 10, 13, 16, 19];
-const REMINDER_BASE_ID = 51000;
-const STREAK_WARNING_ID = 51050;
-const CONGRATS_ID = 51999;
-const PREF_KEY = 'notificationsEnabled';
+const DAILY_NOTIFICATION_ID = 1000;
+const HABIT_NOTIFICATION_ID_BASE = 2000;
+const HABIT_NOTIFICATION_ID_SPAN = 50000;
+const DEFAULT_DAILY_TIME = '20:30';
+
+type ReminderPermissionState = 'granted' | 'denied' | 'unsupported';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
-  private enabled = false;
   private initialized = false;
+  private subscriptions = new Subscription();
   private lastError: string | null = null;
 
   constructor(
     private habitStore: HabitStoreService,
-    private settingsService: SettingsService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -28,195 +28,251 @@ export class NotificationService {
       return;
     }
     this.initialized = true;
-    this.enabled = this.isEnabled();
-    if (this.enabled) {
-      void this.resyncForToday();
-    }
+    this.subscriptions.add(
+      combineLatest([
+        this.habitStore.getReady(),
+        this.habitStore.getHabits(),
+        this.habitStore.getCompletions(),
+        this.habitStore.getSkips(),
+        this.habitStore.getNotificationSettings$()
+      ]).pipe(
+        filter(([ready]) => ready),
+        debounceTime(300)
+      ).subscribe(() => {
+        void this.syncFromStore();
+      })
+    );
   }
 
   dispose(): void {
-    // no-op for now
-  }
-
-  isEnabled(): boolean {
-    if (typeof window === 'undefined' || !window.localStorage) {
-      return false;
-    }
-    return window.localStorage.getItem(PREF_KEY) === 'true';
+    this.subscriptions.unsubscribe();
+    this.subscriptions = new Subscription();
+    this.initialized = false;
   }
 
   isSupported(): boolean {
-    if (this.isNative()) {
-      return true;
+    if (!isPlatformBrowser(this.platformId)) {
+      return false;
     }
-    return typeof Notification !== 'undefined' && typeof window !== 'undefined' && window.isSecureContext === true;
+    return this.isNative();
+  }
+
+  isNativeSchedulingAvailable(): boolean {
+    return this.isSupported();
+  }
+
+  isEnabled(): boolean {
+    return this.habitStore.getNotificationSettingsSync().dailyEnabled;
   }
 
   getLastError(): string | null {
     return this.lastError;
   }
 
-  async setEnabled(value: boolean): Promise<void> {
-    this.enabled = value;
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.setItem(PREF_KEY, value ? 'true' : 'false');
+  async requestPermissionIfNeeded(): Promise<ReminderPermissionState> {
+    this.lastError = null;
+    if (!this.isNative()) {
+      this.lastError = 'unsupported';
+      return 'unsupported';
     }
-    this.settingsService.updateSettings({ notificationsEnabled: value });
+    try {
+      const current = await LocalNotifications.checkPermissions();
+      if (current.display === 'granted') {
+        return 'granted';
+      }
+      const result = await LocalNotifications.requestPermissions();
+      if (result.display === 'granted') {
+        return 'granted';
+      }
+      this.lastError = 'denied';
+      return 'denied';
+    } catch {
+      this.lastError = 'failed';
+      return 'denied';
+    }
+  }
+
+  async setEnabled(value: boolean): Promise<void> {
+    this.habitStore.updateNotificationSettings({ dailyEnabled: value });
+    if (!value) {
+      await this.cancelAllManaged();
+    }
+  }
+
+  async setDailyTime(time: string): Promise<void> {
+    this.habitStore.updateNotificationSettings({ dailyTime: this.normalizeTime(time) });
+    await this.syncFromStore();
   }
 
   async enableForToday(): Promise<void> {
-    this.lastError = null;
-    try {
-      if (this.isNative()) {
-        const permission = await LocalNotifications.requestPermissions();
-        if (permission.display !== 'granted') {
-          this.lastError = 'denied';
-          await this.setEnabled(false);
-          return;
-        }
-        await this.setEnabled(true);
-        await this.resyncForToday();
-        return;
-      }
-      if (typeof Notification === 'undefined' || !window.isSecureContext) {
-        this.lastError = 'unsupported';
-        await this.setEnabled(false);
-        return;
-      }
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
-        this.lastError = 'denied';
-        await this.setEnabled(false);
-        return;
-      }
-      await this.setEnabled(true);
-    } catch (error) {
-      this.lastError = 'failed';
+    const permission = await this.requestPermissionIfNeeded();
+    if (permission !== 'granted') {
       await this.setEnabled(false);
+      return;
     }
+    await this.setEnabled(true);
+    await this.syncFromStore();
   }
 
   async disableAll(): Promise<void> {
-    this.lastError = null;
     await this.setEnabled(false);
-    await this.cancelAll();
+    await this.cancelAllManaged();
   }
 
   async resyncForToday(): Promise<void> {
+    await this.syncFromStore();
+  }
+
+  async syncFromStore(): Promise<void> {
     this.lastError = null;
-    if (!this.enabled || !this.isNative()) {
+    if (!this.isNative()) {
       return;
     }
+    const ready = this.habitStore.getReady();
+    // guard against sync running before store hydration completes
+    // getReady() is already in init subscription; direct calls may happen earlier.
+    let storeReady = false;
+    const sub = ready.subscribe(v => { storeReady = v; });
+    sub.unsubscribe();
+    if (!storeReady) {
+      return;
+    }
+
     try {
-      const pendingCount = this.getPendingCount();
-      if (pendingCount <= 0) {
-        await this.cancelAll();
-        await this.showCongratsNow();
-        return;
-      }
-      await this.cancelAll();
-      const notifications = this.buildReminderNotifications(pendingCount);
+      await this.cancelAllManaged();
+      const notifications = this.buildNotificationsFromState();
       if (notifications.length > 0) {
-        await LocalNotifications.schedule({ notifications });
+        await LocalNotifications.schedule({ notifications: notifications as any });
       }
-      await this.scheduleStreakWarning(pendingCount);
     } catch (error) {
       this.lastError = 'failed';
     }
   }
 
-  async showCongratsNow(): Promise<void> {
+  async cancelAllManaged(): Promise<void> {
     if (!this.isNative()) {
       return;
     }
     try {
-      const fireAt = new Date(Date.now() + 1000);
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            id: CONGRATS_ID,
-            title: 'Leveled Up',
-            body: 'Won today! Streak saved.',
-            schedule: { at: fireAt }
-          }
-        ]
-      });
-    } catch {
-      // ignore
-    }
-  }
-
-  private buildReminderNotifications(pendingCount: number) {
-    const now = new Date();
-    const today = this.normalizeDate(now);
-    return REMINDER_HOURS.flatMap((hour, index) => {
-      const fireAt = new Date(today);
-      fireAt.setHours(hour, 0, 0, 0);
-      if (fireAt <= now) {
-        return [];
+      const ids = await this.getManagedNotificationIdsToCancel();
+      if (ids.length === 0) {
+        return;
       }
-      return [{
-        id: REMINDER_BASE_ID + index,
-        title: 'Level Up',
-        body: `${pendingCount} habits pending. Don't miss your streak.`,
-        schedule: { at: fireAt }
-      }];
-    });
-  }
-
-  private async scheduleStreakWarning(pendingCount: number): Promise<void> {
-    if (pendingCount <= 0) {
-      return;
-    }
-    const now = new Date();
-    const today = this.normalizeDate(now);
-    const fireAt = new Date(today);
-    fireAt.setHours(19, 0, 0, 0);
-    if (fireAt <= now) {
-      return;
-    }
-    try {
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            id: STREAK_WARNING_ID,
-            title: 'Level Up',
-            body: 'You are about to miss your streak. Finish now.',
-            schedule: { at: fireAt }
-          }
-        ]
+      await LocalNotifications.cancel({
+        notifications: ids.map(id => ({ id }))
       });
     } catch {
-      // ignore
+      // ignore cancellation failures
     }
   }
 
-  private async cancelAll(): Promise<void> {
-    if (!this.isNative()) {
-      return;
+  private buildNotificationsFromState(): any[] {
+    const notifications: any[] = [];
+    const today = new Date();
+    const daily = this.habitStore.getNotificationSettingsSync();
+    const summary = this.habitStore.getDaySummary(today);
+    const pending = Math.max(summary.totalCount - summary.handledCount, 0);
+    const isPerfect = summary.totalCount > 0 && summary.doneCount === summary.totalCount;
+
+    if (daily.dailyEnabled && !isPerfect && pending > 0) {
+      const { hour, minute } = this.parseTime(daily.dailyTime || DEFAULT_DAILY_TIME);
+      notifications.push({
+        id: DAILY_NOTIFICATION_ID,
+        title: 'Level Up',
+        body: `You have ${pending} ${pending === 1 ? 'habit' : 'habits'} left today.`,
+        schedule: {
+          on: { hour, minute },
+          repeats: true
+        }
+      });
     }
-    const notifications = REMINDER_HOURS.map((_, index) => ({ id: REMINDER_BASE_ID + index }));
-    notifications.push({ id: STREAK_WARNING_ID });
-    notifications.push({ id: CONGRATS_ID });
+
+    const habits = this.habitStore.getHabitsSync();
+    for (const habit of habits) {
+      if (!habit.isActive || !habit.reminderEnabled) {
+        continue;
+      }
+      const reminderTime = this.normalizeTime(habit.reminderTime);
+      const { hour, minute } = this.parseTime(reminderTime);
+      const id = this.getHabitReminderId(habit.id);
+      notifications.push({
+        id,
+        title: 'Level Up',
+        body: `Habit: ${habit.name} - don't break the streak.`,
+        schedule: {
+          on: { hour, minute },
+          repeats: true
+        }
+      });
+    }
+
+    return notifications;
+  }
+
+  private getManagedNotificationIds(): number[] {
+    const ids = [DAILY_NOTIFICATION_ID];
+    for (const habit of this.habitStore.getHabitsSync()) {
+      ids.push(this.getHabitReminderId(habit.id));
+    }
+    return Array.from(new Set(ids));
+  }
+
+  private async getManagedNotificationIdsToCancel(): Promise<number[]> {
+    const ids = new Set<number>(this.getManagedNotificationIds());
     try {
-      await LocalNotifications.cancel({ notifications });
+      const pending = await LocalNotifications.getPending();
+      for (const notification of pending.notifications ?? []) {
+        const id = Number(notification.id);
+        if (!Number.isFinite(id)) {
+          continue;
+        }
+        if (id === DAILY_NOTIFICATION_ID || (id >= HABIT_NOTIFICATION_ID_BASE && id < HABIT_NOTIFICATION_ID_BASE + HABIT_NOTIFICATION_ID_SPAN)) {
+          ids.add(id);
+        }
+      }
     } catch {
-      // ignore
+      // fall back to current-state IDs only
     }
+    return Array.from(ids);
   }
 
-  private getPendingCount(): number {
-    const summary = this.habitStore.getDaySummary(new Date());
-    return Math.max(summary.totalCount - summary.handledCount, 0);
+  private getHabitReminderId(habitId: string): number {
+    return HABIT_NOTIFICATION_ID_BASE + (this.hashString(habitId) % HABIT_NOTIFICATION_ID_SPAN);
+  }
+
+  private hashString(value: string): number {
+    let hash = 0;
+    for (let i = 0; i < value.length; i++) {
+      hash = ((hash << 5) - hash + value.charCodeAt(i)) | 0;
+    }
+    return Math.abs(hash);
+  }
+
+  private parseTime(time: string): { hour: number; minute: number } {
+    const normalized = this.normalizeTime(time);
+    const [hourStr, minuteStr] = normalized.split(':');
+    return {
+      hour: Number(hourStr),
+      minute: Number(minuteStr)
+    };
+  }
+
+  private normalizeTime(time: string | undefined | null): string {
+    const raw = String(time || '').trim();
+    if (!/^\d{2}:\d{2}$/.test(raw)) {
+      return DEFAULT_DAILY_TIME;
+    }
+    const [h, m] = raw.split(':').map(Number);
+    if (!Number.isFinite(h) || !Number.isFinite(m)) {
+      return DEFAULT_DAILY_TIME;
+    }
+    const hour = Math.min(23, Math.max(0, h));
+    const minute = Math.min(59, Math.max(0, m));
+    return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
   }
 
   private isNative(): boolean {
-    return Capacitor.isNativePlatform();
-  }
-
-  private normalizeDate(date: Date): Date {
-    const normalized = new Date(date);
-    normalized.setHours(0, 0, 0, 0);
-    return normalized;
+    return isPlatformBrowser(this.platformId) && Capacitor.isNativePlatform();
   }
 }
+

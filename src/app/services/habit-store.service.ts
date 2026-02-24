@@ -1,6 +1,6 @@
 import { Injectable, isDevMode } from '@angular/core';
 import { BehaviorSubject, Observable, combineLatest, map } from 'rxjs';
-import { Habit, MonthKey, HabitCompletion, DayCheck, MonthlyTotals, TopHabit, MonthInsights, HabitSkips, HabitSkip, UserProfile, ProfileSettings, TimerState, TimerStateMap } from '../models/habit.model';
+import { Habit, MonthKey, HabitCompletion, DayCheck, MonthlyTotals, TopHabit, MonthInsights, HabitSkips, HabitSkip, UserProfile, ProfileSettings, TimerState, TimerStateMap, NotificationSettings } from '../models/habit.model';
 import { DateUtils } from '../shared/date-utils';
 import { getLevelProgress, LevelProgress } from '../shared/level-utils';
 import { StorageService, PersistedState } from './storage.service';
@@ -32,6 +32,8 @@ type BackupData = {
     type?: 'check' | 'timer';
     targetSeconds?: number;
     allowManualComplete?: boolean;
+    reminderEnabled?: boolean;
+    reminderTime?: string;
     frequency?: 'daily' | 'weekly';
     minimum?: string;
   }>;
@@ -44,6 +46,7 @@ type BackupData = {
 };
 
 type DaySummary = { doneCount: number; skippedCount: number; handledCount: number; totalCount: number; percentDone: number; percentHandled: number };
+const DEFAULT_DAILY_REMINDER_TIME = '20:30';
 
 @Injectable({
   providedIn: 'root'
@@ -92,7 +95,7 @@ export class HabitStoreService {
       }
       const profile = state.userProfile ? this.normalizeUserProfile(state.userProfile) : null;
       this.userProfile$.next(profile);
-      this.profile$.next(state.profile ?? {});
+      this.profile$.next(this.normalizeProfileSettings(state.profile ?? {}));
       if (typeof state.onboardingCompleted === 'boolean') {
         this.onboardingCompleted$.next(state.onboardingCompleted);
       } else if (profile) {
@@ -120,11 +123,11 @@ export class HabitStoreService {
     const now = Date.now();
     const todayDateKey = this.toIsoDateLocal(new Date());
     const habits: Habit[] = [
-      { id: this.createId(), name: 'Wake up on time', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, createdAt: now, isActive: true, sortOrder: 0 },
-      { id: this.createId(), name: 'Meditation', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: true, timerSeconds: 300, timerAutoComplete: true, type: 'timer', targetSeconds: 300, allowManualComplete: false, timerCompleted: false, createdAt: now + 1, isActive: true, sortOrder: 1 },
-      { id: this.createId(), name: 'Move (walk/exercise)', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, createdAt: now + 2, isActive: true, sortOrder: 2 },
-      { id: this.createId(), name: 'Read', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, createdAt: now + 3, isActive: true, sortOrder: 3 },
-      { id: this.createId(), name: 'Reflect (journal)', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, createdAt: now + 4, isActive: true, sortOrder: 4 }
+      { id: this.createId(), name: 'Wake up on time', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now, isActive: true, sortOrder: 0 },
+      { id: this.createId(), name: 'Meditation', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: true, timerSeconds: 300, timerAutoComplete: true, type: 'timer', targetSeconds: 300, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 1, isActive: true, sortOrder: 1 },
+      { id: this.createId(), name: 'Move (walk/exercise)', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 2, isActive: true, sortOrder: 2 },
+      { id: this.createId(), name: 'Read', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 3, isActive: true, sortOrder: 3 },
+      { id: this.createId(), name: 'Reflect (journal)', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 4, isActive: true, sortOrder: 4 }
     ];
     this.habits$.next(habits);
   }
@@ -219,13 +222,35 @@ export class HabitStoreService {
     return this.getProfileSync();
   }
 
+  getNotificationSettings$(): Observable<NotificationSettings> {
+    return this.profile$.pipe(map(profile => this.readNotificationSettings(profile)));
+  }
+
+  getNotificationSettingsSync(): NotificationSettings {
+    return this.readNotificationSettings(this.profile$.value);
+  }
+
   setProfile(profile: ProfileSettings): void {
-    this.profile$.next(profile);
+    this.profile$.next(this.normalizeProfileSettings(profile));
     this.saveToStorage();
   }
 
   updateProfileSettings(patch: Partial<ProfileSettings>): void {
-    this.profile$.next({ ...this.profile$.value, ...patch });
+    this.profile$.next(this.normalizeProfileSettings({ ...this.profile$.value, ...patch }));
+    this.saveToStorage();
+  }
+
+  updateNotificationSettings(patch: Partial<NotificationSettings>): void {
+    const current = this.readNotificationSettings(this.profile$.value);
+    const next: NotificationSettings = {
+      dailyEnabled: patch.dailyEnabled ?? current.dailyEnabled,
+      dailyTime: this.normalizeReminderTime(patch.dailyTime ?? current.dailyTime)
+    };
+    this.profile$.next(this.normalizeProfileSettings({
+      ...this.profile$.value,
+      dailyReminderEnabled: next.dailyEnabled,
+      dailyReminderTime: next.dailyTime
+    }));
     this.saveToStorage();
   }
 
@@ -363,6 +388,8 @@ export class HabitStoreService {
         targetSeconds,
         allowManualComplete: false,
         timerCompleted: false,
+        reminderEnabled: false,
+        reminderTime: undefined,
         createdAt,
         isActive: true,
         sortOrder
@@ -404,7 +431,7 @@ export class HabitStoreService {
     this.saveToStorage();
   }
 
-  updateHabit(habitId: string, patch: Partial<Pick<Habit, 'name' | 'isActive' | 'sortOrder' | 'goalDays' | 'frequencyType' | 'weeklyTarget' | 'minimumVersion' | 'timerEnabled' | 'timerSeconds' | 'timerAutoComplete' | 'type' | 'targetSeconds' | 'allowManualComplete' | 'timerCompleted'>>): void {
+  updateHabit(habitId: string, patch: Partial<Pick<Habit, 'name' | 'isActive' | 'sortOrder' | 'goalDays' | 'frequencyType' | 'weeklyTarget' | 'minimumVersion' | 'timerEnabled' | 'timerSeconds' | 'timerAutoComplete' | 'type' | 'targetSeconds' | 'allowManualComplete' | 'timerCompleted' | 'reminderEnabled' | 'reminderTime'>>): void {
     const habits = this.habits$.value.map(habit => {
       if (habit.id !== habitId) {
         return habit;
@@ -427,6 +454,8 @@ export class HabitStoreService {
       const nextAllowManualComplete = patch.allowManualComplete ?? habit.allowManualComplete ?? false;
       const nextTimerCompleted = patch.timerCompleted ?? false;
       const nextTimerAutoComplete = patch.timerAutoComplete ?? habit.timerAutoComplete ?? true;
+      const nextReminderEnabled = patch.reminderEnabled ?? habit.reminderEnabled ?? false;
+      const nextReminderTime = this.normalizeReminderTime(patch.reminderTime ?? habit.reminderTime);
       return {
         ...habit,
         ...patch,
@@ -440,7 +469,9 @@ export class HabitStoreService {
         type: nextType,
         targetSeconds: nextTargetSeconds,
         allowManualComplete: nextAllowManualComplete,
-        timerCompleted: nextTimerCompleted
+        timerCompleted: nextTimerCompleted,
+        reminderEnabled: nextReminderEnabled,
+        reminderTime: nextReminderEnabled ? nextReminderTime : undefined
       };
     });
     this.habits$.next(this.sortHabits(habits));
@@ -453,6 +484,13 @@ export class HabitStoreService {
     );
     this.habits$.next(this.sortHabits(habits));
     this.saveToStorage();
+  }
+
+  updateHabitReminder(habitId: string, enabled: boolean, time: string): void {
+    this.updateHabit(habitId, {
+      reminderEnabled: enabled,
+      reminderTime: enabled ? this.normalizeReminderTime(time) : undefined
+    });
   }
 
   reorderHabits(fromIndex: number, toIndex: number): void {
@@ -1022,6 +1060,8 @@ export class HabitStoreService {
           const type = (habit as Habit).type ?? habit.type ?? (timerEnabled ? 'timer' : 'check');
           const targetSeconds = Math.max(0, Number((habit as Habit).targetSeconds ?? habit.targetSeconds ?? timerSeconds) || 0);
           const allowManualComplete = (habit as Habit).allowManualComplete ?? habit.allowManualComplete ?? false;
+          const reminderEnabled = Boolean((habit as Habit).reminderEnabled ?? habit.reminderEnabled ?? false);
+          const reminderTime = this.normalizeReminderTime((habit as Habit).reminderTime ?? habit.reminderTime);
           const fallbackDateKey = this.inferCreatedAtDateKey(habit.id, incomingChecks, this.toIsoDateLocal(new Date()));
           return {
             id: habit.id,
@@ -1037,6 +1077,8 @@ export class HabitStoreService {
             type,
             targetSeconds,
             allowManualComplete,
+            reminderEnabled,
+            reminderTime: reminderEnabled ? reminderTime : undefined,
             createdAt: Number((habit as Habit).createdAt) || Date.now(),
             isActive: (habit as Habit).isActive ?? true,
             sortOrder: Number((habit as Habit).sortOrder) || 0
@@ -1098,7 +1140,7 @@ export class HabitStoreService {
         this.userProfile$.next(this.normalizeUserProfile(backup.userProfile));
       }
       if (backup.profile) {
-        this.profile$.next(backup.profile);
+        this.profile$.next(this.normalizeProfileSettings(backup.profile));
       }
       this.saveToStorage();
       return;
@@ -1149,7 +1191,7 @@ export class HabitStoreService {
       this.userProfile$.next(this.normalizeUserProfile(backup.userProfile));
     }
     if (backup.profile) {
-      this.profile$.next(backup.profile);
+      this.profile$.next(this.normalizeProfileSettings(backup.profile));
     }
 
     const selectedYear = backup.appSettings?.selectedYear;
@@ -1214,6 +1256,8 @@ export class HabitStoreService {
         const allowManualComplete = habit.allowManualComplete ?? false;
         const timerCompleted = habit.timerCompleted ?? false;
       const timerAutoComplete = habit.timerAutoComplete ?? true;
+      const reminderEnabled = Boolean(habit.reminderEnabled ?? false);
+      const reminderTime = this.normalizeReminderTime(habit.reminderTime);
       const shouldMigrateDrinkWater = String(habit.name || '').trim().toLowerCase() === 'drink water';
       const nextName = shouldMigrateDrinkWater ? 'Meditation' : habit.name?.trim() || `Habit ${index + 1}`;
       const migratedTarget = shouldMigrateDrinkWater ? 300 : targetSeconds;
@@ -1236,6 +1280,8 @@ export class HabitStoreService {
         targetSeconds: migratedTarget,
           allowManualComplete: shouldMigrateDrinkWater ? false : allowManualComplete,
           timerCompleted: shouldMigrateDrinkWater ? false : timerCompleted,
+        reminderEnabled,
+        reminderTime: reminderEnabled ? reminderTime : undefined,
         createdAt: habit.createdAt ?? Date.now() + index,
         isActive: habit.isActive ?? true,
         sortOrder: habit.sortOrder ?? index
@@ -1256,6 +1302,39 @@ export class HabitStoreService {
       primaryGoal: profile.primaryGoal ? String(profile.primaryGoal).trim() : undefined,
       createdAt: Number(profile.createdAt) || Date.now()
     };
+  }
+
+  private readNotificationSettings(profile: ProfileSettings | null | undefined): NotificationSettings {
+    return {
+      dailyEnabled: Boolean(profile?.dailyReminderEnabled),
+      dailyTime: this.normalizeReminderTime(profile?.dailyReminderTime)
+    };
+  }
+
+  private normalizeProfileSettings(profile: ProfileSettings): ProfileSettings {
+    return {
+      ...profile,
+      displayName: profile.displayName ? String(profile.displayName).trim() : undefined,
+      remindersEnabled: Boolean(profile.remindersEnabled ?? false),
+      dailyReminderEnabled: Boolean(profile.dailyReminderEnabled ?? false),
+      dailyReminderTime: this.normalizeReminderTime(profile.dailyReminderTime)
+    };
+  }
+
+  private normalizeReminderTime(value: unknown): string {
+    const raw = String(value ?? '').trim();
+    if (!/^\d{2}:\d{2}$/.test(raw)) {
+      return DEFAULT_DAILY_REMINDER_TIME;
+    }
+    const [hourStr, minuteStr] = raw.split(':');
+    const hour = Number(hourStr);
+    const minute = Number(minuteStr);
+    if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
+      return DEFAULT_DAILY_REMINDER_TIME;
+    }
+    const safeHour = Math.min(23, Math.max(0, hour));
+    const safeMinute = Math.min(59, Math.max(0, minute));
+    return `${String(safeHour).padStart(2, '0')}:${String(safeMinute).padStart(2, '0')}`;
   }
 
   private createId(): string {

@@ -14,6 +14,7 @@ import { Habit } from '../../models/habit.model';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/confirm-dialog.component';
 import { ThemeService } from '../../services/theme.service';
 import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-animations';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-habits',
@@ -73,6 +74,15 @@ import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-
               <mat-label>Minimum version (optional)</mat-label>
               <input matInput formControlName="minimumVersion" placeholder="e.g., 1 page, 5 minutes">
             </mat-form-field>
+            <div class="reminder-controls">
+              <div class="text-label">Habit reminder</div>
+              <app-toggle [checked]="habitForm.get('reminderEnabled')?.value" [disabled]="!remindersNativeSupported" (checkedChange)="setReminderEnabled($event)"></app-toggle>
+            </div>
+            <mat-form-field appearance="fill" *ngIf="habitForm.get('reminderEnabled')?.value">
+              <mat-label>Reminder time</mat-label>
+              <input matInput type="time" formControlName="reminderTime" [disabled]="!remindersNativeSupported">
+            </mat-form-field>
+            <div class="text-muted reminder-note" *ngIf="!remindersNativeSupported">Reminders work in the installed app.</div>
             <div class="form-actions">
               <button class="btn btn-primary glass-btn glass-btn--primary" type="submit" [disabled]="habitForm.invalid">
                 {{ editingHabitId ? 'Save' : 'Add' }}
@@ -94,8 +104,9 @@ import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-
                     {{ habit.isActive ? 'Active' : 'Inactive' }}
                     <span *ngIf="habit.frequencyType">- {{ habit.frequencyType === 'daily' ? 'Daily' : 'Weekly' }}</span>
                     <span *ngIf="habit.frequencyType === 'weekly' && habit.weeklyTarget">- {{ habit.weeklyTarget }}x/week</span>
-                    <span *ngIf="habit.minimumVersion">- {{ habit.minimumVersion }}</span>
                   </div>
+                  <div class="habit-sub text-muted" *ngIf="habit.minimumVersion">{{ habit.minimumVersion }}</div>
+                  <div class="habit-sub text-muted" *ngIf="habit.reminderEnabled && habit.reminderTime">Reminder - {{ habit.reminderTime }}</div>
                 </div>
                 <app-toggle class="glass-toggle" [checked]="habit.isActive" (checkedChange)="toggleActive(habit.id)"></app-toggle>
               </div>
@@ -137,19 +148,23 @@ export class HabitsComponent implements OnInit, OnDestroy {
   ready$!: Observable<boolean>;
   activeCount = 0;
   weeklyTargetOptions = [1, 2, 3, 4, 5, 6, 7];
+  remindersNativeSupported = false;
   private subscription: Subscription = new Subscription();
 
   constructor(
     private habitStore: HabitStoreService,
     private dialog: MatDialog,
     private themeService: ThemeService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private notificationService: NotificationService
   ) {
     this.habitForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(24), this.nameUniqueValidator]],
       frequencyType: ['daily', [Validators.required]],
       weeklyTarget: [3],
       minimumVersion: [''],
+      reminderEnabled: [false],
+      reminderTime: ['20:30'],
       timerEnabled: [false],
       timerMinutes: [10]
     });
@@ -169,6 +184,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
         this.reduceMotion = reduce;
       })
     );
+    this.remindersNativeSupported = this.notificationService.isNativeSchedulingAvailable();
   }
 
   ngOnDestroy(): void {
@@ -181,7 +197,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
 
   startAdd(): void {
     this.editingHabitId = null;
-    this.habitForm.reset({ frequencyType: 'daily', weeklyTarget: 3, minimumVersion: '', timerEnabled: false, timerMinutes: 10 });
+    this.habitForm.reset({ frequencyType: 'daily', weeklyTarget: 3, minimumVersion: '', reminderEnabled: false, reminderTime: '20:30', timerEnabled: false, timerMinutes: 10 });
     this.formOpen = true;
   }
 
@@ -192,6 +208,8 @@ export class HabitsComponent implements OnInit, OnDestroy {
       frequencyType: habit.frequencyType ?? 'daily',
       weeklyTarget: habit.weeklyTarget ?? 3,
       minimumVersion: habit.minimumVersion ?? '',
+      reminderEnabled: habit.reminderEnabled ?? false,
+      reminderTime: habit.reminderTime ?? '20:30',
       timerEnabled: habit.timerEnabled ?? false,
       timerMinutes: habit.timerSeconds ? Math.max(1, Math.round(habit.timerSeconds / 60)) : 10
     });
@@ -201,7 +219,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
   cancelEdit(): void {
     this.formOpen = false;
     this.editingHabitId = null;
-    this.habitForm.reset({ frequencyType: 'daily', weeklyTarget: 3, minimumVersion: '', timerEnabled: false, timerMinutes: 10 });
+    this.habitForm.reset({ frequencyType: 'daily', weeklyTarget: 3, minimumVersion: '', reminderEnabled: false, reminderTime: '20:30', timerEnabled: false, timerMinutes: 10 });
   }
 
   saveHabit(): void {
@@ -215,6 +233,8 @@ export class HabitsComponent implements OnInit, OnDestroy {
       ? Math.min(7, Math.max(1, weeklyTargetRaw))
       : undefined;
     const minimumVersion = String(this.habitForm.get('minimumVersion')?.value || '').trim();
+    const reminderEnabled = this.remindersNativeSupported && Boolean(this.habitForm.get('reminderEnabled')?.value);
+    const reminderTime = String(this.habitForm.get('reminderTime')?.value || '20:30');
     const timerEnabled = Boolean(this.habitForm.get('timerEnabled')?.value);
     const timerMinutesRaw = Number(this.habitForm.get('timerMinutes')?.value);
     const timerMinutes = Number.isFinite(timerMinutesRaw) ? Math.max(1, Math.min(120, timerMinutesRaw)) : 10;
@@ -234,9 +254,16 @@ export class HabitsComponent implements OnInit, OnDestroy {
         type: timerEnabled ? 'timer' : 'check',
         targetSeconds: timerSeconds,
         allowManualComplete: false
+        ,
+        reminderEnabled,
+        reminderTime
       });
     } else {
       this.habitStore.addHabit(name, frequencyType, weeklyTarget, minimumVersion, 30, timerEnabled, timerSeconds, true);
+      const created = this.habitStore.getHabitsSync().find(h => h.name.toLowerCase() === name.toLowerCase());
+      if (created && reminderEnabled) {
+        this.habitStore.updateHabitReminder(created.id, true, reminderTime);
+      }
     }
     this.cancelEdit();
   }
@@ -245,6 +272,13 @@ export class HabitsComponent implements OnInit, OnDestroy {
     this.habitForm.patchValue({ timerEnabled: enabled });
     if (!enabled) {
       this.habitForm.patchValue({ timerMinutes: 10 });
+    }
+  }
+
+  setReminderEnabled(enabled: boolean): void {
+    this.habitForm.patchValue({ reminderEnabled: enabled });
+    if (!enabled) {
+      this.habitForm.patchValue({ reminderTime: '20:30' });
     }
   }
 

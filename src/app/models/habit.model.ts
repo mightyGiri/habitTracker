@@ -14,6 +14,8 @@ export interface Habit {
   allowManualComplete?: boolean;
   timerCompleted?: boolean;
   color?: string;
+  reminderEnabled?: boolean;
+  reminderTime?: string;
   createdAt: number;
   isActive: boolean;
   sortOrder: number;
@@ -70,6 +72,13 @@ export interface ProfileSettings {
   dailyWinTarget?: number;
   requiredHabitsCount?: number;
   remindersEnabled?: boolean;
+  dailyReminderEnabled?: boolean;
+  dailyReminderTime?: string;
+}
+
+export interface NotificationSettings {
+  dailyEnabled: boolean;
+  dailyTime: string;
 }
 
 export interface MonthlyTotals {

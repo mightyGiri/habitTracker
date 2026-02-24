@@ -165,10 +165,15 @@ type BeforeInstallPromptEvent = Event & {
                 (input)=\"setFontSizeFromRange($event)\">
             </div>
             <div class=\"control-group\">
-              <div class=\"compact-label text-label\">Notifications</div>
-              <app-toggle [checked]=\"notificationsEnabled\" (checkedChange)=\"toggleNotifications($event)\"></app-toggle>
+              <div class=\"compact-label text-label\">Daily reminder</div>
+              <app-toggle [checked]=\"dailyReminderEnabled\" [disabled]=\"notificationsLoading || !remindersNativeSupported\" (checkedChange)=\"toggleNotifications($event)\"></app-toggle>
+            </div>
+            <div class=\"control-group\">
+              <div class=\"compact-label text-label\">Reminder time</div>
+              <input class=\"reminder-time-input\" type=\"time\" [value]=\"dailyReminderTime\" [disabled]=\"notificationsLoading || !dailyReminderEnabled || !remindersNativeSupported\" (change)=\"onDailyReminderTimeChange($event)\">
             </div>
           </div>
+          <div class=\"section-helper text-muted\" *ngIf=\"!remindersNativeSupported\">Reminders work in the installed app.</div>
           <!-- <div class=\"font-family-row\">
             <mat-form-field appearance=\"fill\" class=\"appearance-field\">
               <mat-label>Font Family</mat-label>
@@ -267,6 +272,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
   notificationsEnabled = false;
   notificationsSupported = false;
   notificationsLoading = false;
+  dailyReminderEnabled = false;
+  dailyReminderTime = '20:30';
+  remindersNativeSupported = false;
 
   customAccent = '#f27a2a';
 
@@ -388,12 +396,15 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
         }
         this.notificationsSupported = this.notificationService.isSupported();
-        if (!this.notificationsSupported) {
-          this.notificationsEnabled = false;
-          this.settingsService.updateSettings({ notificationsEnabled: false });
-        }
       })
 
+    );
+
+    this.subscription.add(
+      this.habitStore.getNotificationSettings$().subscribe(notificationSettings => {
+        this.dailyReminderEnabled = notificationSettings.dailyEnabled;
+        this.dailyReminderTime = notificationSettings.dailyTime;
+      })
     );
 
     this.subscription.add(
@@ -439,6 +450,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
 
     if (isPlatformBrowser(this.platformId)) {
+      this.remindersNativeSupported = this.notificationService.isNativeSchedulingAvailable();
 
       this.installListener = (event: Event) => {
 
@@ -822,36 +834,44 @@ export class ProfileComponent implements OnInit, OnDestroy {
     if (this.notificationsLoading) {
       return;
     }
-    this.notificationsSupported = this.notificationService.isSupported();
-    if (!this.notificationsSupported) {
-      this.notificationsEnabled = false;
-      this.settingsService.updateSettings({ notificationsEnabled: false });
-      this.snackBar.open('Notifications require HTTPS and a supported browser.', 'Close', { duration: 2500 });
+    this.remindersNativeSupported = this.notificationService.isNativeSchedulingAvailable();
+    if (!this.remindersNativeSupported) {
+      this.dailyReminderEnabled = false;
+      this.habitStore.updateNotificationSettings({ dailyEnabled: false });
+      this.snackBar.open('Reminders work in the installed app.', 'Close', { duration: 2200 });
       return;
     }
+
     this.notificationsLoading = true;
     if (enabled) {
-      await this.notificationService.setEnabled(true);
-      await this.notificationService.enableForToday();
-      const error = this.notificationService.getLastError();
-      if (error) {
-        this.notificationsEnabled = false;
-        this.settingsService.updateSettings({ notificationsEnabled: false });
-        const message = error === 'denied'
-          ? 'Permission denied. Enable from browser settings.'
-          : 'Notifications not supported on this device.';
-        this.snackBar.open(message, 'Close', { duration: 3000 });
+      const permission = await this.notificationService.requestPermissionIfNeeded();
+      if (permission !== 'granted') {
+        await this.notificationService.setEnabled(false);
+        this.dailyReminderEnabled = false;
+        this.snackBar.open('Permission denied. Enable notifications in device settings.', 'Close', { duration: 3000 });
       } else {
-        this.notificationsEnabled = true;
-        this.snackBar.open('Notifications enabled ✅', 'Close', { duration: 2000 });
+        await this.notificationService.setEnabled(true);
+        await this.notificationService.syncFromStore();
+        this.dailyReminderEnabled = true;
+        this.snackBar.open('Daily reminder enabled', 'Close', { duration: 2000 });
       }
     } else {
-      await this.notificationService.setEnabled(false);
       await this.notificationService.disableAll();
-      this.notificationsEnabled = false;
-      this.snackBar.open('Notifications off', 'Close', { duration: 1500 });
+      this.dailyReminderEnabled = false;
+      this.snackBar.open('Daily reminder off', 'Close', { duration: 1500 });
     }
     this.notificationsLoading = false;
+    this.cdr.markForCheck();
+  }
+
+  async onDailyReminderTimeChange(event: Event): Promise<void> {
+    const value = (event.target as HTMLInputElement).value || '20:30';
+    this.dailyReminderTime = value;
+    this.habitStore.updateNotificationSettings({ dailyTime: value });
+    if (this.dailyReminderEnabled && this.remindersNativeSupported) {
+      await this.notificationService.syncFromStore();
+      this.snackBar.open('Reminder time updated', 'Close', { duration: 1800 });
+    }
     this.cdr.markForCheck();
   }
 
@@ -892,6 +912,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 // - Data & Backup and Personalization sections collapse/expand.
 
 // - No overflow behind bottom nav on small screens.
+
 
 
 
