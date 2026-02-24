@@ -10,10 +10,17 @@ import { ThemeService } from '../../services/theme.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="splash" [class.reduce-motion]="reduceMotion" [class.is-fading]="isFadingOut">
-      <div class="splash-inner">
-        <img class="splash-icon" src="icons/app_icon_192x192.png" alt="Level-Up logo">
-        <div class="splash-sub">Level Up every freaking day</div>
+    <div class="splash-screen" [class.reduce-motion]="reduceMotion" [class.is-fading]="isFadingOut">
+      <div class="splash-shell">
+        <div class="splash-panel">
+          <div class="splash-mark-wrap">
+            <div class="splash-mark-glow" aria-hidden="true"></div>
+            <img class="splash-icon" src="icons/app_icon_192x192.png" alt="Level-Up logo">
+          </div>
+          <div class="splash-label">SYSTEM</div>
+          <div class="splash-title">Level-Up</div>
+          <div class="splash-sub">Preparing your next session</div>
+        </div>
       </div>
     </div>
   `,
@@ -36,7 +43,7 @@ export class SplashComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    const delay = 3000;
+    const delay = 2200;
     this.delayTimer = setTimeout(() => {
       this.delayDone = true;
       this.tryNavigate();
@@ -73,19 +80,9 @@ export class SplashComponent implements OnInit, OnDestroy {
     }
     this.hasNavigated = true;
     this.isFadingOut = true;
+    const target = this.habitStore.onboardingCompletedSync() ? '/today' : '/getting-started';
     this.fadeTimer = setTimeout(() => {
-    void this.router.navigate(['/today']);
-  }, this.reduceMotion ? 0 : 400);
+      void this.router.navigate([target]);
+    }, this.reduceMotion ? 0 : 350);
   }
 }
-
-// Manual test checklist
-// - Hard refresh -> splash 3s -> correct landing route
-// - Onboarding complete -> splash ~1.2s -> Today
-// - Onboarding shows only once
-// - Splash uses Shadow Monarch gradient
-// - Logo has no white border box
-// - Skip works and still marks onboardingComplete
-// - Header never overlaps notch/time
-// - After Finish -> Today
-// - After app reopen -> Splash -> Today

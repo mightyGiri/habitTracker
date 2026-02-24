@@ -1,138 +1,169 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { filter, take } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { filter, Subscription, take } from 'rxjs';
 import { HabitStoreService } from '../../services/habit-store.service';
 import { ThemeService } from '../../services/theme.service';
 import { UserProfile } from '../../models/habit.model';
 
-type OnboardingStep = 0 | 1 | 2 | 3;
+type WizardStep = 0 | 1 | 2 | 3;
+type OnboardingView = 'intro' | 'wizard' | 'loading';
 
 @Component({
   selector: 'app-onboarding',
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="page-container onboarding">
+    <div class="page-container onboarding-flow" [class.reduce-motion]="reduceMotion">
       <div class="onboarding-shell">
-        <ng-container [ngSwitch]="step">
-          <section *ngSwitchCase="0" class="onboarding-step">
-            <div class="quick-setup-card aesthetic-card arcane-card">
-              <div class="quick-setup-inner">
-                <h1 class="text-title center-title">Quick setup</h1>
-                <p class="text-muted center-subtitle">Start fast. Personalize anytime.</p>
-
-                <label class="text-label why-label" for="quick-name-input">Display name</label>
-                <input
-                  id="quick-name-input"
-                  type="text"
-                  class="onboarding-input"
-                  [(ngModel)]="name"
-                  maxlength="20"
-                  placeholder="Your name">
-                <div class="text-muted validation-error" *ngIf="showQuickNameError">Name is required (min 2 characters).</div>
-
-                <label class="text-label why-label" for="daily-target-input">Daily habit target</label>
-                <input
-                  id="daily-target-input"
-                  type="number"
-                  class="onboarding-input"
-                  [(ngModel)]="dailyTarget"
-                  min="1"
-                  max="12"
-                  (ngModelChange)="onDailyTargetChange($event)">
-                <div class="text-muted helper-text">Choose 1-12 habits per day (recommended: 5).</div>
-
-                <label class="toggle-row" for="reminders-input">
-                  <span class="text-label">Reminders</span>
-                  <input
-                    id="reminders-input"
-                    type="checkbox"
-                    [(ngModel)]="remindersEnabled">
-                </label>
-
-                <div class="onboarding-actions quick-actions">
-                  <button class="btn btn-primary" type="button" (click)="startNow()" [disabled]="!canStartQuick">
-                    Start Now
-                  </button>
-                  <button class="btn btn-outline" type="button" (click)="personalize()" [disabled]="!canStartQuick">
-                    Personalize
-                  </button>
-                </div>
-                <button class="btn btn-ghost skip-link" type="button" (click)="skip()">Skip</button>
+        <ng-container [ngSwitch]="view">
+          <section *ngSwitchCase="'intro'" class="intro-screen panel-screen">
+            <div class="intro-mark-wrap">
+              <div class="intro-mark-glow" aria-hidden="true"></div>
+              <img class="intro-mark" src="icons/app_icon_192x192.png" alt="Level-Up logo">
+            </div>
+            <div class="intro-copy cinematic-panel">
+              <div class="kicker-label">SYSTEM</div>
+              <h1 class="hero-title">Level up every day.</h1>
+              <p class="hero-subtitle">Build habits, earn XP, and improve daily, one checkbox at a time.</p>
+              <ul class="benefit-list">
+                <li class="benefit-item">Track today in seconds</li>
+                <li class="benefit-item">Gain XP and level up</li>
+                <li class="benefit-item">See streaks and progress</li>
+              </ul>
+              <div class="cta-stack">
+                <button class="btn btn-primary cta-primary" type="button" (click)="goToWizard()">
+                  Get Started
+                </button>
+                <button class="btn btn-ghost cta-secondary" type="button" (click)="skipSetup()">
+                  Skip setup
+                </button>
               </div>
             </div>
           </section>
 
-          <section *ngSwitchCase="1" class="onboarding-step">
-            <h1 class="text-title center-title">Choose your persona</h1>
-            <p class="text-muted center-subtitle">We'll tailor your tone.</p>
-            <label class="text-label why-label" for="name-input">Name</label>
-            <input
-              id="name-input"
-              type="text"
-              class="onboarding-input"
-              [(ngModel)]="name"
-              placeholder="Your name">
-            <div class="text-muted helper-text">This is how we’ll address you.</div>
-            <div class="text-muted validation-error" *ngIf="showNameError">Name is required.</div>
-            <div class="pill-row">
-              <button
-                class="pill-button"
-                type="button"
-                *ngFor="let option of personas"
-                [class.is-active]="persona === option"
-                (click)="persona = option">
-                {{ option }}
-              </button>
+          <section *ngSwitchCase="'wizard'" class="wizard-screen panel-screen">
+            <div class="wizard-progress-wrap" aria-hidden="true">
+              <div class="wizard-progress-track">
+                <div class="wizard-progress-fill" [style.width.%]="wizardProgressPercent"></div>
+              </div>
+              <div class="wizard-progress-label text-muted">Step {{ step + 1 }} / 4</div>
             </div>
-            <div class="text-muted validation-error" *ngIf="showPersonaError">Please choose a persona.</div>
-            <div class="onboarding-actions split">
-              <button class="btn btn-outline" type="button" (click)="goBack()">Back</button>
-              <button class="btn btn-primary" type="button" (click)="goNext()" [disabled]="!canProceedPersona">Continue</button>
+
+            <div class="wizard-card cinematic-panel" *ngIf="step === 0">
+              <div class="kicker-label">Step 1</div>
+              <h1 class="hero-title">What should we call you?</h1>
+              <p class="hero-subtitle">This is the name shown on your dashboard.</p>
+              <label class="field-label" for="wizard-name">Name</label>
+              <input
+                id="wizard-name"
+                type="text"
+                class="onboarding-input"
+                [(ngModel)]="name"
+                maxlength="20"
+                placeholder="Your name">
+              <div class="validation-error" *ngIf="showNameErrorStepOne">Enter at least 2 characters.</div>
+              <div class="wizard-actions">
+                <button class="btn btn-primary cta-primary" type="button" (click)="nextStep()" [disabled]="!isNameStepValid">
+                  Next
+                </button>
+              </div>
+            </div>
+
+            <div class="wizard-card cinematic-panel" *ngIf="step === 1">
+              <div class="kicker-label">Step 2</div>
+              <h1 class="hero-title">Choose your focus</h1>
+              <p class="hero-subtitle">Pick the direction you want your habits to support.</p>
+              <div class="goal-grid">
+                <button
+                  type="button"
+                  class="goal-option"
+                  *ngFor="let option of wizardGoals"
+                  [class.is-active]="goalChoice === option"
+                  (click)="selectGoal(option)">
+                  {{ option }}
+                </button>
+              </div>
+              <div class="custom-goal-wrap" *ngIf="goalChoice === 'Custom'">
+                <label class="field-label" for="custom-goal">Custom goal</label>
+                <input
+                  id="custom-goal"
+                  type="text"
+                  class="onboarding-input"
+                  [(ngModel)]="customGoal"
+                  maxlength="40"
+                  placeholder="Your custom goal">
+              </div>
+              <div class="validation-error" *ngIf="showGoalErrorStepTwo">Choose a goal to continue.</div>
+              <div class="wizard-actions split">
+                <button class="btn btn-outline" type="button" (click)="prevStep()">Back</button>
+                <button class="btn btn-primary cta-primary compact" type="button" (click)="nextStep()" [disabled]="!isGoalStepValid">
+                  Next
+                </button>
+              </div>
+            </div>
+
+            <div class="wizard-card cinematic-panel" *ngIf="step === 2">
+              <div class="kicker-label">Step 3</div>
+              <h1 class="hero-title">Why are you doing this?</h1>
+              <p class="hero-subtitle">Optional, but useful when motivation drops.</p>
+              <label class="field-label" for="why-line">Why (optional)</label>
+              <textarea
+                id="why-line"
+                class="onboarding-input"
+                rows="3"
+                [attr.maxlength]="statementLimit"
+                [(ngModel)]="statement"
+                placeholder="One line reason (optional)"></textarea>
+              <div class="char-count">{{ statementLength }}/{{ statementLimit }}</div>
+              <div class="wizard-actions split">
+                <button class="btn btn-outline" type="button" (click)="prevStep()">Back</button>
+                <button class="btn btn-primary cta-primary compact" type="button" (click)="nextStep()">Next</button>
+              </div>
+            </div>
+
+            <div class="wizard-card cinematic-panel" *ngIf="step === 3">
+              <div class="kicker-label">Step 4</div>
+              <h1 class="hero-title">Confirm your setup</h1>
+              <p class="hero-subtitle">You can change this later in Profile.</p>
+              <div class="summary-card">
+                <div class="summary-row">
+                  <span class="summary-key">Name</span>
+                  <span class="summary-value">{{ trimmedName || 'Player' }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-key">Goal</span>
+                  <span class="summary-value">{{ resolvedGoal }}</span>
+                </div>
+                <div class="summary-row" *ngIf="trimmedStatement">
+                  <span class="summary-key">Why</span>
+                  <span class="summary-value summary-why">{{ trimmedStatement }}</span>
+                </div>
+              </div>
+              <div class="wizard-actions split">
+                <button class="btn btn-outline" type="button" (click)="prevStep()">Back</button>
+                <button class="btn btn-primary cta-primary compact" type="button" (click)="finish()">
+                  Finish
+                </button>
+              </div>
+            </div>
+
+            <div class="wizard-footer">
+              <button class="btn btn-ghost cta-secondary" type="button" (click)="skipSetup()">Skip setup</button>
             </div>
           </section>
 
-          <section *ngSwitchCase="2" class="onboarding-step">
-            <h1 class="text-title center-title">Your primary goal</h1>
-            <p class="text-muted center-subtitle">Pick the focus for your habits.</p>
-            <div class="pill-row">
-              <button
-                class="pill-button"
-                type="button"
-                *ngFor="let option of goals"
-                [class.is-active]="goal === option"
-                (click)="goal = option">
-                {{ option }}
-              </button>
-            </div>
-            <div class="text-muted validation-error" *ngIf="showGoalError">Please choose a primary goal.</div>
-            <label class="text-label why-label" for="statement-input">Why</label>
-            <textarea
-              id="statement-input"
-              class="onboarding-input"
-              rows="3"
-              [attr.maxlength]="statementLimit"
-              [(ngModel)]="statement"
-              placeholder="Short reason to stay consistent"></textarea>
-            <div class="text-muted validation-error" *ngIf="showStatementError">Why is required (min 3 characters).</div>
-            <div class="text-muted char-count">{{ statementLength }}/{{ statementLimit }}</div>
-            <div class="onboarding-actions split">
-              <button class="btn btn-outline" type="button" (click)="goBack()">Back</button>
-              <button class="btn btn-primary" type="button" (click)="goNext()" [disabled]="!canProceedGoal">Finish</button>
-            </div>
-          </section>
-
-          <section *ngSwitchCase="3" class="onboarding-step final-step">
-            <h1 class="text-title center-title">You're all set, {{ displayName }}.</h1>
-            <p class="text-muted center-subtitle">The first step to win is to start now.</p>
-            <p class="text-muted center-subtitle">{{ personaFinalLine }}</p>
-            <p class="text-muted center-subtitle">
-              You're all set. Taking the first step is already a win. Keep showing up and you'll feel the shift.
-            </p>
-            <div class="onboarding-actions">
-              <button class="btn btn-primary" type="button" (click)="finish()">Start Today</button>
+          <section *ngSwitchCase="'loading'" class="loading-screen panel-screen" aria-live="polite">
+            <div class="loading-shell cinematic-panel">
+              <div class="aura-stage" aria-hidden="true">
+                <div class="aura-ring aura-ring-one"></div>
+                <div class="aura-ring aura-ring-two"></div>
+                <div class="silhouette-core"></div>
+                <div class="silhouette-shape"></div>
+              </div>
+              <div class="loading-title">Let’s level up...</div>
+              <div class="loading-subtitle">Preparing your journey</div>
             </div>
           </section>
         </ng-container>
@@ -141,269 +172,199 @@ type OnboardingStep = 0 | 1 | 2 | 3;
   `,
   styleUrls: ['./onboarding.component.sass']
 })
-export class OnboardingComponent implements OnInit {
-  step: OnboardingStep = 0;
-  personas: Array<UserProfile['persona']> = [
-    'Developer',
-    'Fitness',
-    'Student',
-    'Creator',
-    'Entrepreneur',
-    'Leader',
-    'Artist',
-    'Learner',
-    'Athlete',
-    'Other'
-  ];
-  goals: Array<UserProfile['primaryGoal']> = [
-    'Build consistency',
-    'Improve health & energy',
-    'Learn a skill',
-    'Boost focus & productivity',
-    'Reduce stress & feel calm',
-    'Transform lifestyle'
-  ];
-  persona: UserProfile['persona'] | null = null;
-  goal: UserProfile['primaryGoal'] | null = null;
+export class OnboardingComponent implements OnInit, OnDestroy {
+  view: OnboardingView = 'intro';
+  step: WizardStep = 0;
+  reduceMotion = false;
+
   name = '';
-  dailyTarget = 5;
-  remindersEnabled = false;
+  goalChoice: string | null = null;
+  customGoal = '';
   statement = '';
+
   readonly statementLimit = 140;
-  readonly statementMin = 3;
+  readonly wizardGoals = ['Fitness', 'Productivity', 'Mindset', 'Health', 'Custom'] as const;
+
+  private readonly subscriptions = new Subscription();
+  private loadingTimer?: ReturnType<typeof setTimeout>;
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private habitStore: HabitStoreService,
     private themeService: ThemeService
   ) {}
 
   ngOnInit(): void {
     this.themeService.setTheme('dark');
-    this.habitStore.getReady().pipe(
-      filter(ready => ready),
-      take(1)
-    ).subscribe(() => {
-      if (this.habitStore.onboardingCompletedSync()) {
-        void this.router.navigate(['/today']);
-      }
-    });
+    this.subscriptions.add(
+      this.themeService.getReducedMotion().subscribe(reduce => {
+        this.reduceMotion = reduce;
+      })
+    );
+    this.setViewFromRoute();
+    this.subscriptions.add(
+      this.habitStore.getReady().pipe(filter(ready => ready), take(1)).subscribe(() => {
+        if (this.habitStore.onboardingCompletedSync()) {
+          void this.router.navigate(['/today']);
+          return;
+        }
+        this.prefillFromExistingProfile();
+      })
+    );
   }
 
-  goNext(): void {
-    if (this.step < 3) {
-      if (this.step === 0 && !this.canStartQuick) {
-        return;
-      }
-      if (this.step === 1 && !this.canProceedPersona) {
-        return;
-      }
-      if (this.step === 2 && !this.canProceedGoal) {
-        return;
-      }
-      this.step = (this.step + 1) as OnboardingStep;
+  ngOnDestroy(): void {
+    if (this.loadingTimer) {
+      clearTimeout(this.loadingTimer);
+    }
+    this.subscriptions.unsubscribe();
+  }
+
+  private setViewFromRoute(): void {
+    const path = this.route.snapshot.routeConfig?.path || '';
+    this.view = path === 'getting-started' ? 'intro' : 'wizard';
+    this.step = 0;
+  }
+
+  private prefillFromExistingProfile(): void {
+    const existing = this.habitStore.getUserProfileSync();
+    if (!existing) {
       return;
     }
-    this.finish();
-  }
-
-  goBack(): void {
-    if (this.step > 0) {
-      this.step = (this.step - 1) as OnboardingStep;
+    if (!this.name && typeof existing.name === 'string') {
+      this.name = existing.name;
+    }
+    const existingGoal = (existing.primaryGoal || '').trim();
+    if (existingGoal) {
+      if (this.wizardGoals.includes(existingGoal as (typeof this.wizardGoals)[number])) {
+        this.goalChoice = existingGoal;
+      } else {
+        this.goalChoice = 'Custom';
+        this.customGoal = existingGoal;
+      }
+    }
+    const why = (existing.whyStatement || existing.statement || existing.why || '').trim();
+    if (!this.statement && why) {
+      this.statement = why.slice(0, this.statementLimit);
     }
   }
 
-  skip(): void {
-    this.name = 'Player';
-    this.dailyTarget = 5;
-    this.remindersEnabled = false;
-    this.completeAndGoToday('skip');
+  goToWizard(): void {
+    this.themeService.setTheme('dark');
+    void this.router.navigate(['/onboarding']);
   }
 
-  finish(): void {
+  skipSetup(): void {
     this.themeService.setTheme('dark');
-    this.saveQuickSetup();
-    this.saveProfile(this.persona, this.goal, this.statement);
+    this.habitStore.skipOnboarding();
     void this.router.navigate(['/today']);
   }
 
-  startNow(): void {
-    if (!this.canStartQuick) {
+  nextStep(): void {
+    if (this.step === 0 && !this.isNameStepValid) {
       return;
     }
-    this.completeAndGoToday('complete');
+    if (this.step === 1 && !this.isGoalStepValid) {
+      return;
+    }
+    if (this.step >= 3) {
+      this.finish();
+      return;
+    }
+    this.step = (this.step + 1) as WizardStep;
   }
 
-  personalize(): void {
-    if (!this.canStartQuick) {
+  prevStep(): void {
+    if (this.step > 0) {
+      this.step = (this.step - 1) as WizardStep;
+    }
+  }
+
+  selectGoal(option: (typeof this.wizardGoals)[number]): void {
+    this.goalChoice = option;
+    if (option !== 'Custom') {
+      this.customGoal = '';
+    }
+  }
+
+  finish(): void {
+    if (!this.isNameStepValid || !this.isGoalStepValid) {
       return;
     }
     this.themeService.setTheme('dark');
-    this.saveQuickSetup();
-    this.step = 1;
-  }
-
-  private saveProfile(persona: UserProfile['persona'] | null, goal: UserProfile['primaryGoal'] | null, statement: string): void {
-    const trimmedStatement = this.trimStatement(statement);
+    const existing = this.habitStore.getUserProfileSync();
+    const trimmedWhy = this.trimmedStatement || undefined;
     const profile: UserProfile = {
-      name: this.name.trim(),
-      persona: persona ?? 'Developer',
-      primaryGoal: goal ?? 'Build consistency',
-      statement: trimmedStatement || undefined,
-      whyStatement: trimmedStatement || undefined,
-      createdAt: Date.now()
+      name: this.trimmedName || 'Player',
+      persona: existing?.persona,
+      primaryGoal: this.resolvedGoal,
+      statement: trimmedWhy,
+      whyStatement: trimmedWhy,
+      why: trimmedWhy,
+      createdAt: existing?.createdAt ?? Date.now()
     };
     this.habitStore.setUserProfile(profile);
     this.habitStore.completeOnboarding();
+    this.startLoadingTransition();
+  }
+
+  private startLoadingTransition(): void {
+    this.view = 'loading';
+    if (this.loadingTimer) {
+      clearTimeout(this.loadingTimer);
+    }
+    this.loadingTimer = setTimeout(() => {
+      void this.router.navigate(['/today']);
+    }, this.reduceMotion ? 1200 : 1500);
+  }
+
+  get wizardProgressPercent(): number {
+    return ((this.step + 1) / 4) * 100;
   }
 
   get trimmedName(): string {
     return this.name.trim();
   }
 
-  get canStartQuick(): boolean {
+  get isNameStepValid(): boolean {
     return this.trimmedName.length >= 2;
   }
 
-  get showQuickNameError(): boolean {
-    return this.step === 0 && this.trimmedName.length > 0 && this.trimmedName.length < 2;
+  get showNameErrorStepOne(): boolean {
+    return this.step === 0 && this.trimmedName.length > 0 && !this.isNameStepValid;
   }
 
-  get nameValid(): boolean {
-    return this.trimmedName.length >= 2;
+  get trimmedCustomGoal(): string {
+    return this.customGoal.trim();
   }
 
-  get personaSelected(): boolean {
-    return Boolean(this.persona);
+  get isGoalStepValid(): boolean {
+    if (!this.goalChoice) {
+      return false;
+    }
+    if (this.goalChoice === 'Custom') {
+      return this.trimmedCustomGoal.length >= 2;
+    }
+    return true;
   }
 
-  get canProceedPersona(): boolean {
-    return this.nameValid && this.personaSelected;
+  get showGoalErrorStepTwo(): boolean {
+    return this.step === 1 && !!this.goalChoice && !this.isGoalStepValid;
   }
 
-  get showNameError(): boolean {
-    return this.step === 1 && this.trimmedName.length === 0;
-  }
-
-  get showPersonaError(): boolean {
-    return this.step === 1 && !this.personaSelected && this.trimmedName.length >= 2;
-  }
-
-  get goalSelected(): boolean {
-    return Boolean(this.goal);
+  get trimmedStatement(): string {
+    return this.statement.trim().slice(0, this.statementLimit);
   }
 
   get statementLength(): number {
-    return this.statement.trim().length;
+    return this.trimmedStatement.length;
   }
 
-  get canProceedGoal(): boolean {
-    return this.goalSelected && this.statementLength >= this.statementMin;
-  }
-
-  get showGoalError(): boolean {
-    return this.step === 2 && !this.goalSelected;
-  }
-
-  get showStatementError(): boolean {
-    return this.step === 2 && this.goalSelected && this.statementLength < this.statementMin;
-  }
-
-  private trimStatement(value: string): string {
-    return value.trim().slice(0, this.statementLimit);
-  }
-
-  onDailyTargetChange(value: number | string): void {
-    this.dailyTarget = this.clampDailyTarget(value);
-  }
-
-  private clampDailyTarget(value: number | string): number {
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed)) {
-      return 5;
+  get resolvedGoal(): string {
+    if (this.goalChoice === 'Custom') {
+      return this.trimmedCustomGoal || 'Custom';
     }
-    return Math.max(1, Math.min(12, Math.round(parsed)));
-  }
-
-  private saveQuickSetup(): void {
-    const displayName = this.trimmedName || 'Player';
-    const dailyWinTarget = this.clampDailyTarget(this.dailyTarget);
-    const remindersEnabled = Boolean(this.remindersEnabled);
-
-    this.habitStore.updateProfileSettings({
-      displayName,
-      dailyWinTarget,
-      remindersEnabled
-    });
-
-    const existing = this.habitStore.getUserProfileSync();
-    this.habitStore.setUserProfile({
-      name: displayName,
-      persona: existing?.persona,
-      primaryGoal: existing?.primaryGoal,
-      statement: existing?.statement,
-      whyStatement: existing?.whyStatement,
-      why: existing?.why,
-      createdAt: existing?.createdAt ?? Date.now()
-    });
-  }
-
-  private completeAndGoToday(mode: 'skip' | 'complete'): void {
-    this.themeService.setTheme('dark');
-    this.saveQuickSetup();
-    if (mode === 'skip') {
-      this.habitStore.skipOnboarding();
-    } else {
-      this.habitStore.completeOnboarding();
-    }
-    void this.router.navigate(['/today']);
-  }
-
-  get displayName(): string {
-    return this.trimmedName || 'there';
-  }
-
-  get personaFinalLine(): string {
-    const persona = this.persona ?? 'Other';
-    switch (persona) {
-      case 'Developer':
-        return 'Ship small. Improve daily. You’ll look back amazed.';
-      case 'Fitness':
-        return 'Show up. Move. Recover. Repeat.';
-      case 'Student':
-        return 'One focused session at a time.';
-      case 'Entrepreneur':
-        return 'Momentum beats perfect. Execute.';
-      case 'Creator':
-        return 'Create daily. Confidence follows.';
-      case 'Leader':
-        return 'Lead yourself first.';
-      case 'Artist':
-        return 'Practice becomes identity.';
-      case 'Learner':
-        return 'Curiosity wins.';
-      case 'Athlete':
-        return 'Train the basics.';
-      default:
-        return 'Start small. Repeat daily. Never miss twice.';
-    }
+    return this.goalChoice || 'Build consistency';
   }
 }
-
-// Manual test checklist
-// - Splash always shows on refresh/reopen
-// - Onboarding shows only once
-// - Skip works and still marks onboardingComplete
-// - Header never overlaps notch/time
-// - After Finish -> Today
-// - After app reopen -> Splash -> Today
-// - Next disabled until name+persona
-// - Persists after refresh
-// - Profile shows name+persona later
-// - Goal/why required, Finish disabled until valid
-// - No negative wording in onboarding copy
-
-
-
-
-

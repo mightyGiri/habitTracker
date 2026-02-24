@@ -1,5 +1,12 @@
 /* Design tokens */
 :root
+  /* safe area + shell spacing */
+  --safe-top: env(safe-area-inset-top, 0px)
+  --safe-bottom: env(safe-area-inset-bottom, 0px)
+  --page-pad: 18px
+  --page-pad-mobile: 14px
+  --tabbar-height: 72px
+
   /* brand + accent */
   --accent: #4c8dff
   --accent-weak: color-mix(in oklab, var(--accent) 35%, transparent)
@@ -8,11 +15,11 @@
   --glow: 0 0 0 1px color-mix(in oklab, var(--accent) 30%, transparent), 0 0 18px color-mix(in oklab, var(--accent) 20%, transparent)
 
   /* surfaces */
-  --bg: #0a1326
-  --bg-soft: #101f3a
-  --card: #142344
-  --card-2: #10203a
-  --border: color-mix(in oklab, white 12%, transparent)
+  --bg: #070b16
+  --bg-soft: #0d1324
+  --card: #101625
+  --card-2: #0c1220
+  --border: color-mix(in oklab, white 10%, transparent)
   --app-bg: var(--bg)
   --surface-1: var(--card)
   --surface-2: var(--card-2)
@@ -27,9 +34,9 @@
   --text-muted: var(--muted-2)
 
   /* layout + radius */
-  --radius-lg: 18px
-  --radius-md: 14px
-  --radius-sm: 10px
+  --radius-lg: 20px
+  --radius-md: 16px
+  --radius-sm: 12px
   --radius: var(--radius-md)
 
   --space-1: 8px
@@ -42,9 +49,10 @@
   --pad-3: var(--space-3)
 
   /* shadows */
-  --shadow-soft: 0 10px 28px rgba(0, 0, 0, 0.38)
-  --shadow-card: 0 8px 20px rgba(0, 0, 0, 0.3)
+  --shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.3)
+  --shadow-card: 0 10px 24px rgba(0, 0, 0, 0.26)
   --shadow-0: none
+  --glow-soft: 0 0 18px color-mix(in oklab, var(--accent) 12%, transparent)
 
   /* typography */
   --font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif
@@ -74,14 +82,14 @@
   /* legacy token mapping */
   --theme-bg: var(--bg)
   --theme-bg-2: var(--bg-soft)
-  --theme-bg-spot-1: var(--accent-weak)
-  --theme-bg-spot-2: color-mix(in oklab, var(--accent) 10%, transparent)
+  --theme-bg-spot-1: color-mix(in oklab, var(--accent) 12%, transparent)
+  --theme-bg-spot-2: color-mix(in oklab, var(--accent) 8%, transparent)
   --theme-pattern: none
   --theme-surface: var(--card)
   --theme-surface-2: var(--card-2)
   --theme-border: var(--border)
   --theme-shadow: var(--shadow-card)
-  --theme-shadow-hover: 0 14px 28px rgba(0, 0, 0, 0.4)
+  --theme-shadow-hover: 0 12px 26px rgba(0, 0, 0, 0.3)
   --theme-text: var(--text)
   --theme-text-muted: var(--muted)
   --theme-text-inverse: #1f1b16
