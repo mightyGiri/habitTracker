@@ -17,6 +17,7 @@ import { routeAnimations } from './shared/route-animations';
 import { BottomNavComponent } from './shared/bottom-nav/bottom-nav.component';
 import { NotificationService } from './services/notification.service';
 import { TabStateService } from './services/tab-state.service';
+import { SoundService } from './services/sound.service';
 
 @Component({
   selector: 'app-root',
@@ -71,6 +72,7 @@ export class App implements OnInit, OnDestroy {
     private themeService: ThemeService,
     private router: Router,
     private notificationService: NotificationService,
+    private soundService: SoundService,
     private tabState: TabStateService,
     @Inject(PLATFORM_ID) private platformId: object
   ) {}
@@ -99,6 +101,7 @@ export class App implements OnInit, OnDestroy {
     this.showChrome = !this.isSplashOrOnboarding(this.router.url);
     this.tabState.setCurrentTab(this.getTabFromUrl(this.router.url));
     this.notificationService.init();
+    this.soundService.init();
     if (this.notificationService.isEnabled()) {
       void this.notificationService.resyncForToday();
     }

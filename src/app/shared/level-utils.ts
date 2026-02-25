@@ -1,5 +1,6 @@
 export type LevelProgress = {
   totalDone: number;
+  totalXp: number;
   level: number;
   nextLevel: number;
   requiredForNext: number;
@@ -9,48 +10,79 @@ export type LevelProgress = {
   remainingToNext: number;
 };
 
-const FLAT_STEP_START_LEVEL = 5;
-const FLAT_STEP_SIZE = 5;
-
-export function getRequiredDone(level: number): number {
+export function getXpRequiredForNextLevel(level: number): number {
   const safeLevel = Math.max(0, Math.floor(level));
   if (safeLevel <= 0) {
+    return 3;
+  }
+  if (safeLevel === 1) {
+    return 5;
+  }
+  if (safeLevel === 2) {
+    return 10;
+  }
+  return 10;
+}
+
+export function computeLevelFromTotalXp(totalXp: number): {
+  level: number;
+  xpIntoLevel: number;
+  requiredThisLevel: number;
+  progressPercent: number;
+  nextLevel: number;
+  remainingToNext: number;
+} {
+  let level = 0;
+  let remaining = Math.max(0, Math.floor(totalXp || 0));
+
+  while (true) {
+    const req = getXpRequiredForNextLevel(level);
+    if (remaining < req) {
+      const progressPercent = req <= 0 ? 100 : Math.round((remaining / req) * 100);
+      return {
+        level,
+        xpIntoLevel: remaining,
+        requiredThisLevel: req,
+        progressPercent: Math.max(0, Math.min(100, progressPercent)),
+        nextLevel: level + 1,
+        remainingToNext: Math.max(req - remaining, 0)
+      };
+    }
+    remaining -= req;
+    level += 1;
+  }
+}
+
+export function getRequiredDone(level: number): number {
+  if (level <= 0) {
     return 0;
   }
-  if (safeLevel <= FLAT_STEP_START_LEVEL) {
-    return (safeLevel * (safeLevel + 1)) / 2;
+  let total = 0;
+  for (let current = 0; current < Math.floor(level); current++) {
+    total += getXpRequiredForNextLevel(current);
   }
-  const levelFiveThreshold = (FLAT_STEP_START_LEVEL * (FLAT_STEP_START_LEVEL + 1)) / 2;
-  return levelFiveThreshold + (safeLevel - FLAT_STEP_START_LEVEL) * FLAT_STEP_SIZE;
+  return total;
 }
 
 export function getLevelFromTotalDone(totalDone: number): number {
-  const safeTotalDone = Math.max(0, Math.floor(totalDone));
-  if (safeTotalDone <= 0) {
-    return 0;
-  }
-  let level = 0;
-  while (safeTotalDone >= getRequiredDone(level + 1)) {
-    level += 1;
-  }
-  return level;
+  return computeLevelFromTotalXp(totalDone).level;
 }
 
 export function computeLevelStats(totalWins: number): LevelProgress {
   const safeTotalDone = Math.max(0, Math.floor(totalWins));
-  const level = getLevelFromTotalDone(safeTotalDone);
-  const nextLevel = level + 1;
-  const requiredForNext = getRequiredDone(nextLevel);
-  const requiredForCurrent = getRequiredDone(level);
-  const progressInLevel = safeTotalDone - requiredForCurrent;
-  const requiredThisLevel = Math.max(requiredForNext - requiredForCurrent, 1);
-  const progressPercent = Math.min(Math.max(progressInLevel / requiredThisLevel, 0), 1);
-  const remainingToNext = Math.max(requiredForNext - safeTotalDone, 0);
+  const computed = computeLevelFromTotalXp(safeTotalDone);
+  const requiredForCurrent = getRequiredDone(computed.level);
+  const requiredForNext = requiredForCurrent + computed.requiredThisLevel;
+  const progressInLevel = computed.xpIntoLevel;
+  const requiredThisLevel = Math.max(computed.requiredThisLevel, 1);
+  const progressPercent = Math.max(0, Math.min(1, computed.progressPercent / 100));
+  const remainingToNext = Math.max(computed.remainingToNext, 0);
 
   return {
     totalDone: safeTotalDone,
-    level,
-    nextLevel,
+    totalXp: safeTotalDone,
+    level: computed.level,
+    nextLevel: computed.nextLevel,
     requiredForNext,
     progressInLevel,
     requiredThisLevel,

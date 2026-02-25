@@ -1,6 +1,7 @@
 export interface Habit {
   id: string;
   name: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
   createdAtDateKey: string;
   goalDays: number;
   frequencyType?: 'daily' | 'weekly';
@@ -74,6 +75,8 @@ export interface ProfileSettings {
   remindersEnabled?: boolean;
   dailyReminderEnabled?: boolean;
   dailyReminderTime?: string;
+  soundsEnabled?: boolean;
+  unlockedBadgeIds?: string[];
 }
 
 export interface NotificationSettings {
@@ -103,4 +106,24 @@ export interface MonthInsights {
   worstDay: number;
   currentStreak: number;
   perfectDays: number;
+}
+
+export type HabitDifficulty = 'easy' | 'medium' | 'hard';
+
+export interface DailyLog {
+  dateISO: string;
+  completedHabitIds: string[];
+  dayXP: number;
+  isPerfectDay: boolean;
+}
+
+export interface GamificationStats {
+  totalXP: number;
+  level: number;
+  xpNeededForNextLevel: number;
+  progressPercent: number;
+  currentDailyStreak: number;
+  currentPerfectStreak: number;
+  bestDailyStreak: number;
+  bestPerfectStreak: number;
 }

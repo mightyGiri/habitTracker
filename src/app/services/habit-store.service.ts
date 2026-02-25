@@ -1,9 +1,11 @@
 import { Injectable, isDevMode } from '@angular/core';
-import { BehaviorSubject, Observable, combineLatest, map } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, combineLatest, map } from 'rxjs';
 import { Habit, MonthKey, HabitCompletion, DayCheck, MonthlyTotals, TopHabit, MonthInsights, HabitSkips, HabitSkip, UserProfile, ProfileSettings, TimerState, TimerStateMap, NotificationSettings } from '../models/habit.model';
 import { DateUtils } from '../shared/date-utils';
 import { getLevelProgress, LevelProgress } from '../shared/level-utils';
 import { StorageService, PersistedState } from './storage.service';
+import { GamificationService, DayXpSummary, StreakSnapshot } from './gamification.service';
+import { AchievementsService, AchievementBadgeId } from './achievements.service';
 
 interface StorageData {
   habits: Habit[];
@@ -21,6 +23,7 @@ type BackupData = {
   habits: Array<{
     id: string;
     name: string;
+    difficulty?: 'easy' | 'medium' | 'hard';
     createdAtDateKey?: string;
     goalDays: number;
     frequencyType?: 'daily' | 'weekly';
@@ -63,15 +66,20 @@ export class HabitStoreService {
   private userProfile$ = new BehaviorSubject<UserProfile | null>(null);
   private profile$ = new BehaviorSubject<ProfileSettings>({});
   private ready$ = new BehaviorSubject<boolean>(false);
+  private badgeUnlockEvents$ = new Subject<AchievementBadgeId[]>();
   private defaultsSeeded = false;
   private isHydrated = false;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingState: PersistedState | null = null;
 
-  constructor(private storageService: StorageService) {
+  constructor(
+    private storageService: StorageService,
+    private gamification: GamificationService,
+    private achievements: AchievementsService
+  ) {
     void this.initialize();
-    this.completions$.subscribe(completions => {
-      this.levelStats$.next(this.buildLevelStats(completions));
+    combineLatest([this.habits$, this.completions$]).subscribe(([habits, completions]) => {
+      this.levelStats$.next(this.buildLevelStats(habits, completions));
     });
   }
 
@@ -106,6 +114,7 @@ export class HabitStoreService {
       }
       this.isHydrated = true;
       this.enforceAdminDateLock();
+      this.refreshUnlockedBadges(false);
       this.saveToStorage();
       this.ready$.next(true);
       return;
@@ -115,6 +124,7 @@ export class HabitStoreService {
     this.defaultsSeeded = true;
     this.isHydrated = true;
     this.enforceAdminDateLock();
+    this.refreshUnlockedBadges(false);
     this.saveToStorage();
     this.ready$.next(true);
   }
@@ -123,11 +133,11 @@ export class HabitStoreService {
     const now = Date.now();
     const todayDateKey = this.toIsoDateLocal(new Date());
     const habits: Habit[] = [
-      { id: this.createId(), name: 'Wake up on time', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now, isActive: true, sortOrder: 0 },
-      { id: this.createId(), name: 'Meditation', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: true, timerSeconds: 300, timerAutoComplete: true, type: 'timer', targetSeconds: 300, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 1, isActive: true, sortOrder: 1 },
-      { id: this.createId(), name: 'Move (walk/exercise)', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 2, isActive: true, sortOrder: 2 },
-      { id: this.createId(), name: 'Read', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 3, isActive: true, sortOrder: 3 },
-      { id: this.createId(), name: 'Reflect (journal)', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 4, isActive: true, sortOrder: 4 }
+      { id: this.createId(), name: 'Wake up on time', difficulty: 'easy', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now, isActive: true, sortOrder: 0 },
+      { id: this.createId(), name: 'Meditation', difficulty: 'medium', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: true, timerSeconds: 300, timerAutoComplete: true, type: 'timer', targetSeconds: 300, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 1, isActive: true, sortOrder: 1 },
+      { id: this.createId(), name: 'Move (walk/exercise)', difficulty: 'hard', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 2, isActive: true, sortOrder: 2 },
+      { id: this.createId(), name: 'Read', difficulty: 'easy', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 3, isActive: true, sortOrder: 3 },
+      { id: this.createId(), name: 'Reflect (journal)', difficulty: 'medium', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 4, isActive: true, sortOrder: 4 }
     ];
     this.habits$.next(habits);
   }
@@ -220,6 +230,18 @@ export class HabitStoreService {
 
   getProfileSettingsSync(): ProfileSettings {
     return this.getProfileSync();
+  }
+
+  getUnlockedBadgeIds(): Observable<string[]> {
+    return this.profile$.pipe(map(profile => profile.unlockedBadgeIds ?? []));
+  }
+
+  getUnlockedBadgeIdsSync(): string[] {
+    return this.profile$.value.unlockedBadgeIds ?? [];
+  }
+
+  getBadgeUnlockEvents(): Observable<AchievementBadgeId[]> {
+    return this.badgeUnlockEvents$.asObservable();
   }
 
   getNotificationSettings$(): Observable<NotificationSettings> {
@@ -342,20 +364,24 @@ export class HabitStoreService {
     this.saveToStorage();
   }
 
-  private buildLevelStats(completions: HabitCompletion): LevelProgress {
-    let totalDone = 0;
-    Object.values(completions).forEach(dayMap => {
-      Object.values(dayMap).forEach(value => {
-        if (value) {
-          totalDone += 1;
-        }
-      });
-    });
-
-    return getLevelProgress(totalDone);
+  getHabitXpValue(habitOrId: Habit | string): number {
+    if (typeof habitOrId === 'string') {
+      const habit = this.habits$.value.find(item => item.id === habitOrId);
+      return this.gamification.getHabitXpValue(habit);
+    }
+    return this.gamification.getHabitXpValue(habitOrId);
   }
 
-  addHabit(name: string, frequencyType: 'daily' | 'weekly', weeklyTarget: number | undefined, minimumVersion: string, goalDays = 30, timerEnabled = false, timerSeconds = 0, timerAutoComplete = true): void {
+  computeTotalXpSync(): number {
+    return this.computeTotalXpFromState(this.habits$.value, this.completions$.value);
+  }
+
+  private buildLevelStats(habits: Habit[], completions: HabitCompletion): LevelProgress {
+    const totalXP = this.computeTotalXpFromState(habits, completions);
+    return this.gamification.computeLevelProgressFromTotalXP(totalXP);
+  }
+
+  addHabit(name: string, frequencyType: 'daily' | 'weekly', weeklyTarget: number | undefined, minimumVersion: string, goalDays = 30, timerEnabled = false, timerSeconds = 0, timerAutoComplete = true, difficulty: 'easy' | 'medium' | 'hard' = 'easy'): void {
     const trimmed = name.trim();
     if (!trimmed) {
       return;
@@ -376,6 +402,7 @@ export class HabitStoreService {
       {
         id,
         name: trimmed,
+        difficulty: this.gamification.normalizeDifficulty(difficulty),
         createdAtDateKey: this.toIsoDateLocal(new Date()),
         goalDays,
         frequencyType,
@@ -396,6 +423,7 @@ export class HabitStoreService {
       }
     ];
     this.habits$.next(this.sortHabits(nextHabits));
+    this.refreshUnlockedBadges(false);
     this.saveToStorage();
   }
 
@@ -408,6 +436,7 @@ export class HabitStoreService {
     this.completions$.next(completions);
     this.skips$.next(skips);
     this.timerStates$.next(timerStates);
+    this.refreshUnlockedBadges(false);
     this.saveToStorage();
   }
 
@@ -422,6 +451,7 @@ export class HabitStoreService {
     }
     const habits = this.habits$.value.map(h => h.id === habitId ? { ...h, name: trimmed, timerCompleted: false } : h);
     this.habits$.next(this.sortHabits(habits));
+    this.refreshUnlockedBadges(false);
     this.saveToStorage();
   }
 
@@ -431,7 +461,7 @@ export class HabitStoreService {
     this.saveToStorage();
   }
 
-  updateHabit(habitId: string, patch: Partial<Pick<Habit, 'name' | 'isActive' | 'sortOrder' | 'goalDays' | 'frequencyType' | 'weeklyTarget' | 'minimumVersion' | 'timerEnabled' | 'timerSeconds' | 'timerAutoComplete' | 'type' | 'targetSeconds' | 'allowManualComplete' | 'timerCompleted' | 'reminderEnabled' | 'reminderTime'>>): void {
+  updateHabit(habitId: string, patch: Partial<Pick<Habit, 'name' | 'difficulty' | 'isActive' | 'sortOrder' | 'goalDays' | 'frequencyType' | 'weeklyTarget' | 'minimumVersion' | 'timerEnabled' | 'timerSeconds' | 'timerAutoComplete' | 'type' | 'targetSeconds' | 'allowManualComplete' | 'timerCompleted' | 'reminderEnabled' | 'reminderTime'>>): void {
     const habits = this.habits$.value.map(habit => {
       if (habit.id !== habitId) {
         return habit;
@@ -456,6 +486,7 @@ export class HabitStoreService {
       const nextTimerAutoComplete = patch.timerAutoComplete ?? habit.timerAutoComplete ?? true;
       const nextReminderEnabled = patch.reminderEnabled ?? habit.reminderEnabled ?? false;
       const nextReminderTime = this.normalizeReminderTime(patch.reminderTime ?? habit.reminderTime);
+      const nextDifficulty = this.gamification.normalizeDifficulty(patch.difficulty ?? habit.difficulty);
       return {
         ...habit,
         ...patch,
@@ -471,7 +502,8 @@ export class HabitStoreService {
         allowManualComplete: nextAllowManualComplete,
         timerCompleted: nextTimerCompleted,
         reminderEnabled: nextReminderEnabled,
-        reminderTime: nextReminderEnabled ? nextReminderTime : undefined
+        reminderTime: nextReminderEnabled ? nextReminderTime : undefined,
+        difficulty: nextDifficulty
       };
     });
     this.habits$.next(this.sortHabits(habits));
@@ -588,6 +620,7 @@ export class HabitStoreService {
       }
     }
 
+    this.refreshUnlockedBadges(true);
     this.saveToStorage();
   }
 
@@ -647,7 +680,7 @@ export class HabitStoreService {
   isPerfectDay(date: Date): boolean {
     const dateKey = this.toIsoDateLocal(this.resolveDate(date));
     const summary = this.getDaySummaryByDateKey(dateKey);
-    return summary.totalCount > 0 && summary.handledCount === summary.totalCount;
+    return summary.totalCount > 0 && summary.doneCount === summary.totalCount;
   }
 
   getRemainingCount(date: Date): number {
@@ -693,7 +726,31 @@ export class HabitStoreService {
     while (true) {
       const cursorDateKey = this.toIsoDateLocal(cursor);
       const summary = this.getDaySummaryByDateKey(cursorDateKey);
-      const isPerfect = summary.totalCount > 0 && summary.handledCount >= summary.totalCount;
+      const hasAnyCompletion = summary.doneCount > 0;
+      if (!hasAnyCompletion) {
+        break;
+      }
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return streak;
+  }
+
+  getPerfectStreakCount(dateKey: string): number {
+    const normalizedDateKey = this.normalizeDateKey(dateKey);
+    if (!normalizedDateKey) {
+      return 0;
+    }
+    const endingDate = this.dateFromKey(normalizedDateKey);
+    if (!endingDate) {
+      return 0;
+    }
+    let streak = 0;
+    const cursor = new Date(endingDate);
+    while (true) {
+      const cursorDateKey = this.toIsoDateLocal(cursor);
+      const summary = this.getDaySummaryByDateKey(cursorDateKey);
+      const isPerfect = summary.totalCount > 0 && summary.doneCount === summary.totalCount;
       if (!isPerfect) {
         break;
       }
@@ -719,7 +776,7 @@ export class HabitStoreService {
     for (let i = 0; i < total; i++) {
       const cursorDateKey = this.toIsoDateLocal(cursor);
       const summary = this.getDaySummaryByDateKey(cursorDateKey);
-      const isPerfectDay = summary.totalCount > 0 && summary.handledCount >= summary.totalCount;
+      const isPerfectDay = summary.totalCount > 0 && summary.doneCount === summary.totalCount;
       if (isPerfectDay) {
         wins++;
       }
@@ -736,6 +793,14 @@ export class HabitStoreService {
       return 0;
     }
     return this.getStreakCount(targetDateKey);
+  }
+
+  getBestDailyStreak(): number {
+    return this.computeGlobalStreakSnapshot().bestDailyStreak;
+  }
+
+  getBestPerfectStreak(): number {
+    return this.computeGlobalStreakSnapshot().bestPerfectStreak;
   }
 
   isCheckedForDate(year: number, monthIndex: number, dayNumber: number, habitId: string): boolean {
@@ -1066,6 +1131,7 @@ export class HabitStoreService {
           return {
             id: habit.id,
             name: String(habit.name || '').trim() || 'Habit',
+            difficulty: this.gamification.normalizeDifficulty((habit as Habit).difficulty ?? habit.difficulty),
             createdAtDateKey: this.normalizeDateKey(habit.createdAtDateKey) || fallbackDateKey,
             goalDays: Math.max(1, Number(habit.goalDays) || 1),
             frequencyType,
@@ -1142,6 +1208,7 @@ export class HabitStoreService {
       if (backup.profile) {
         this.profile$.next(this.normalizeProfileSettings(backup.profile));
       }
+      this.refreshUnlockedBadges(false);
       this.saveToStorage();
       return;
     }
@@ -1200,6 +1267,7 @@ export class HabitStoreService {
       this.selectedMonthYear$.next({ year: selectedYear, month: selectedMonthIndex });
     }
 
+    this.refreshUnlockedBadges(false);
     this.saveToStorage();
   }
 
@@ -1268,6 +1336,7 @@ export class HabitStoreService {
       return {
         ...habit,
         name: nextName,
+        difficulty: this.gamification.normalizeDifficulty(habit.difficulty),
         createdAtDateKey: this.normalizeDateKey(habit.createdAtDateKey) || fallbackDateKey,
         goalDays: habit.goalDays ?? 30,
         frequencyType,
@@ -1317,7 +1386,61 @@ export class HabitStoreService {
       displayName: profile.displayName ? String(profile.displayName).trim() : undefined,
       remindersEnabled: Boolean(profile.remindersEnabled ?? false),
       dailyReminderEnabled: Boolean(profile.dailyReminderEnabled ?? false),
-      dailyReminderTime: this.normalizeReminderTime(profile.dailyReminderTime)
+      dailyReminderTime: this.normalizeReminderTime(profile.dailyReminderTime),
+      soundsEnabled: Boolean(profile.soundsEnabled ?? false),
+      unlockedBadgeIds: this.achievements.normalizeBadgeIds(profile.unlockedBadgeIds)
+    };
+  }
+
+  private refreshUnlockedBadges(emitEvents: boolean): void {
+    const metrics = this.buildAchievementMetrics();
+    const nextUnlocked = this.achievements.getUnlockedBadgeIds(metrics);
+    const previousUnlocked = this.achievements.normalizeBadgeIds(this.profile$.value.unlockedBadgeIds);
+    const previousSet = new Set(previousUnlocked);
+    const newlyUnlocked = nextUnlocked.filter(id => !previousSet.has(id));
+    const changed = previousUnlocked.length !== nextUnlocked.length ||
+      previousUnlocked.some((id, index) => nextUnlocked[index] !== id);
+
+    if (changed) {
+      this.profile$.next(this.normalizeProfileSettings({
+        ...this.profile$.value,
+        unlockedBadgeIds: nextUnlocked
+      }));
+    }
+
+    if (emitEvents && newlyUnlocked.length > 0) {
+      this.badgeUnlockEvents$.next(newlyUnlocked);
+    }
+  }
+
+  private buildAchievementMetrics(): { totalCompletedCount: number; perfectDayCount: number; level: number } {
+    const completions = this.completions$.value;
+    let totalCompletedCount = 0;
+    let perfectDayCount = 0;
+
+    for (const [dateKey, dayMap] of Object.entries(completions)) {
+      if (!dayMap || typeof dayMap !== 'object' || Array.isArray(dayMap)) {
+        continue;
+      }
+      let dayCompleted = 0;
+      for (const completed of Object.values(dayMap)) {
+        if (completed === true) {
+          dayCompleted += 1;
+          totalCompletedCount += 1;
+        }
+      }
+      if (dayCompleted > 0) {
+        const summary = this.getDaySummaryByDateKey(dateKey);
+        if (summary.totalCount > 0 && summary.doneCount === summary.totalCount) {
+          perfectDayCount += 1;
+        }
+      }
+    }
+
+    return {
+      totalCompletedCount,
+      perfectDayCount,
+      level: this.levelStats$.value.level
     };
   }
 
@@ -1603,5 +1726,78 @@ export class HabitStoreService {
     const today = this.normalizeDate(new Date());
     this.selectedDateKey$.next(this.toIsoDateLocal(today));
     this.selectedMonthYear$.next({ year: today.getFullYear(), month: today.getMonth() });
+  }
+
+  private computeTotalXpFromState(habits: Habit[], completions: HabitCompletion): number {
+    const dateKeys = Object.keys(completions).sort();
+    let totalXP = 0;
+    for (const dateKey of dateKeys) {
+      const activeHabits = this.getHabitsActiveOnFromList(habits, dateKey);
+      totalXP += this.gamification.computeDayXP(dateKey, activeHabits, completions, true).dayXP;
+    }
+    return totalXP;
+  }
+
+  private getHabitsActiveOnFromList(habits: Habit[], dateKey: string): Habit[] {
+    const normalizedDateKey = this.normalizeDateKey(dateKey) || this.toIsoDateLocal(new Date());
+    return habits
+      .filter(habit => this.isHabitActiveOnDateKey(habit, normalizedDateKey))
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  }
+
+  private computeGlobalStreakSnapshot(): StreakSnapshot {
+    const endKey = this.toIsoDateLocal(new Date());
+    const startKey = this.getEarliestTrackedDateKey();
+    if (!startKey) {
+      return {
+        currentDailyStreak: 0,
+        currentPerfectStreak: 0,
+        bestDailyStreak: 0,
+        bestPerfectStreak: 0
+      };
+    }
+
+    const summariesByDateKey: Record<string, Pick<DayXpSummary, 'doneCount' | 'isPerfectDay'>> = {};
+    const sortedDateKeysAsc: string[] = [];
+    let cursor = this.dateFromKey(startKey);
+    const end = this.dateFromKey(endKey);
+    if (!cursor || !end) {
+      return {
+        currentDailyStreak: 0,
+        currentPerfectStreak: 0,
+        bestDailyStreak: 0,
+        bestPerfectStreak: 0
+      };
+    }
+
+    while (cursor <= end) {
+      const key = this.toIsoDateLocal(cursor);
+      const summary = this.getDaySummaryByDateKey(key);
+      summariesByDateKey[key] = {
+        doneCount: summary.doneCount,
+        isPerfectDay: summary.totalCount > 0 && summary.doneCount === summary.totalCount
+      };
+      sortedDateKeysAsc.push(key);
+      cursor = new Date(cursor);
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return this.gamification.computeStreaks(sortedDateKeysAsc, summariesByDateKey);
+  }
+
+  private getEarliestTrackedDateKey(): string | null {
+    const candidates: string[] = [];
+    for (const habit of this.habits$.value) {
+      const key = this.normalizeDateKey(habit.createdAtDateKey);
+      if (key) {
+        candidates.push(key);
+      }
+    }
+    candidates.push(...Object.keys(this.completions$.value).filter(key => Boolean(this.normalizeDateKey(key))));
+    if (candidates.length === 0) {
+      return null;
+    }
+    candidates.sort();
+    return candidates[0] ?? null;
   }
 }

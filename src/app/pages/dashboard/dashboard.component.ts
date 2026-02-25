@@ -19,6 +19,8 @@ import { getLevelProgress, LevelProgress } from '../../shared/level-utils';
 import { plural } from '../../shared/plural';
 import { DayCountPipe } from '../../shared/day-count.pipe';
 import { ActivatedRoute, Router } from '@angular/router';
+import { AchievementsService } from '../../services/achievements.service';
+import { SoundService } from '../../services/sound.service';
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -41,20 +43,24 @@ type ConfettiPiece = {
   duration: number;
 };
 
+type SystemOverlayType = 'none' | 'perfect' | 'levelup';
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, MatCardModule, MatIconModule, MatSnackBarModule, MatDialogModule, DayCountPipe, ProgressBarComponent, HabitCheckComponent],
   animations: [staggerFadeUp || noopAnimation],
   template: `
-    <div class="system-modal-overlay" *ngIf="showLevelUpModal">
-      <div class="system-modal-card" role="dialog" aria-live="polite" aria-label="Level up">
-        <button class="system-modal-close glass-btn glass-btn--ghost" type="button" aria-label="Dismiss level up" (click)="dismissLevelUpModal()">
+    <div class="system-modal-overlay" *ngIf="activeSystemOverlay !== 'none'">
+      <div class="system-modal-card" role="dialog" aria-live="polite" [attr.aria-label]="activeSystemOverlay === 'perfect' ? 'Perfect day' : 'Level up'">
+        <button class="system-modal-close glass-btn glass-btn--ghost" type="button" [attr.aria-label]="activeSystemOverlay === 'perfect' ? 'Dismiss perfect day' : 'Dismiss level up'" (click)="dismissSystemOverlay()">
           &#x2715;
         </button>
         <div class="system-modal-system system-label">SYSTEM</div>
-        <div class="system-modal-title system-title">LEVEL UP</div>
-        <div class="system-modal-level system-subtitle">Lv {{ levelUpFrom }} &#x2192; Lv {{ levelUpTo }}</div>
+        <div class="system-modal-title system-title">{{ activeSystemOverlay === 'perfect' ? 'PERFECT DAY' : 'LEVEL UP' }}</div>
+        <div class="system-modal-level system-subtitle" *ngIf="activeSystemOverlay === 'perfect'">All habits completed.</div>
+        <div class="system-modal-level system-subtitle" *ngIf="activeSystemOverlay === 'perfect' && streakCount > 0">&#x1F525; Streak: {{ streakCount }}</div>
+        <div class="system-modal-level system-subtitle" *ngIf="activeSystemOverlay === 'levelup'">Lv {{ levelUpFrom }} &#x2192; Lv {{ levelUpTo }}</div>
         <div class="system-modal-particles" aria-hidden="true">
           <span class="system-modal-spark"></span>
           <span class="system-modal-spark"></span>
@@ -169,6 +175,7 @@ type ConfettiPiece = {
               [class.is-skipped]="isSelectedDaySkipped(habit.id)"
               [class.is-next]="isNextHabit(habit.id)"
               [class.reward-pulse]="inlineRewardHabitId === habit.id"
+              [class.done-pop]="isDonePopActive(habit.id)"
               (click)="onHabitCardActivate(habit, $event)"
               (keydown.enter)="onHabitCardActivate(habit, $event)"
               (keydown.space)="onHabitCardActivate(habit, $event); $event.preventDefault()"
@@ -177,16 +184,22 @@ type ConfettiPiece = {
               <div class="today-item-info">
                 <div class="today-item-name">{{ habit.name }}</div>
                 <div class="today-item-sub text-muted">{{ habitProgressMap[habit.id] || 0 }}% this month</div>
+                <span class="habit-xp-chip text-label">+{{ getHabitXp(habit) }} XP</span>
                 <span class="skipped-chip" *ngIf="isSelectedDaySkipped(habit.id)">Skipped</span>
-                <span class="inline-reward" *ngIf="inlineRewardHabitId === habit.id"> ++Aura </span>
+                <span class="inline-reward" *ngIf="inlineRewardHabitId === habit.id">{{ inlineRewardText }}</span>
               </div>
               <div class="today-item-meta">
                 <span class="today-item-percent text-label">{{ habitProgressMap[habit.id] || 0 }}%</span>
-                <app-habit-check
-                  [checked]="isTodayChecked(habit.id)"
-                  (toggle)="toggleHabitForSelectedDay(habit)"
-                  [attr.aria-label]="'Toggle ' + habit.name">
-                </app-habit-check>
+                <div class="habit-check-wrap">
+                  <span class="xp-float" *ngIf="isXpFloatActive(habit.id)">+{{ getHabitXp(habit) }} XP</span>
+                  <app-habit-check
+                    class="habit-check-cta"
+                    [class.check-pop]="isDonePopActive(habit.id)"
+                    [checked]="isTodayChecked(habit.id)"
+                    (toggle)="toggleHabitForSelectedDay(habit)"
+                    [attr.aria-label]="'Toggle ' + habit.name">
+                  </app-habit-check>
+                </div>
               </div>
             </button>
           </div>
@@ -199,7 +212,7 @@ type ConfettiPiece = {
       </mat-card>
 
       <mat-card class="aesthetic-card streak-card">
-        <div class="section-header text-section">Perfect Streak</div>
+        <div class="section-header text-section">Daily Streak</div>
         <mat-card-content>
           <div class="streak-row">
             <div class="streak-value">{{ currentStreakDisplay | dayCount }}</div>
@@ -321,12 +334,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   confettiPieces: ConfettiPiece[] = [];
   private confettiTimer?: ReturnType<typeof setTimeout>;
   inlineRewardHabitId: string | null = null;
+  inlineRewardText = '+1 XP';
   private inlineRewardTimer?: ReturnType<typeof setTimeout>;
-  showLevelUpModal = false;
+  activeSystemOverlay: SystemOverlayType = 'none';
+  private systemOverlayQueue: Array<Exclude<SystemOverlayType, 'none'>> = [];
   levelUpFrom = 0;
   levelUpTo = 0;
   private lastSeenLevel?: number;
-  private levelUpModalTimer?: ReturnType<typeof setTimeout>;
+  private systemOverlayTimer?: ReturnType<typeof setTimeout>;
   finishMomentMessage = '';
   finishMomentActive = false;
   private finishMomentTimer?: ReturnType<typeof setTimeout>;
@@ -360,8 +375,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   private resizeListener?: () => void;
   private lastMonthKey: string | null = null;
   private rewardStageMap: Record<string, number> = {};
+  private xpFloatMap = new Map<string, boolean>();
+  private xpFloatTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private donePopMap = new Map<string, boolean>();
+  private donePopTimers = new Map<string, ReturnType<typeof setTimeout>>();
   ready$!: Observable<boolean>;
-
   get isPerfectTodaySelected(): boolean {
     return this.isSameDate(this.selectedDate, this.todayDate) && this.todayIsPerfect;
   }
@@ -400,15 +418,16 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   get levelXpText(): string {
-    return `XP: ${this.levelStats.totalDone} done`;
+    return `XP: ${this.levelStats.totalXp}`;
   }
 
   get levelProgressText(): string {
-    if (this.levelStats.level === 0 && this.levelStats.totalDone === 0) {
-      return `Complete 1 ${plural(1, 'habit')} to reach Level 1`;
+    const totalXp = this.levelStats.totalXp;
+    if (this.levelStats.level === 0 && totalXp === 0) {
+      return 'Gain 3 XP to reach Level 1';
     }
 
-    return `${this.levelStats.progressInLevel}/${this.levelStats.requiredThisLevel} to Level ${this.levelStats.nextLevel}`;
+    return `${this.levelStats.progressInLevel}/${this.levelStats.requiredThisLevel} XP to Level ${this.levelStats.nextLevel}`;
   }
 
   get isSelectedDayFinalized(): boolean {
@@ -424,7 +443,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       return 'Level up achieved. Finish strong.';
     }
 
-    return `${this.levelStats.remainingToNext} more ${plural(this.levelStats.remainingToNext, 'habit')} to reach Level ${this.levelStats.nextLevel}.`;
+    return `${this.levelStats.remainingToNext} more XP to reach Level ${this.levelStats.nextLevel}.`;
   }
 
   get isTodaySelected(): boolean {
@@ -447,6 +466,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   constructor(
     private habitStore: HabitStoreService,
+    private achievementsService: AchievementsService,
+    private soundService: SoundService,
     private themeService: ThemeService,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
@@ -488,19 +509,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         const newLevel = levelStats.level;
         if (this.lastSeenLevel === undefined) {
           this.lastSeenLevel = newLevel;
-        } else if (newLevel > this.lastSeenLevel) {
-          this.levelUpFrom = this.lastSeenLevel;
-          this.levelUpTo = newLevel;
-          this.showLevelUpModal = true;
-          if (this.levelUpModalTimer) {
-            clearTimeout(this.levelUpModalTimer);
-          }
-          this.levelUpModalTimer = setTimeout(() => {
-            this.showLevelUpModal = false;
-            this.cdr.markForCheck();
-          }, 5000);
-          this.cdr.markForCheck();
-          this.lastSeenLevel = newLevel;
         } else {
           this.lastSeenLevel = newLevel;
         }
@@ -526,6 +534,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         this.updateDateChips();
         this.updateHabitProgress();
         this.recomputeDashboardState();
+      })
+    );
+
+    this.subscription.add(
+      this.habitStore.getBadgeUnlockEvents().subscribe(ids => {
+        ids.forEach(id => {
+          this.snackBar.open(`Badge unlocked: ${this.achievementsService.getBadgeTitle(id)}`, undefined, { duration: 2200 });
+        });
       })
     );
     this.subscription.add(
@@ -676,8 +692,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
-    if (this.levelUpModalTimer) {
-      clearTimeout(this.levelUpModalTimer);
+    if (this.systemOverlayTimer) {
+      clearTimeout(this.systemOverlayTimer);
     }
     if (isPlatformBrowser(this.platformId)) {
       if (this.headerLevelUpTimer) {
@@ -692,6 +708,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         window.removeEventListener('beforeinstallprompt', this.installListener);
       }
     }
+    this.xpFloatTimers.forEach(timer => clearTimeout(timer));
+    this.donePopTimers.forEach(timer => clearTimeout(timer));
+    this.xpFloatTimers.clear();
+    this.donePopTimers.clear();
+    this.xpFloatMap.clear();
+    this.donePopMap.clear();
   }
 
   private updateData(): void {
@@ -733,9 +755,23 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.habitStore.isSkipped(habitId, this.selectedDate);
   }
 
+  getHabitXp(habit: Habit): number {
+    return this.habitStore.getHabitXpValue(habit);
+  }
+
+  isXpFloatActive(habitId: string): boolean {
+    return this.xpFloatMap.get(habitId) === true;
+  }
+
+  isDonePopActive(habitId: string): boolean {
+    return this.donePopMap.get(habitId) === true;
+  }
+
   toggleTodayHabit(habitId: string): void {
     const summaryBefore = this.habitStore.getDaySummary(this.selectedDate);
+    const wasPerfectBefore = this.isStrictPerfect(summaryBefore);
     const wasDone = this.habitStore.isCompleted(habitId, this.selectedDate);
+    const levelBefore = this.habitStore.getLevelStatsSync().level;
     if (this.habitStore.isSkipped(habitId, this.selectedDate)) {
       this.habitStore.unskipHabit(habitId, this.selectedDate);
       this.habitStore.setCompleted(habitId, this.selectedDate, true);
@@ -749,9 +785,26 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.refreshTodayState();
     const summaryAfter = this.habitStore.getDaySummary(this.selectedDate);
     this.handleRewards(summaryBefore, summaryAfter);
+    const isPerfectAfter = this.isStrictPerfect(summaryAfter);
+    if (this.isSameDate(this.selectedDate, this.todayDate) && wasPerfectBefore && !isPerfectAfter) {
+      this.showToast('Perfect bonus removed');
+    }
     const isDoneNow = this.habitStore.isCompleted(habitId, this.selectedDate);
     if (!wasDone && isDoneNow) {
-      this.showHabitReward(habitId);
+      const levelAfter = this.habitStore.getLevelStatsSync().level;
+      const leveledUp = levelAfter > levelBefore;
+      const becamePerfect = !wasPerfectBefore && isPerfectAfter;
+      this.soundService.play('habitComplete');
+      if (becamePerfect) {
+        this.queueSystemOverlay('perfect');
+      }
+      if (leveledUp) {
+        this.levelUpFrom = levelBefore;
+        this.levelUpTo = levelAfter;
+        this.queueSystemOverlay('levelup');
+      }
+      this.triggerXpFloat(habitId);
+      this.triggerDonePopFx(habitId);
     }
   }
 
@@ -1254,12 +1307,54 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     }, 8000);
   }
 
-  dismissLevelUpModal(): void {
-    if (this.levelUpModalTimer) {
-      clearTimeout(this.levelUpModalTimer);
+  dismissSystemOverlay(): void {
+    if (this.systemOverlayTimer) {
+      clearTimeout(this.systemOverlayTimer);
+      this.systemOverlayTimer = undefined;
     }
-    this.showLevelUpModal = false;
+    this.activeSystemOverlay = 'none';
     this.cdr.markForCheck();
+    this.playNextSystemOverlay();
+  }
+
+  private queueSystemOverlay(type: Exclude<SystemOverlayType, 'none'>): void {
+    if (this.activeSystemOverlay === type) {
+      return;
+    }
+    const lastQueued = this.systemOverlayQueue[this.systemOverlayQueue.length - 1];
+    if (lastQueued === type) {
+      return;
+    }
+    this.systemOverlayQueue.push(type);
+    if (this.activeSystemOverlay === 'none') {
+      this.playNextSystemOverlay();
+    }
+  }
+
+  private playNextSystemOverlay(): void {
+    if (this.activeSystemOverlay !== 'none') {
+      return;
+    }
+    const next = this.systemOverlayQueue.shift();
+    if (!next) {
+      return;
+    }
+    this.activeSystemOverlay = next;
+    if (next === 'perfect') {
+      this.soundService.play('perfectDay');
+    } else if (next === 'levelup') {
+      this.soundService.play('levelUp');
+    }
+    this.cdr.markForCheck();
+    if (this.systemOverlayTimer) {
+      clearTimeout(this.systemOverlayTimer);
+    }
+    this.systemOverlayTimer = setTimeout(() => {
+      this.activeSystemOverlay = 'none';
+      this.systemOverlayTimer = undefined;
+      this.cdr.markForCheck();
+      this.playNextSystemOverlay();
+    }, 2200);
   }
 
 
@@ -1304,7 +1399,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       this.rewardStageMap[dateKey] = 2;
     }
     if (before.percentHandled < 100 && after.percentHandled === 100 && stage < 3) {
-      this.showToast('Perfect day achieved.');
+      this.showToast('+5 XP Perfect day bonus');
       this.rewardStageMap[dateKey] = 3;
       if (!this.reduceMotion) {
         this.triggerPerfectDayCelebrate();
@@ -1321,15 +1416,49 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!this.isSameDate(this.selectedDate, this.todayDate)) {
       return;
     }
+    const xpValue = this.habitStore.getHabitXpValue(habitId);
     if (this.inlineRewardTimer) {
       clearTimeout(this.inlineRewardTimer);
     }
+    this.inlineRewardText = `+${xpValue} XP`;
     this.inlineRewardHabitId = habitId;
     this.inlineRewardTimer = setTimeout(() => {
       if (this.inlineRewardHabitId === habitId) {
         this.inlineRewardHabitId = null;
       }
     }, 1000);
+  }
+
+  private triggerXpFloat(habitId: string): void {
+    this.xpFloatMap.set(habitId, true);
+    const existing = this.xpFloatTimers.get(habitId);
+    if (existing) {
+      clearTimeout(existing);
+    }
+    const duration = this.reduceMotion ? 300 : 650;
+    const timer = setTimeout(() => {
+      this.xpFloatMap.delete(habitId);
+      this.xpFloatTimers.delete(habitId);
+      this.cdr.markForCheck();
+    }, duration);
+    this.xpFloatTimers.set(habitId, timer);
+    this.cdr.markForCheck();
+  }
+
+  private triggerDonePopFx(habitId: string): void {
+    this.donePopMap.set(habitId, true);
+    const existing = this.donePopTimers.get(habitId);
+    if (existing) {
+      clearTimeout(existing);
+    }
+    const duration = this.reduceMotion ? 200 : 650;
+    const timer = setTimeout(() => {
+      this.donePopMap.delete(habitId);
+      this.donePopTimers.delete(habitId);
+      this.cdr.markForCheck();
+    }, duration);
+    this.donePopTimers.set(habitId, timer);
+    this.cdr.markForCheck();
   }
 
   private pickIdentityLine(): string {

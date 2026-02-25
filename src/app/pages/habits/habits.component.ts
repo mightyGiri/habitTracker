@@ -74,6 +74,14 @@ import { NotificationService } from '../../services/notification.service';
               <mat-label>Minimum version (optional)</mat-label>
               <input matInput formControlName="minimumVersion" placeholder="e.g., 1 page, 5 minutes">
             </mat-form-field>
+            <mat-form-field appearance="fill">
+              <mat-label>Difficulty</mat-label>
+              <mat-select formControlName="difficulty">
+                <mat-option value="easy">Easy (+1 XP)</mat-option>
+                <mat-option value="medium">Medium (+2 XP)</mat-option>
+                <mat-option value="hard">Hard (+3 XP)</mat-option>
+              </mat-select>
+            </mat-form-field>
             <div class="reminder-controls">
               <div class="text-label">Habit reminder</div>
               <app-toggle [checked]="habitForm.get('reminderEnabled')?.value" [disabled]="!remindersNativeSupported" (checkedChange)="setReminderEnabled($event)"></app-toggle>
@@ -105,6 +113,7 @@ import { NotificationService } from '../../services/notification.service';
                     <span *ngIf="habit.frequencyType">- {{ habit.frequencyType === 'daily' ? 'Daily' : 'Weekly' }}</span>
                     <span *ngIf="habit.frequencyType === 'weekly' && habit.weeklyTarget">- {{ habit.weeklyTarget }}x/week</span>
                   </div>
+                  <div class="habit-sub text-muted">Difficulty - {{ (habit.difficulty || 'easy') | titlecase }}</div>
                   <div class="habit-sub text-muted" *ngIf="habit.minimumVersion">{{ habit.minimumVersion }}</div>
                   <div class="habit-sub text-muted" *ngIf="habit.reminderEnabled && habit.reminderTime">Reminder - {{ habit.reminderTime }}</div>
                 </div>
@@ -163,6 +172,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
       frequencyType: ['daily', [Validators.required]],
       weeklyTarget: [3],
       minimumVersion: [''],
+      difficulty: ['easy'],
       reminderEnabled: [false],
       reminderTime: ['20:30'],
       timerEnabled: [false],
@@ -197,7 +207,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
 
   startAdd(): void {
     this.editingHabitId = null;
-    this.habitForm.reset({ frequencyType: 'daily', weeklyTarget: 3, minimumVersion: '', reminderEnabled: false, reminderTime: '20:30', timerEnabled: false, timerMinutes: 10 });
+    this.habitForm.reset({ frequencyType: 'daily', weeklyTarget: 3, minimumVersion: '', difficulty: 'easy', reminderEnabled: false, reminderTime: '20:30', timerEnabled: false, timerMinutes: 10 });
     this.formOpen = true;
   }
 
@@ -208,6 +218,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
       frequencyType: habit.frequencyType ?? 'daily',
       weeklyTarget: habit.weeklyTarget ?? 3,
       minimumVersion: habit.minimumVersion ?? '',
+      difficulty: habit.difficulty ?? 'easy',
       reminderEnabled: habit.reminderEnabled ?? false,
       reminderTime: habit.reminderTime ?? '20:30',
       timerEnabled: habit.timerEnabled ?? false,
@@ -219,7 +230,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
   cancelEdit(): void {
     this.formOpen = false;
     this.editingHabitId = null;
-    this.habitForm.reset({ frequencyType: 'daily', weeklyTarget: 3, minimumVersion: '', reminderEnabled: false, reminderTime: '20:30', timerEnabled: false, timerMinutes: 10 });
+    this.habitForm.reset({ frequencyType: 'daily', weeklyTarget: 3, minimumVersion: '', difficulty: 'easy', reminderEnabled: false, reminderTime: '20:30', timerEnabled: false, timerMinutes: 10 });
   }
 
   saveHabit(): void {
@@ -233,6 +244,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
       ? Math.min(7, Math.max(1, weeklyTargetRaw))
       : undefined;
     const minimumVersion = String(this.habitForm.get('minimumVersion')?.value || '').trim();
+    const difficulty = String(this.habitForm.get('difficulty')?.value || 'easy') as 'easy' | 'medium' | 'hard';
     const reminderEnabled = this.remindersNativeSupported && Boolean(this.habitForm.get('reminderEnabled')?.value);
     const reminderTime = String(this.habitForm.get('reminderTime')?.value || '20:30');
     const timerEnabled = Boolean(this.habitForm.get('timerEnabled')?.value);
@@ -248,6 +260,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
         frequencyType,
         weeklyTarget,
         minimumVersion,
+        difficulty,
         timerEnabled,
         timerSeconds,
         timerAutoComplete: true,
@@ -259,7 +272,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
         reminderTime
       });
     } else {
-      this.habitStore.addHabit(name, frequencyType, weeklyTarget, minimumVersion, 30, timerEnabled, timerSeconds, true);
+      this.habitStore.addHabit(name, frequencyType, weeklyTarget, minimumVersion, 30, timerEnabled, timerSeconds, true, difficulty);
       const created = this.habitStore.getHabitsSync().find(h => h.name.toLowerCase() === name.toLowerCase());
       if (created && reminderEnabled) {
         this.habitStore.updateHabitReminder(created.id, true, reminderTime);

@@ -157,6 +157,46 @@
 .section-body
   padding: 0 var(--space-3) var(--space-3)
 
+.badge-grid
+  display: grid
+  grid-template-columns: repeat(2, minmax(0, 1fr))
+  gap: 10px
+
+.badge-tile
+  border-radius: 14px
+  border: 1px solid color-mix(in oklab, var(--system-border) 40%, transparent)
+  background: rgba(10, 14, 26, 0.45)
+  padding: 12px
+  display: grid
+  grid-template-columns: 28px 1fr
+  gap: 10px
+  align-items: center
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, white 4%, transparent)
+
+  &.is-locked
+    opacity: 0.6
+
+.badge-icon
+  width: 28px
+  height: 28px
+  display: grid
+  place-items: center
+  color: var(--theme-accent)
+
+  .mat-icon
+    font-size: 20px
+    width: 20px
+    height: 20px
+
+.badge-tile.is-locked .badge-icon
+  color: color-mix(in oklab, var(--theme-text) 55%, var(--system-highlight))
+
+.badge-title
+  color: var(--theme-text)
+  font-size: calc(var(--fs-muted) * var(--font-scale))
+  font-weight: 600
+  line-height: 1.25
+
 .section-title
   padding: 14px var(--space-3) 0
 
@@ -219,6 +259,9 @@
 
 .compact-label
   margin-bottom: 6px
+
+.control-group
+  min-width: 0
 
 .font-slider
   width: 100%
@@ -324,6 +367,9 @@
     text-decoration: underline
 
 @media (max-width: 768px)
+  .badge-grid
+    grid-template-columns: 1fr
+
   .field-grid
     grid-template-columns: 1fr
 

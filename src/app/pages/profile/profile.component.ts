@@ -36,6 +36,7 @@ import { getLevelProgress, LevelProgress } from '../../shared/level-utils';
 import { VersionService } from '../../services/version.service';
 import { NotificationService } from '../../services/notification.service';
 import { ShadowMonarchModalComponent } from '../../shared/shadow-monarch-modal/shadow-monarch-modal.component';
+import { STARTER_BADGES, type AchievementBadgeDef } from '../../services/achievements.service';
 
 
 
@@ -83,7 +84,6 @@ type BeforeInstallPromptEvent = Event & {
   template: `
     <div class=\"page-container profile-page\" [@.disabled]=\"reduceMotion\">
       <h1 class=\"page-title\">Profile</h1>
-
       <div class=\"profile-header arcane-card\" [@staggerFadeUp]=\"animationKey\">
         <div class=\"avatar-circle\">{{ initials }}</div>
         <div class=\"profile-meta\">
@@ -100,8 +100,8 @@ type BeforeInstallPromptEvent = Event & {
             <div class=\"row-value\"><span class=\"glass-pill\">Lv {{ levelStats.level }}</span></div>
           </div>
           <div class=\"settings-row\">
-            <div class=\"row-label\">Total wins</div>
-            <div class=\"row-value\">{{ levelStats.totalDone }}</div>
+            <div class=\"row-label\">Total XP</div>
+            <div class=\"row-value\">{{ levelStats.totalXp }}</div>
           </div>
           <div class=\"settings-row\" *ngIf=\"personaLabel\">
             <div class=\"row-label\">Persona</div>
@@ -114,6 +114,21 @@ type BeforeInstallPromptEvent = Event & {
           <div class=\"settings-row\" *ngIf=\"whyStatement\">
             <div class=\"row-label\">Why</div>
             <div class=\"row-value row-wrap\">{{ whyStatement }}</div>
+          </div>
+        </div>
+      </section>
+
+      <section class=\"section-block arcane-card\" [@staggerFadeUp]=\"animationKey\">
+        <div class=\"section-title text-section\">Achievements</div>
+        <div class=\"section-body\">
+          <div class=\"section-helper text-muted\">Unlock badges by showing up consistently.</div>
+          <div class=\"badge-grid\">
+            <div class=\"badge-tile\" *ngFor=\"let badge of achievementBadges\" [class.is-locked]=\"!isBadgeUnlocked(badge.id)\">
+              <div class=\"badge-icon\">
+                <mat-icon>{{ isBadgeUnlocked(badge.id) ? badge.icon : 'help_outline' }}</mat-icon>
+              </div>
+              <div class=\"badge-title\">{{ isBadgeUnlocked(badge.id) ? badge.title : '?' }}</div>
+            </div>
           </div>
         </div>
       </section>
@@ -171,6 +186,10 @@ type BeforeInstallPromptEvent = Event & {
             <div class=\"control-group\">
               <div class=\"compact-label text-label\">Reminder time</div>
               <input class=\"reminder-time-input\" type=\"time\" [value]=\"dailyReminderTime\" [disabled]=\"notificationsLoading || !dailyReminderEnabled || !remindersNativeSupported\" (change)=\"onDailyReminderTimeChange($event)\">
+            </div>
+            <div class=\"control-group\">
+              <div class=\"compact-label text-label\">Sounds</div>
+              <app-toggle [checked]=\"soundsEnabled\" (checkedChange)=\"toggleSounds($event)\"></app-toggle>
             </div>
           </div>
           <div class=\"section-helper text-muted\" *ngIf=\"!remindersNativeSupported\">Reminders work in the installed app.</div>
@@ -275,6 +294,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   dailyReminderEnabled = false;
   dailyReminderTime = '20:30';
   remindersNativeSupported = false;
+  soundsEnabled = false;
 
   customAccent = '#f27a2a';
 
@@ -295,6 +315,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
   whyStatement = '';
 
   levelStats: LevelProgress = getLevelProgress(0);
+  achievementBadges: AchievementBadgeDef[] = STARTER_BADGES;
+  private unlockedBadgeIds = new Set<string>();
 
   dataOpen = false;
 
@@ -418,10 +440,18 @@ export class ProfileComponent implements OnInit, OnDestroy {
     );
 
     this.subscription.add(
+      this.habitStore.getUnlockedBadgeIds().subscribe(ids => {
+        this.unlockedBadgeIds = new Set(ids);
+        this.cdr.markForCheck();
+      })
+    );
+
+    this.subscription.add(
 
       this.habitStore.getProfile().subscribe(profile => {
 
         this.profile = profile;
+        this.soundsEnabled = Boolean(profile.soundsEnabled);
 
         this.displayName = this.resolveDisplayName(profile, this.userProfile);
 
@@ -891,6 +921,17 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   get profileSubtitle(): string {
     return this.personaLabel || this.goalLabel || this.whyStatement || 'Build consistency';
+  }
+
+  toggleSounds(enabled: boolean): void {
+    this.soundsEnabled = enabled;
+    this.habitStore.updateProfileSettings({ soundsEnabled: enabled });
+    this.snackBar.open(enabled ? 'Sounds on' : 'Sounds off', undefined, { duration: 1500 });
+    this.cdr.markForCheck();
+  }
+
+  isBadgeUnlocked(id: string): boolean {
+    return this.unlockedBadgeIds.has(id);
   }
 
   private resolveDisplayName(profile: ProfileSettings, userProfile: UserProfile | null): string {

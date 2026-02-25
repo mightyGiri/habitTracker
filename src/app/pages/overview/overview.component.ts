@@ -14,6 +14,8 @@ import { Router } from '@angular/router';
 import { getLevelProgress, LevelProgress } from '../../shared/level-utils';
 import { BackupService } from '../../services/backup.service';
 import { WeeklyReportShareService } from '../../services/weekly-report-share.service';
+import { WeeklyReportService } from '../../services/weekly-report.service';
+import { GamificationService } from '../../services/gamification.service';
 
 type CalendarCell = {
   dayNumber: number | null;
@@ -66,11 +68,11 @@ type SelectedDateHabits = {
               <div class="hero-block arcane-card--tight">
                 <div class="hero-label">Level</div>
                 <div class="hero-value"><span class="glass-pill">Lv {{ levelStats.level }}</span></div>
-                <div class="text-muted">Total wins: {{ levelStats.totalDone }}</div>
-                <div class="text-muted">Next: Level {{ levelStats.nextLevel }} in {{ levelStats.remainingToNext }} wins</div>
+                <div class="text-muted">Total XP: {{ levelStats.totalXp }}</div>
+                <div class="text-muted">Next: Level {{ levelStats.nextLevel }} in {{ levelStats.remainingToNext }} XP</div>
               </div>
               <div class="hero-block arcane-card--tight">
-                <div class="hero-label">Wins</div>
+                <div class="hero-label">Perfect Days</div>
                 <div class="hero-value">Perfect days: {{ weekAttendanceCount }} / {{ weekTotalDays }}</div>
               </div>
               <div class="hero-block hero-action arcane-card--tight">
@@ -310,6 +312,8 @@ export class OverviewComponent implements OnInit, OnDestroy {
     private router: Router,
     private backupService: BackupService,
     private weeklyReportShareService: WeeklyReportShareService,
+    private weeklyReportService: WeeklyReportService,
+    private gamification: GamificationService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private platformId: object
@@ -662,47 +666,29 @@ export class OverviewComponent implements OnInit, OnDestroy {
     const weekStartKey = sortedKeys[0] || this.todayKey;
     const weekEndKey = sortedKeys[sortedKeys.length - 1] || this.todayKey;
 
-    let completed = 0;
-    let goal = 0;
-    let weekXp = 0;
-    let perfectDays = 0;
-    let weeklyPerfectStreak = 0;
-    let currentWeeklyPerfectRun = 0;
-    const habitStats = new Map<string, { name: string; doneCount: number; daysActive: number }>();
+    const computed = this.weeklyReportService.computeWeekStats(
+      sortedKeys,
+      this.latestCompletions,
+      dateKey => this.habitStore.getHabitsActiveOn(dateKey)
+    );
 
-    for (const dateKey of sortedKeys) {
-      const activeHabits = this.habitStore.getHabitsActiveOn(dateKey);
-      const dayMap = this.latestCompletions[dateKey] || {};
-      let dayDone = 0;
-      for (const habit of activeHabits) {
-        const current = habitStats.get(habit.id) ?? { name: habit.name, doneCount: 0, daysActive: 0 };
-        current.daysActive += 1;
-        if (Boolean(dayMap[habit.id])) {
-          current.doneCount += 1;
-          dayDone += 1;
-          completed += 1;
-          weekXp += (this.habitStore as unknown as { getHabitXpValue?: (value: Habit) => number }).getHabitXpValue?.(habit) ?? 1;
-        }
-        habitStats.set(habit.id, current);
-      }
-      goal += activeHabits.length;
-      if (activeHabits.length > 0 && dayDone === activeHabits.length) {
-        perfectDays += 1;
-        currentWeeklyPerfectRun += 1;
-        weeklyPerfectStreak = Math.max(weeklyPerfectStreak, currentWeeklyPerfectRun);
-        weekXp += 5;
-      } else {
-        currentWeeklyPerfectRun = 0;
-      }
-    }
-
-    const habits = Array.from(habitStats.values())
+    const completed = computed.completed;
+    const goal = computed.goal;
+    const weekXp = computed.weekXP ?? 0;
+    const perfectDays = computed.perfectDays;
+    const weeklyPerfectStreak = computed.weeklyPerfectStreak;
+    const habits: Array<{ name: string; doneCount: number; daysActive: number }> = computed.perHabit
+      .map(habit => ({
+        name: habit.name,
+        doneCount: habit.doneCount,
+        daysActive: habit.daysActive
+      }))
       .sort((a, b) => (b.doneCount - a.doneCount) || (b.daysActive - a.daysActive) || a.name.localeCompare(b.name));
 
     const bestStreak = this.computeBestPerfectStreak();
-    const levelLine = `Level ${this.levelStats.level} • XP ${this.levelStats.totalDone}`;
+    const levelLine = `Level ${this.levelStats.level} - XP ${this.levelStats.totalXp}`;
     const levelSubline = this.levelStats.remainingToNext > 0
-      ? `Next level in ${this.levelStats.remainingToNext} wins`
+      ? `Next level in ${this.levelStats.remainingToNext} XP`
       : 'Next level unlocked';
     const footerSummary = goal === 0
       ? 'No habits active this week'
@@ -718,7 +704,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
       weekRangeLabel: rangeLabel,
       dateKeys: sortedKeys,
       headerName: this.habitStore.getCurrentUsername(),
-      headerMeta: `Level ${this.levelStats.level} • XP ${this.levelStats.totalDone}`,
+      headerMeta: `Level ${this.levelStats.level} - XP ${this.levelStats.totalXp}`,
       stats: {
         completed,
         goal,
@@ -796,6 +782,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
     return this.normalizeDate(new Date(year, monthIndex, day));
   }
 }
+
 
 
 
