@@ -33,9 +33,12 @@ export type WeeklyReportSharePayload = {
   weekEndKey: string;
   weekRangeLabel: string;
   dateKeys: string[];
+  headerName?: string | null;
+  headerMeta?: string | null;
   stats: {
     completed: number;
     goal: number;
+    weekXp?: number;
     perfectDays: number;
     weeklyPerfectStreak: number;
     bestStreak: number;

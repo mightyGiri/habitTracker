@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, Inject, PLATFORM_ID, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -13,6 +13,7 @@ import { staggerFadeUp, noopAnimation } from '../../shared/list-animations';
 import { Router } from '@angular/router';
 import { getLevelProgress, LevelProgress } from '../../shared/level-utils';
 import { BackupService } from '../../services/backup.service';
+import { WeeklyReportShareService } from '../../services/weekly-report-share.service';
 
 type CalendarCell = {
   dayNumber: number | null;
@@ -150,7 +151,7 @@ type SelectedDateHabits = {
                   type="button"
                   (click)="shareWeeklyReport()"
                   [disabled]="!canShareWeeklyReport || weeklyReportBusy">
-                  <span>Share weekly report</span>
+                  <span>{{ weeklyReportBusy ? 'Preparing...' : 'Share weekly report' }}</span>
                   <small>PNG image</small>
                 </button>
               </div>
@@ -202,12 +203,70 @@ type SelectedDateHabits = {
           <mat-card-content>Loading overview...</mat-card-content>
         </mat-card>
       </ng-template>
+      <div class="weekly-report-export-host" *ngIf="weeklySharePayload" aria-hidden="true">
+        <section id="weeklyReportExportRoot" #weeklyReportExportRoot class="weekly-report-export-root weekly-report-export-mode">
+          <div class="weekly-report-capture-card">
+            <div class="weekly-report-capture-header">
+              <div class="weekly-report-capture-user">{{ weeklySharePayload.headerName || 'Player' }}</div>
+              <div class="weekly-report-capture-meta" *ngIf="weeklySharePayload.headerMeta">{{ weeklySharePayload.headerMeta }}</div>
+            </div>
+
+            <div class="weekly-report-capture-title">WEEKLY REPORT</div>
+            <div class="weekly-report-capture-range">{{ weeklySharePayload.weekRangeLabel }}</div>
+
+            <div class="weekly-report-capture-stats">
+              <div class="weekly-report-capture-stat">
+                <div class="weekly-report-capture-stat-label">Completed</div>
+                <div class="weekly-report-capture-stat-value">{{ weeklySharePayload.stats.completed }}/{{ weeklySharePayload.stats.goal }}</div>
+                <div class="weekly-report-capture-stat-sub">
+                  {{ weeklySharePayload.stats.goal > 0 ? ((weeklySharePayload.stats.completed / weeklySharePayload.stats.goal) * 100 | number:'1.0-0') : 0 }}% • Week XP {{ weeklySharePayload.stats.weekXp }}
+                </div>
+              </div>
+              <div class="weekly-report-capture-stat">
+                <div class="weekly-report-capture-stat-label">Perfect days</div>
+                <div class="weekly-report-capture-stat-value">{{ weeklySharePayload.stats.perfectDays }}</div>
+              </div>
+              <div class="weekly-report-capture-stat">
+                <div class="weekly-report-capture-stat-label">Weekly streak</div>
+                <div class="weekly-report-capture-stat-value">{{ weeklySharePayload.stats.goal > 0 ? (weeklySharePayload.stats.weeklyPerfectStreak + ' days') : '--' }}</div>
+              </div>
+              <div class="weekly-report-capture-stat">
+                <div class="weekly-report-capture-stat-label">Best streak</div>
+                <div class="weekly-report-capture-stat-value">{{ weeklySharePayload.stats.bestStreak }}</div>
+              </div>
+            </div>
+
+            <div class="weekly-report-capture-section">Habits</div>
+            <div class="weekly-report-capture-empty" *ngIf="weeklySharePayload.habits.length === 0">No habits active this week</div>
+            <div class="weekly-report-capture-habits" *ngIf="weeklySharePayload.habits.length > 0">
+              <div class="weekly-report-capture-habit" *ngFor="let habit of weeklySharePayload.habits; let i = index">
+                <div class="weekly-report-capture-habit-head">
+                  <div class="weekly-report-capture-habit-name">{{ i + 1 }}. {{ habit.name }}</div>
+                  <div class="weekly-report-capture-habit-metric">{{ habit.doneCount }}/{{ habit.daysActive }}</div>
+                </div>
+                <div class="weekly-report-capture-habit-bar">
+                  <div class="weekly-report-capture-habit-fill" [style.width.%]="habit.daysActive > 0 ? ((habit.doneCount / habit.daysActive) * 100) : 0"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="weekly-report-capture-level" *ngIf="weeklySharePayload.levelLine">
+              <div class="weekly-report-capture-stat-label">Level</div>
+              <div class="weekly-report-capture-level-line">{{ weeklySharePayload.levelLine }}</div>
+              <div class="weekly-report-capture-level-sub" *ngIf="weeklySharePayload.levelSubline">{{ weeklySharePayload.levelSubline }}</div>
+            </div>
+
+            <div class="weekly-report-capture-footer">{{ weeklySharePayload.footerSummary || 'LEVEL UP • One week stronger' }}</div>
+          </div>
+        </section>
+      </div>
     </div>
   `,
 
   styleUrls: ['./overview.component.sass']
 })
 export class OverviewComponent implements OnInit, OnDestroy {
+  @ViewChild('weeklyReportExportRoot') weeklyReportExportRoot?: ElementRef<HTMLElement>;
   monthMatrix: MonthSlot[][] = [];
   selectedMonthYear: MonthKey | null = null;
   animationKey = 0;
@@ -235,6 +294,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
   private gridRows = 6;
   canShareWeeklyReport = false;
   weeklyReportBusy = false;
+  weeklySharePayload: Parameters<BackupService['exportWeeklyReportPng']>[0] | null = null;
   selectedWeekIndex = 0;
   selectedWeekRangeLabel = '';
   private latestHabits: Habit[] = [];
@@ -249,7 +309,9 @@ export class OverviewComponent implements OnInit, OnDestroy {
     private themeService: ThemeService,
     private router: Router,
     private backupService: BackupService,
+    private weeklyReportShareService: WeeklyReportShareService,
     private snackBar: MatSnackBar,
+    private cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private platformId: object
   ) {}
 
@@ -467,21 +529,42 @@ export class OverviewComponent implements OnInit, OnDestroy {
     }
     this.weeklyReportBusy = true;
     try {
-      const payload = this.buildWeeklyReportPayload();
-      const result = await this.backupService.exportWeeklyReportPng(payload);
-      if (result.status === 'success') {
-        this.snackBar.open('Weekly report exported', undefined, { duration: 1800 });
-      } else if (result.status === 'cancelled') {
-        // no toast for cancel
-      } else {
-        console.error('Weekly report share failed:', result.error);
-        this.snackBar.open('Weekly report export failed', undefined, { duration: 2400 });
+      this.weeklySharePayload = this.buildWeeklyReportPayload();
+      this.cdr.detectChanges();
+      await this.weeklyReportShareService.waitForStableLayout();
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 50));
+
+      const element = this.weeklyReportExportRoot?.nativeElement;
+      if (!element) {
+        throw new Error('Weekly report export element not found');
       }
+      const rect = element.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) {
+        throw new Error('Weekly report export element is not measurable');
+      }
+      element.scrollTop = 0;
+
+      const safeKey = (this.weeklySharePayload.weekStartKey || 'weekly').replace(/[^0-9-]/g, '');
+      const fileName = `weekly_report_${safeKey}_${Date.now()}.png`;
+      const dataUrl = await this.weeklyReportShareService.withTimeout(
+        this.weeklyReportShareService.captureElementToPngDataUrl(element, {
+          width: 900,
+          height: 1600,
+          pixelRatio: 2,
+          backgroundColor: '#05070f'
+        }),
+        8000
+      );
+      await this.weeklyReportShareService.sharePngDataUrl(dataUrl, fileName);
+      this.snackBar.open('Weekly report shared', undefined, { duration: 1800 });
     } catch (error) {
-      console.error('Weekly report share failed:', error);
+      console.error('[WeeklyReportShare] export failed:', error);
       this.snackBar.open('Weekly report export failed', undefined, { duration: 2400 });
     } finally {
       this.weeklyReportBusy = false;
+      this.weeklySharePayload = null;
+      this.cdr.detectChanges();
     }
   }
 
@@ -581,6 +664,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
 
     let completed = 0;
     let goal = 0;
+    let weekXp = 0;
     let perfectDays = 0;
     let weeklyPerfectStreak = 0;
     let currentWeeklyPerfectRun = 0;
@@ -597,6 +681,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
           current.doneCount += 1;
           dayDone += 1;
           completed += 1;
+          weekXp += (this.habitStore as unknown as { getHabitXpValue?: (value: Habit) => number }).getHabitXpValue?.(habit) ?? 1;
         }
         habitStats.set(habit.id, current);
       }
@@ -605,6 +690,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
         perfectDays += 1;
         currentWeeklyPerfectRun += 1;
         weeklyPerfectStreak = Math.max(weeklyPerfectStreak, currentWeeklyPerfectRun);
+        weekXp += 5;
       } else {
         currentWeeklyPerfectRun = 0;
       }
@@ -631,9 +717,12 @@ export class OverviewComponent implements OnInit, OnDestroy {
       weekEndKey,
       weekRangeLabel: rangeLabel,
       dateKeys: sortedKeys,
+      headerName: this.habitStore.getCurrentUsername(),
+      headerMeta: `Level ${this.levelStats.level} • XP ${this.levelStats.totalDone}`,
       stats: {
         completed,
         goal,
+        weekXp,
         perfectDays,
         weeklyPerfectStreak,
         bestStreak
