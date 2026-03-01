@@ -60,9 +60,7 @@ export class SoundService {
         return;
       }
       const def = this.defs[name];
-      const audio = new Audio(def.src);
-      audio.preload = 'auto';
-      audio.volume = def.volume;
+      const audio = this.createAudio(def);
       this.audioMap.set(name, audio);
     });
   }
@@ -82,26 +80,54 @@ export class SoundService {
     }
     this.lastPlayAt.set(name, now);
 
-    const def = this.defs[name];
+    void this.playWithRetry(name);
+  }
+
+  private async playWithRetry(name: SoundEventName): Promise<void> {
     let audio = this.audioMap.get(name);
     if (!audio) {
-      audio = new Audio(def.src);
-      audio.preload = 'auto';
-      audio.volume = def.volume;
+      audio = this.createAudio(this.defs[name]);
       this.audioMap.set(name, audio);
     }
 
-    // Web browsers may block playback until a user gesture; fail silently.
-    try {
-      if (this.unlocked) {
-        audio.currentTime = 0;
-      }
-      const playPromise = audio.play();
-      if (playPromise && typeof playPromise.catch === 'function') {
-        void playPromise.catch(() => undefined);
-      }
-    } catch {
-      // no-op
+    const firstTry = await this.tryPlayAudio(audio);
+    if (firstTry) {
+      return;
     }
+
+    // Some WebViews fail to replay ended audio; recreate once and retry.
+    const replacement = this.createAudio(this.defs[name]);
+    this.audioMap.set(name, replacement);
+    await this.tryPlayAudio(replacement);
+  }
+
+  private async tryPlayAudio(audio: HTMLAudioElement): Promise<boolean> {
+    try {
+      audio.pause();
+    } catch {
+      // ignore
+    }
+    try {
+      audio.currentTime = 0;
+    } catch {
+      // Some WebViews may throw if media is not seekable yet.
+    }
+
+    try {
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.then === 'function') {
+        await playPromise;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private createAudio(def: SoundDef): HTMLAudioElement {
+    const audio = new Audio(def.src);
+    audio.preload = 'auto';
+    audio.volume = def.volume;
+    return audio;
   }
 }

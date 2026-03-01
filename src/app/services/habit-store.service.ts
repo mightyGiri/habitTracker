@@ -1387,7 +1387,7 @@ export class HabitStoreService {
       remindersEnabled: Boolean(profile.remindersEnabled ?? false),
       dailyReminderEnabled: Boolean(profile.dailyReminderEnabled ?? false),
       dailyReminderTime: this.normalizeReminderTime(profile.dailyReminderTime),
-      soundsEnabled: Boolean(profile.soundsEnabled ?? false),
+      soundsEnabled: Boolean(profile.soundsEnabled ?? true),
       unlockedBadgeIds: this.achievements.normalizeBadgeIds(profile.unlockedBadgeIds)
     };
   }

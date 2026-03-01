@@ -7,10 +7,13 @@ import * as XLSX from 'xlsx';
 import { Capacitor } from '@capacitor/core';
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { environment } from '../../environments/environment';
 
 type BackupPayload = {
   schemaVersion: number;
   exportedAt: string;
+  version?: string;
+  build?: number;
   appSettings: {
     theme?: string;
     selectedYear?: number;
@@ -134,6 +137,8 @@ export class BackupService {
     return {
       schemaVersion: 1,
       exportedAt: new Date().toISOString(),
+      version: environment.appVersion,
+      build: environment.buildNumber,
       appSettings: {
         theme: 'dark',
         selectedYear: snapshot.selectedMonthYear?.year,

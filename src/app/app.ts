@@ -16,8 +16,10 @@ import { ThemeService } from './services/theme.service';
 import { routeAnimations } from './shared/route-animations';
 import { BottomNavComponent } from './shared/bottom-nav/bottom-nav.component';
 import { NotificationService } from './services/notification.service';
+import { NotificationPermissionService } from './services/notification-permission.service';
 import { TabStateService } from './services/tab-state.service';
 import { SoundService } from './services/sound.service';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -72,12 +74,14 @@ export class App implements OnInit, OnDestroy {
     private themeService: ThemeService,
     private router: Router,
     private notificationService: NotificationService,
+    private notificationPermissionService: NotificationPermissionService,
     private soundService: SoundService,
     private tabState: TabStateService,
     @Inject(PLATFORM_ID) private platformId: object
   ) {}
 
   ngOnInit(): void {
+    console.log(`App Version ${environment.appVersion} (Build ${environment.buildNumber})`);
     this.enforceDarkTheme();
     this.subscription.add(
       this.habitStore.getSelectedMonthYear().subscribe(monthYear => {
@@ -102,6 +106,9 @@ export class App implements OnInit, OnDestroy {
     this.tabState.setCurrentTab(this.getTabFromUrl(this.router.url));
     this.notificationService.init();
     this.soundService.init();
+    if (this.notificationService.isNativeSchedulingAvailable()) {
+      void this.notificationPermissionService.ensurePermission(false);
+    }
     if (this.notificationService.isEnabled()) {
       void this.notificationService.resyncForToday();
     }
@@ -156,4 +163,5 @@ export class App implements OnInit, OnDestroy {
     document.body.classList.remove('light-theme');
     document.body.classList.add('dark-theme');
   }
+
 }

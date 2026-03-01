@@ -15,7 +15,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { RouterModule } from '@angular/router';
 
-import { Subscription, combineLatest, map } from 'rxjs';
+import { Subscription } from 'rxjs';
 
 import { BackupService } from '../../services/backup.service';
 
@@ -33,10 +33,10 @@ import { ProfileSettings, UserProfile } from '../../models/habit.model';
 import { ToggleComponent } from '../../shared/ui/toggle/toggle.component';
 
 import { getLevelProgress, LevelProgress } from '../../shared/level-utils';
-import { VersionService } from '../../services/version.service';
 import { NotificationService } from '../../services/notification.service';
 import { ShadowMonarchModalComponent } from '../../shared/shadow-monarch-modal/shadow-monarch-modal.component';
 import { STARTER_BADGES, type AchievementBadgeDef } from '../../services/achievements.service';
+import { environment } from '../../../environments/environment';
 
 
 
@@ -119,15 +119,29 @@ type BeforeInstallPromptEvent = Event & {
       </section>
 
       <section class=\"section-block arcane-card\" [@staggerFadeUp]=\"animationKey\">
-        <div class=\"section-title text-section\">Achievements</div>
-        <div class=\"section-body\">
-          <div class=\"section-helper text-muted\">Unlock badges by showing up consistently.</div>
-          <div class=\"badge-grid\">
-            <div class=\"badge-tile\" *ngFor=\"let badge of achievementBadges\" [class.is-locked]=\"!isBadgeUnlocked(badge.id)\">
-              <div class=\"badge-icon\">
-                <mat-icon>{{ isBadgeUnlocked(badge.id) ? badge.icon : 'help_outline' }}</mat-icon>
+        <button
+          class=\"section-toggle achievements-toggle glass-btn glass-btn--ghost\"
+          type=\"button\"
+          [attr.aria-expanded]=\"achievementsOpen\"
+          aria-controls=\"achievements-panel\"
+          (click)=\"toggleAchievementsOpen()\">
+          <span class=\"text-section\">Achievements</span>
+          <mat-icon class=\"chevron\" [class.is-open]=\"achievementsOpen\">expand_more</mat-icon>
+        </button>
+        <div
+          id=\"achievements-panel\"
+          class=\"achievements-panel\"
+          [class.is-open]=\"achievementsOpen\"
+          [attr.aria-hidden]=\"!achievementsOpen\">
+          <div class=\"section-body achievements-body\">
+            <div class=\"section-helper text-muted\">Unlock badges by showing up consistently.</div>
+            <div class=\"badge-grid\">
+              <div class=\"badge-tile\" *ngFor=\"let badge of achievementBadges\" [class.is-locked]=\"!isBadgeUnlocked(badge.id)\">
+                <div class=\"badge-icon\">
+                  <mat-icon>{{ isBadgeUnlocked(badge.id) ? badge.icon : 'help_outline' }}</mat-icon>
+                </div>
+                <div class=\"badge-title\">{{ isBadgeUnlocked(badge.id) ? badge.title : '?' }}</div>
               </div>
-              <div class=\"badge-title\">{{ isBadgeUnlocked(badge.id) ? badge.title : '?' }}</div>
             </div>
           </div>
         </div>
@@ -143,10 +157,10 @@ type BeforeInstallPromptEvent = Event & {
           <div class=\"data-actions\">
             <button class=\"btn btn-outline btn-sm glass-btn glass-btn--ghost\" type=\"button\" (click)=\"exportJson()\">Export backup (JSON)</button>
             <button class=\"btn btn-outline btn-sm glass-btn glass-btn--ghost\" type=\"button\" (click)=\"triggerImportJson(importInput)\">Restore backup (JSON)</button>
-            <button class=\"btn btn-outline btn-sm glass-btn glass-btn--ghost\" type=\"button\" (click)=\"exportCsv()\">Export as CSV</button>
+            <!-- <button class=\"btn btn-outline btn-sm glass-btn glass-btn--ghost\" type=\"button\" (click)=\"exportCsv()\">Export as CSV</button>
             <button class=\"btn btn-outline btn-sm glass-btn glass-btn--ghost\" type=\"button\" (click)=\"exportXlsx()\" [disabled]=\"exportingXlsx\">
               {{ exportingXlsx ? 'Exporting...' : 'Export as Excel' }}
-            </button>
+            </button> -->
           </div>
           <input
             #importInput
@@ -239,7 +253,7 @@ type BeforeInstallPromptEvent = Event & {
             </div>
             <div class="settings-row">
               <div class="row-label">Version</div>
-              <div class="row-value">{{ versionLabel$ | async }}</div>
+              <div class="row-value">{{ versionLabel }}</div>
             </div>
             <div class="settings-row">
               <div class="row-label">Privacy</div>
@@ -276,6 +290,7 @@ type BeforeInstallPromptEvent = Event & {
 })
 
 export class ProfileComponent implements OnInit, OnDestroy {
+  private static readonly ACHIEVEMENTS_EXPANDED_KEY = 'profile.achievements.expanded';
 
   reduceMotion = false;
 
@@ -294,11 +309,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
   dailyReminderEnabled = false;
   dailyReminderTime = '20:30';
   remindersNativeSupported = false;
-  soundsEnabled = false;
+  soundsEnabled = true;
 
   customAccent = '#f27a2a';
 
-  readonly versionLabel$;
+  readonly versionLabel = `${environment.appVersion} (Build ${environment.buildNumber})`;
 
   canInstall = false;
 
@@ -317,6 +332,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   levelStats: LevelProgress = getLevelProgress(0);
   achievementBadges: AchievementBadgeDef[] = STARTER_BADGES;
   private unlockedBadgeIds = new Set<string>();
+  achievementsOpen = false;
 
   dataOpen = false;
 
@@ -370,22 +386,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
     private themeService: ThemeService,
 
-    private versionService: VersionService,
-
     private notificationService: NotificationService,
 
     private cdr: ChangeDetectorRef,
 
     @Inject(PLATFORM_ID) private platformId: Object
 
-  ) {
-    this.versionLabel$ = combineLatest([
-      this.versionService.getVersion$(),
-      this.versionService.getBuild$()
-    ]).pipe(
-      map(([version, build]) => build !== null ? `Version ${version} (Build ${build})` : `Version ${version}`)
-    );
-  }
+  ) {}
 
 
 
@@ -451,7 +458,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       this.habitStore.getProfile().subscribe(profile => {
 
         this.profile = profile;
-        this.soundsEnabled = Boolean(profile.soundsEnabled);
+        this.soundsEnabled = Boolean(profile.soundsEnabled ?? true);
 
         this.displayName = this.resolveDisplayName(profile, this.userProfile);
 
@@ -480,6 +487,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
 
     if (isPlatformBrowser(this.platformId)) {
+      this.achievementsOpen = this.readAchievementsExpanded();
       this.remindersNativeSupported = this.notificationService.isNativeSchedulingAvailable();
 
       this.installListener = (event: Event) => {
@@ -932,6 +940,34 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   isBadgeUnlocked(id: string): boolean {
     return this.unlockedBadgeIds.has(id);
+  }
+
+  toggleAchievementsOpen(): void {
+    this.achievementsOpen = !this.achievementsOpen;
+    this.persistAchievementsExpanded(this.achievementsOpen);
+    this.cdr.markForCheck();
+  }
+
+  private readAchievementsExpanded(): boolean {
+    if (!isPlatformBrowser(this.platformId)) {
+      return false;
+    }
+    try {
+      return window.localStorage.getItem(ProfileComponent.ACHIEVEMENTS_EXPANDED_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  private persistAchievementsExpanded(expanded: boolean): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    try {
+      window.localStorage.setItem(ProfileComponent.ACHIEVEMENTS_EXPANDED_KEY, expanded ? '1' : '0');
+    } catch {
+      // ignore storage failures
+    }
   }
 
   private resolveDisplayName(profile: ProfileSettings, userProfile: UserProfile | null): string {

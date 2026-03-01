@@ -2,8 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { combineLatest, map } from 'rxjs';
-import { VersionService } from '../../services/version.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-about',
@@ -25,7 +24,7 @@ import { VersionService } from '../../services/version.service';
         <img class="app-icon" src="/icons/app_icon_192x192.png" alt="Level-Up app icon">
         <div>
           <div class="app-name">Level-Up</div>
-          <div class="app-version">{{ versionLabel$ | async }}</div>
+          <div class="app-version">{{ versionLabel }}</div>
         </div>
       </div>
 
@@ -60,14 +59,5 @@ import { VersionService } from '../../services/version.service';
   styleUrls: ['./about.component.sass']
 })
 export class AboutComponent {
-  readonly versionLabel$;
-
-  constructor(private versionService: VersionService) {
-    this.versionLabel$ = combineLatest([
-      this.versionService.getVersion$(),
-      this.versionService.getBuild$()
-    ]).pipe(
-      map(([version, build]) => build !== null ? `Version ${version} (Build ${build})` : `Version ${version}`)
-    );
-  }
+  readonly versionLabel = `${environment.appVersion} (Build ${environment.buildNumber})`;
 }

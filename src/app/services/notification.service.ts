@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Subscription, combineLatest, debounceTime, filter } from 'rxjs';
 import { HabitStoreService } from './habit-store.service';
+import { NotificationPermissionService } from './notification-permission.service';
 
 const DAILY_NOTIFICATION_ID = 1000;
 const HABIT_NOTIFICATION_ID_BASE = 2000;
@@ -20,6 +21,7 @@ export class NotificationService {
 
   constructor(
     private habitStore: HabitStoreService,
+    private notificationPermissionService: NotificationPermissionService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -76,12 +78,18 @@ export class NotificationService {
       return 'unsupported';
     }
     try {
-      const current = await LocalNotifications.checkPermissions();
-      if (current.display === 'granted') {
+      const granted = await this.notificationPermissionService.ensurePermission(true);
+      if (!granted) {
+        this.lastError = 'denied';
+        return 'denied';
+      }
+      // Push notification permission covers Android 13 POST_NOTIFICATIONS; keep local plugin check as a scheduling fallback.
+      const local = await LocalNotifications.checkPermissions();
+      if (local.display === 'granted') {
         return 'granted';
       }
-      const result = await LocalNotifications.requestPermissions();
-      if (result.display === 'granted') {
+      const localRequested = await LocalNotifications.requestPermissions();
+      if (localRequested.display === 'granted') {
         return 'granted';
       }
       this.lastError = 'denied';
@@ -139,6 +147,11 @@ export class NotificationService {
     }
 
     try {
+      // Do not prompt automatically here; just skip scheduling when permission is missing.
+      const hasPermission = await this.notificationPermissionService.ensurePermission(false);
+      if (!hasPermission) {
+        return;
+      }
       await this.cancelAllManaged();
       const notifications = this.buildNotificationsFromState();
       if (notifications.length > 0) {

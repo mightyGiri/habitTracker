@@ -1255,7 +1255,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.confettiTimer = setTimeout(() => {
       this.celebrateBadge = false;
       this.confettiPieces = [];
-    }, 1200);
+    }, 3000);
   }
 
   trackByConfetti(index: number, piece: ConfettiPiece): number {
@@ -1278,7 +1278,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.streakCelebrating = true;
     this.streakCelebrationTimer = setTimeout(() => {
       this.streakCelebrating = false;
-    }, 900);
+    }, 2200);
   }
 
   private triggerStreakFireBurst(): void {
@@ -1291,7 +1291,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.streakFireAnimating = true;
     this.streakFireTimer = setTimeout(() => {
       this.streakFireAnimating = false;
-    }, 1000);
+    }, 2000);
   }
 
   private triggerLevelUpGlow(): void {
@@ -1304,7 +1304,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.levelUpAnimating = true;
     this.levelUpTimer = setTimeout(() => {
       this.levelUpAnimating = false;
-    }, 8000);
+    }, 10000);
   }
 
   dismissSystemOverlay(): void {
@@ -1354,7 +1354,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       this.systemOverlayTimer = undefined;
       this.cdr.markForCheck();
       this.playNextSystemOverlay();
-    }, 2200);
+    }, 3000);
   }
 
 
@@ -1375,7 +1375,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       this.headerLevelUpCelebrating = false;
       this.displayedHeaderProgress = nextProgress;
       this.cdr.markForCheck();
-    }, 2000);
+    }, 3000);
   }
 
   private handleRewards(
