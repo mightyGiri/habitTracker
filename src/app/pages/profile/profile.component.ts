@@ -344,7 +344,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   accentPresets: AccentPreset[] = [
 
-    { id: 'orange', name: 'Orange', color: '#f27a2a' },
+    // { id: 'orange', name: 'Orange', color: '#f27a2a' },
 
     { id: 'green', name: 'Green', color: '#3fb57a' },
 
@@ -358,7 +358,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
     { id: 'yellow', name: 'Yellow', color: '#f4b23a' },
 
-    { id: 'violet', name: 'Violet', color: '#8b5cf6' }
+    { id: 'purple', name: 'Purple', color: '#8b5cf6' },
+    { id: 'violet', name: 'Violet', color: '#5810fe'}
 
   ];
 

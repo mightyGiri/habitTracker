@@ -8,7 +8,7 @@ import { ThemeService } from '../../services/theme.service';
 import { UserProfile } from '../../models/habit.model';
 
 type WizardStep = 0 | 1 | 2 | 3;
-type OnboardingView = 'intro' | 'wizard' | 'loading';
+type OnboardingView = 'intro' | 'wizard';
 
 @Component({
   selector: 'app-onboarding',
@@ -153,19 +153,6 @@ type OnboardingView = 'intro' | 'wizard' | 'loading';
               <button class="btn btn-ghost cta-secondary" type="button" (click)="skipSetup()">Skip setup</button>
             </div>
           </section>
-
-          <section *ngSwitchCase="'loading'" class="loading-screen panel-screen" aria-live="polite">
-            <div class="loading-shell cinematic-panel">
-              <div class="aura-stage" aria-hidden="true">
-                <div class="aura-ring aura-ring-one"></div>
-                <div class="aura-ring aura-ring-two"></div>
-                <div class="silhouette-core"></div>
-                <div class="silhouette-shape"></div>
-              </div>
-              <div class="loading-title">Let’s level up...</div>
-              <div class="loading-subtitle">Preparing your journey</div>
-            </div>
-          </section>
         </ng-container>
       </div>
     </div>
@@ -186,7 +173,6 @@ export class OnboardingComponent implements OnInit, OnDestroy {
   readonly wizardGoals = ['Fitness', 'Productivity', 'Mindset', 'Health', 'Custom'] as const;
 
   private readonly subscriptions = new Subscription();
-  private loadingTimer?: ReturnType<typeof setTimeout>;
 
   constructor(
     private router: Router,
@@ -215,9 +201,6 @@ export class OnboardingComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.loadingTimer) {
-      clearTimeout(this.loadingTimer);
-    }
     this.subscriptions.unsubscribe();
   }
 
@@ -306,17 +289,7 @@ export class OnboardingComponent implements OnInit, OnDestroy {
     };
     this.habitStore.setUserProfile(profile);
     this.habitStore.completeOnboarding();
-    this.startLoadingTransition();
-  }
-
-  private startLoadingTransition(): void {
-    this.view = 'loading';
-    if (this.loadingTimer) {
-      clearTimeout(this.loadingTimer);
-    }
-    this.loadingTimer = setTimeout(() => {
-      void this.router.navigate(['/today']);
-    }, this.reduceMotion ? 1200 : 1500);
+    void this.router.navigate(['/system-loading']);
   }
 
   get wizardProgressPercent(): number {
@@ -368,3 +341,7 @@ export class OnboardingComponent implements OnInit, OnDestroy {
     return this.goalChoice || 'Build consistency';
   }
 }
+
+
+
+

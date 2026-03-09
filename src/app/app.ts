@@ -142,6 +142,7 @@ export class App implements OnInit, OnDestroy {
     return url.startsWith('/splash')
       || url.startsWith('/onboarding')
       || url.startsWith('/getting-started')
+      || url.startsWith('/system-loading')
       || url.startsWith('/welcome')
       || url.includes('setup');
   }

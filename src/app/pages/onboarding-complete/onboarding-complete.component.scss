@@ -1,0 +1,91 @@
+.system-loading-screen {
+  position: fixed;
+  inset: 0;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: linear-gradient(180deg, #020617 0%, #020b1a 100%);
+}
+
+.aura-pulse {
+  position: absolute;
+  width: min(70vw, 360px);
+  aspect-ratio: 1 / 1;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.25);
+  filter: blur(26px);
+  animation: pulseAura 2s ease-in-out infinite;
+}
+
+.visual-stage {
+  position: relative;
+  width: min(78vw, 320px);
+}
+
+.system-image {
+  display: block;
+  width: 100%;
+  border-radius: 16px;
+  opacity: 0.2;
+  transform: scale(0.95);
+  filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.6));
+  animation: revealImage 1.5s ease-out forwards;
+}
+
+.overlay-text {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  text-align: center;
+  color: #fff;
+  pointer-events: none;
+}
+
+.line {
+  font-weight: 600;
+  letter-spacing: 2px;
+}
+
+.system {
+  font-size: 0.72rem;
+  opacity: 0.92;
+}
+
+.level-up {
+  font-size: 1.05rem;
+}
+
+.level {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+@keyframes revealImage {
+  0% {
+    opacity: 0.2;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulseAura {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+}
+

@@ -23,6 +23,16 @@ export const routes: Routes = [
     data: { animation: 'onboarding' }
   },
   {
+    path: 'system-loading',
+    loadComponent: () => import('./pages/onboarding-loading-screen/onboarding-loading-screen.component').then(m => m.OnboardingLoadingScreenComponent),
+    data: { animation: 'onboarding' }
+  },
+  {
+    path: 'home',
+    redirectTo: 'today',
+    pathMatch: 'full'
+  },
+  {
     path: 'today',
     loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent),
     data: { animation: 'dashboard' },
