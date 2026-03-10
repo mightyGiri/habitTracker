@@ -1,23 +1,23 @@
 :root
-  --system-glow: color-mix(in oklab, var(--theme-accent) 65%, #6aa8ff)
-  --system-glow-soft: color-mix(in oklab, var(--theme-accent) 22%, transparent)
-  --system-border: color-mix(in oklab, var(--theme-accent) 50%, #7c6bff)
-  --system-surface: color-mix(in oklab, var(--theme-surface) 80%, #0a0f1c)
-  --system-surface-2: color-mix(in oklab, var(--theme-surface-2) 82%, #0c1426)
-  --system-shadow-deep: 0 18px 40px rgba(0, 0, 0, 0.55)
+  --system-glow: color-mix(in oklab, var(--theme-accent) 70%, var(--system-cyan))
+  --system-glow-soft: color-mix(in oklab, var(--theme-accent) 28%, transparent)
+  --system-border: color-mix(in oklab, var(--theme-accent) 60%, var(--system-purple))
+  --system-surface: color-mix(in oklab, var(--theme-surface) 88%, #030615)
+  --system-surface-2: color-mix(in oklab, var(--theme-surface-2) 90%, #030411)
+  --system-shadow-deep: 0 18px 40px rgba(0, 0, 15, 0.72)
   --system-vignette: color-mix(in oklab, black 55%, transparent)
   --system-noise-opacity: 0.06
-  --system-highlight: color-mix(in oklab, white 70%, var(--theme-accent))
+  --system-highlight: color-mix(in oklab, white 22%, var(--system-cyan))
 
-  --arcane-glow: color-mix(in oklab, var(--theme-accent) 70%, #7ad1ff)
+  --arcane-glow: color-mix(in oklab, var(--theme-accent) 68%, var(--system-cyan))
   --arcane-glow-soft: color-mix(in oklab, var(--theme-accent) 30%, transparent)
-  --arcane-border: color-mix(in oklab, var(--theme-accent) 55%, #7c6bff)
+  --arcane-border: color-mix(in oklab, var(--theme-accent) 60%, var(--system-purple))
   --arcane-border-soft: color-mix(in oklab, var(--theme-accent) 22%, var(--theme-border))
-  --arcane-surface: color-mix(in oklab, var(--theme-surface) 82%, #0a0f1c)
-  --arcane-surface-2: color-mix(in oklab, var(--theme-surface-2) 85%, #0c1426)
+  --arcane-surface: color-mix(in oklab, var(--theme-surface) 88%, #04061a)
+  --arcane-surface-2: color-mix(in oklab, var(--theme-surface-2) 90%, #030411)
   --arcane-text: var(--theme-text)
   --arcane-muted: var(--theme-text-muted)
-  --arcane-shadow: 0 14px 30px rgba(0, 0, 0, 0.45)
+  --arcane-shadow: 0 14px 30px rgba(0, 0, 15, 0.58)
   --arcane-inner: inset 0 0 0 1px color-mix(in oklab, white 6%, transparent)
 
 .system-vignette-layer
@@ -50,8 +50,8 @@
   background: linear-gradient(180deg, color-mix(in oklab, var(--arcane-surface) 92%, transparent), var(--arcane-surface))
   color: var(--arcane-text)
   border: 1px solid var(--arcane-border-soft)
-  box-shadow: var(--system-shadow-deep)
-  backdrop-filter: blur(14px)
+  box-shadow: var(--system-shadow-deep), 0 0 22px color-mix(in oklab, var(--theme-accent) 12%, transparent)
+  backdrop-filter: blur(16px)
   overflow: hidden
 
   &::before,
@@ -73,8 +73,8 @@
     box-shadow: var(--arcane-inner), inset 0 0 12px rgba(0, 0, 0, 0.45)
 
   @supports (backdrop-filter: blur(8px))
-    background: rgba(10, 14, 26, 0.6)
-    backdrop-filter: blur(10px)
+    background: rgba(6, 8, 24, 0.72)
+    backdrop-filter: blur(12px)
 
 .arcane-card--tight
   padding: 12px 14px
@@ -125,7 +125,7 @@
   border-color: color-mix(in oklab, var(--arcane-border-soft) 70%, transparent)
 
 .arcane-btn--primary
-  background: linear-gradient(140deg, color-mix(in oklab, var(--arcane-glow) 55%, transparent), color-mix(in oklab, var(--arcane-glow) 12%, transparent))
+  background: linear-gradient(180deg, rgba(61, 127, 255, 0.92), rgba(28, 74, 196, 0.96))
   border-color: var(--arcane-border)
   box-shadow: 0 0 24px var(--arcane-glow-soft), inset 0 0 0 1px color-mix(in oklab, white 10%, transparent)
 
@@ -152,8 +152,8 @@
   position: absolute
   inset: 0
   width: 0%
-  background: linear-gradient(90deg, color-mix(in oklab, var(--arcane-glow) 70%, transparent), var(--arcane-border))
-  box-shadow: 0 0 14px var(--arcane-glow-soft)
+  background: linear-gradient(90deg, var(--accent), var(--system-cyan))
+  box-shadow: 0 0 14px var(--glow-cyan)
   transition: width 280ms ease
 
   &::after
@@ -172,10 +172,10 @@
   gap: 6px
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom))
   border-radius: 18px
-  background: color-mix(in oklab, var(--arcane-surface) 70%, transparent)
+  background: rgba(0, 0, 15, 0.9)
   border: 1px solid var(--arcane-border-soft)
-  backdrop-filter: blur(16px)
-  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.4)
+  backdrop-filter: blur(20px)
+  box-shadow: 0 16px 30px rgba(0, 0, 15, 0.55)
 
 .arcane-tab
   flex: 1
@@ -230,7 +230,7 @@
   padding: 10px 18px
   border-radius: 999px
   border: 1px solid color-mix(in oklab, var(--system-border) 60%, transparent)
-  background: rgba(10, 14, 26, 0.55)
+  background: rgba(6, 8, 24, 0.62)
   color: var(--arcane-text)
   font-weight: 600
   letter-spacing: 0.04em
@@ -260,7 +260,7 @@
 
 .glass-btn--primary
   border-color: color-mix(in oklab, var(--system-border) 75%, transparent)
-  background: linear-gradient(140deg, rgba(28, 36, 60, 0.7), rgba(10, 14, 26, 0.6))
+  background: linear-gradient(180deg, rgba(61, 127, 255, 0.9), rgba(40, 90, 200, 0.95))
   box-shadow: 0 0 22px var(--system-glow-soft), inset 0 0 0 1px color-mix(in oklab, white 10%, transparent)
 
 .glass-btn--ghost
@@ -275,7 +275,7 @@
   padding: 6px 12px
   border-radius: 999px
   border: 1px solid color-mix(in oklab, var(--system-border) 60%, transparent)
-  background: rgba(10, 14, 26, 0.5)
+  background: rgba(6, 8, 24, 0.58)
   color: var(--arcane-text)
   font-weight: 600
   letter-spacing: 0.08em

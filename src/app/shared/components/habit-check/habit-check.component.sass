@@ -2,8 +2,8 @@
   width: 28px
   height: 28px
   border-radius: 8px
-  border: 1px solid var(--theme-border)
-  background: var(--theme-input-bg, var(--theme-surface-2))
+  border: 2px solid rgba(61, 127, 255, 0.35)
+  background: rgba(61, 127, 255, 0.05)
   display: inline-flex
   align-items: center
   justify-content: center
@@ -17,13 +17,13 @@
     border-radius: 6px
 
   &:hover
-    border-color: var(--theme-accent)
-    box-shadow: var(--glow)
+    border-color: rgba(61, 127, 255, 0.6)
+    box-shadow: 0 0 10px rgba(61, 127, 255, 0.3)
 
   &.is-checked
-    background: var(--theme-accent)
-    border-color: var(--theme-accent)
-    box-shadow: var(--glow)
+    background: linear-gradient(135deg, #3d7fff, #00e5ff)
+    border-color: #3d7fff
+    box-shadow: 0 0 14px rgba(61, 127, 255, 0.7)
 
   &.is-disabled
     opacity: 0.5

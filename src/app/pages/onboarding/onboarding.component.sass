@@ -3,6 +3,7 @@
   display: flex
   align-items: flex-start
   justify-content: center
+  background: radial-gradient(circle at 20% 0%, rgba(61, 127, 255, 0.14), transparent 42%), radial-gradient(circle at 82% 100%, rgba(123, 95, 255, 0.1), transparent 38%), linear-gradient(180deg, #00000f, #050510)
 
 .onboarding-shell
   width: min(680px, 100%)
@@ -15,18 +16,19 @@
 
 .cinematic-panel
   border-radius: 22px
-  border: 1px solid color-mix(in oklab, var(--theme-border) 60%, transparent)
-  background: linear-gradient(180deg, rgba(9, 12, 20, 0.84), rgba(10, 14, 24, 0.72))
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32)
+  border: 1px solid rgba(61, 127, 255, 0.3)
+  background: linear-gradient(180deg, rgba(8, 12, 32, 0.92), rgba(5, 8, 22, 0.88))
+  box-shadow: 0 12px 28px rgba(0, 0, 15, 0.5), 0 0 24px rgba(61, 127, 255, 0.14)
   backdrop-filter: blur(10px)
   -webkit-backdrop-filter: blur(10px)
 
 .kicker-label
-  color: rgba(255, 255, 255, 0.72)
+  color: rgba(61, 127, 255, 0.8)
   font-size: 0.72rem
   font-weight: 700
   letter-spacing: 0.18em
   text-transform: uppercase
+  font-family: "Consolas", "SFMono-Regular", monospace
 
 .hero-title
   margin: 0
@@ -129,16 +131,16 @@
   width: 100%
   height: 5px
   border-radius: 999px
-  background: rgba(255, 255, 255, 0.06)
-  border: 1px solid color-mix(in oklab, var(--theme-border) 40%, transparent)
+  background: rgba(61, 127, 255, 0.08)
+  border: 1px solid rgba(61, 127, 255, 0.2)
   overflow: hidden
 
 .wizard-progress-fill
   height: 100%
   width: 0
   border-radius: inherit
-  background: linear-gradient(90deg, color-mix(in oklab, var(--theme-accent) 82%, white 8%), color-mix(in oklab, #60a5fa 45%, var(--theme-accent)))
-  box-shadow: 0 0 16px color-mix(in oklab, var(--theme-accent) 18%, transparent)
+  background: linear-gradient(90deg, #3d7fff, #00e5ff)
+  box-shadow: 0 0 16px rgba(61, 127, 255, 0.24)
   transition: width 220ms ease
 
 .wizard-progress-label
@@ -159,8 +161,8 @@
 .onboarding-input
   width: 100%
   border-radius: 14px
-  border: 1px solid color-mix(in oklab, var(--theme-border) 55%, transparent)
-  background: rgba(8, 12, 20, 0.6)
+  border: 1px solid rgba(61, 127, 255, 0.3)
+  background: rgba(61, 127, 255, 0.05)
   color: #fff
   padding: 10px 12px
   resize: vertical
@@ -178,8 +180,8 @@
   width: 100%
   text-align: left
   border-radius: 16px
-  border: 1px solid color-mix(in oklab, var(--theme-border) 55%, transparent)
-  background: rgba(10, 14, 24, 0.62)
+  border: 1px solid rgba(61, 127, 255, 0.24)
+  background: rgba(6, 8, 24, 0.74)
   color: rgba(255, 255, 255, 0.92)
   padding: 12px 14px
   font-weight: 600
@@ -192,9 +194,9 @@
     box-shadow: 0 0 14px color-mix(in oklab, var(--theme-accent) 14%, transparent)
 
   &.is-active
-    border-color: color-mix(in oklab, var(--theme-accent) 55%, transparent)
-    background: color-mix(in oklab, var(--theme-accent) 10%, rgba(10, 14, 24, 0.62))
-    box-shadow: 0 0 0 1px color-mix(in oklab, var(--theme-accent) 14%, transparent) inset, 0 0 16px color-mix(in oklab, var(--theme-accent) 16%, transparent)
+    border-color: rgba(61, 127, 255, 0.5)
+    background: rgba(61, 127, 255, 0.08)
+    box-shadow: 0 0 0 1px rgba(61, 127, 255, 0.16) inset, 0 0 16px rgba(61, 127, 255, 0.18)
 
 .custom-goal-wrap
   display: grid
@@ -224,8 +226,8 @@
   display: grid
   gap: 8px
   border-radius: 16px
-  border: 1px solid color-mix(in oklab, var(--theme-border) 45%, transparent)
-  background: rgba(255, 255, 255, 0.02)
+  border: 1px solid rgba(61, 127, 255, 0.3)
+  background: rgba(61, 127, 255, 0.05)
   padding: 12px
 
 .summary-row

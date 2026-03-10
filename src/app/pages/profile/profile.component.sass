@@ -38,7 +38,8 @@
 .profile-name
   font-size: calc(var(--fs-title) * var(--font-scale))
   font-weight: 700
-  color: var(--theme-text)
+  color: #ffffff
+  text-shadow: 0 0 20px rgba(61, 127, 255, 0.5)
 
 .profile-subtitle
   font-size: calc(var(--fs-muted) * var(--font-scale))
@@ -89,7 +90,7 @@
 
 .row-value
   font-weight: 600
-  color: var(--theme-text)
+  color: #00e5ff
   font-size: calc(var(--fs-body) * var(--font-scale))
   text-align: right
 
@@ -164,8 +165,8 @@
 
 .badge-tile
   border-radius: 14px
-  border: 1px solid color-mix(in oklab, var(--system-border) 40%, transparent)
-  background: rgba(10, 14, 26, 0.45)
+  border: 1px solid rgba(255, 215, 0, 0.3)
+  background: rgba(255, 215, 0, 0.08)
   padding: 12px
   display: grid
   grid-template-columns: 28px 1fr
@@ -176,12 +177,15 @@
   &.is-locked
     opacity: 0.6
 
+  &:hover
+    box-shadow: 0 0 18px rgba(255, 215, 0, 0.18)
+
 .badge-icon
   width: 28px
   height: 28px
   display: grid
   place-items: center
-  color: var(--theme-accent)
+  color: #ffd700
 
   .mat-icon
     font-size: 20px

@@ -2,8 +2,8 @@
   position: relative
   padding: 16px
   border-radius: var(--radius-md)
-  border: 1px solid color-mix(in oklab, var(--border-subtle) 60%, transparent)
-  background: linear-gradient(160deg, color-mix(in oklab, var(--surface-1) 96%, white 1%), var(--surface-2))
+  border: 1px solid rgba(61, 127, 255, 0.16)
+  background: linear-gradient(160deg, rgba(8, 12, 32, 0.96), rgba(6, 8, 24, 0.98))
   box-shadow: var(--shadow-card)
   cursor: pointer
   transition: transform 160ms var(--ease), box-shadow 160ms var(--ease), border-color 160ms var(--ease)
@@ -18,11 +18,12 @@
     box-shadow: var(--focus), var(--shadow-card)
 
   &--ready
-    border-color: color-mix(in oklab, var(--accent) 50%, transparent)
-    box-shadow: var(--shadow-card), 0 0 18px color-mix(in oklab, var(--accent) 14%, transparent)
+    border-left: 4px solid #3d7fff
+    box-shadow: -4px 0 20px rgba(61, 127, 255, 0.2), var(--shadow-card)
 
   &--completed
     opacity: 0.72
+    border-left: 4px solid #00e5a0
 
   &--expanded
     border-color: color-mix(in oklab, var(--accent) 28%, transparent)
@@ -84,14 +85,18 @@
   gap: 2px
   font-size: 13px
   font-weight: 700
-  color: #facc15
+  padding: 4px 10px
+  border-radius: 999px
+  background: rgba(255, 215, 0, 0.1)
+  border: 1px solid rgba(255, 215, 0, 0.35)
+  color: #ffd700
   white-space: nowrap
 
   mat-icon
     font-size: 15px
     width: 15px
     height: 15px
-    color: #facc15
+    color: #ffd700
 
 // ── Title & description ───────────────────────────────────────────────────────
 
@@ -99,7 +104,7 @@
   margin: 0 0 4px
   font-size: 15px
   font-weight: 700
-  color: var(--text-1)
+  color: rgba(200, 220, 255, 0.95)
   line-height: 1.25
 
 .quest-card__desc
@@ -147,17 +152,18 @@
   height: 6px
   width: 100%
   border-radius: 99px
-  background: color-mix(in oklab, var(--border-subtle) 60%, transparent)
+  background: rgba(61, 127, 255, 0.1)
+  border: 1px solid rgba(61, 127, 255, 0.16)
   overflow: hidden
 
 .quest-card__progress-fill
   height: 100%
   border-radius: 99px
-  background: linear-gradient(90deg, var(--accent), color-mix(in oklab, var(--accent) 70%, white))
+  background: linear-gradient(90deg, #3d7fff, #00e5ff)
   transition: width 400ms var(--ease)
 
   &--done
-    background: linear-gradient(90deg, #4ade80, #22d3ee)
+    background: linear-gradient(90deg, #00e5a0, #00e5ff)
 
 // ── Week breakdown (expand/collapse) ─────────────────────────────────────────
 

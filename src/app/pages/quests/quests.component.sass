@@ -23,21 +23,21 @@
   width: 44px
   height: 44px
   border-radius: var(--radius-sm)
-  background: color-mix(in oklab, var(--accent) 14%, transparent)
-  border: 1px solid color-mix(in oklab, var(--accent) 22%, transparent)
+  background: rgba(61, 127, 255, 0.12)
+  border: 1px solid rgba(61, 127, 255, 0.24)
   flex-shrink: 0
 
   mat-icon
     font-size: 24px
     width: 24px
     height: 24px
-    color: var(--accent)
+    color: #00e5ff
 
 .quests-header__title
   margin: 0
   font-size: 22px
   font-weight: 800
-  color: var(--text-1)
+  color: rgba(200, 220, 255, 0.95)
   line-height: 1.1
 
 .quests-header__subtitle
@@ -90,8 +90,8 @@
   gap: 4px
   padding: 4px
   border-radius: var(--radius-sm)
-  background: color-mix(in oklab, var(--surface-2) 80%, transparent)
-  border: 1px solid color-mix(in oklab, var(--border-subtle) 40%, transparent)
+  background: linear-gradient(180deg, rgba(6, 8, 24, 0.92), rgba(4, 5, 18, 0.96))
+  border: 1px solid rgba(61, 127, 255, 0.18)
 
 .quests-tab
   flex: 1
@@ -115,9 +115,9 @@
     background: color-mix(in oklab, var(--border-subtle) 30%, transparent)
 
   &--active
-    background: color-mix(in oklab, var(--accent) 14%, transparent)
-    color: var(--text-1)
-    border: 1px solid color-mix(in oklab, var(--accent) 22%, transparent)
+    background: rgba(61, 127, 255, 0.14)
+    color: rgba(200, 220, 255, 0.95)
+    border: 1px solid rgba(61, 127, 255, 0.24)
 
 .quests-tab__badge
   font-size: 11px

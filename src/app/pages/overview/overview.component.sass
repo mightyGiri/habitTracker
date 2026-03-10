@@ -31,13 +31,15 @@
 .hero-label
   font-size: 0.75rem
   color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
-  letter-spacing: 0.08em
+  letter-spacing: 0.12em
   text-transform: uppercase
+  font-family: "Consolas", "SFMono-Regular", monospace
 
 .hero-value
   font-size: 1rem
   font-weight: 600
-  color: var(--theme-text)
+  color: #00e5ff
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.4)
 
 .details-button
   width: 100%
@@ -75,9 +77,10 @@
 .calendar-weekday
   font-size: 0.7rem
   text-transform: uppercase
-  letter-spacing: 0.08em
-  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
+  letter-spacing: 0.12em
+  color: rgba(61, 127, 255, 0.8)
   text-align: center
+  font-family: "Consolas", "SFMono-Regular", monospace
 
 .calendar-cell
   position: relative
@@ -108,7 +111,8 @@
 
   &.is-perfect,
   &.perfect-day
-    border-color: var(--accent-60)
+    background: rgba(255, 215, 0, 0.2)
+    border-color: rgba(255, 215, 0, 0.5)
     animation: perfectPulse 2.5s ease-in-out infinite
 
   &.is-zero
@@ -253,8 +257,9 @@
 .weekly-header
   text-transform: uppercase
   font-size: 0.7rem
-  letter-spacing: 0.08em
-  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
+  letter-spacing: 0.12em
+  color: rgba(61, 127, 255, 0.8)
+  font-family: "Consolas", "SFMono-Regular", monospace
 
 .week-label
   font-weight: 700
@@ -264,7 +269,8 @@
 .week-percent,
 .week-perfect
   font-weight: 600
-  color: var(--theme-text)
+  color: #00e5ff
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.4)
 
 .week-bar
   position: relative
@@ -276,7 +282,7 @@
 
 .week-bar-fill
   height: 100%
-  background: linear-gradient(90deg, var(--theme-accent), var(--accent-strong))
+  background: linear-gradient(90deg, #3d7fff, #00e5ff)
 
 @keyframes perfectPulse
   0%, 100%
@@ -336,7 +342,7 @@
 .weekly-report-export-root
   width: 900px
   height: 1600px
-  background: #0b1020
+  background: linear-gradient(180deg, #080820, #050510)
   color: #fff
   padding: 36px
   border-radius: 22px
@@ -416,6 +422,8 @@
 .weekly-report-capture-stat-value
   font-size: 1.15rem
   font-weight: 800
+  color: #00e5ff
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.4)
 
 .weekly-report-capture-stat-sub
   font-size: 0.8rem
@@ -423,10 +431,11 @@
 
 .weekly-report-capture-section
   font-size: 0.86rem
-  letter-spacing: 0.1em
+  letter-spacing: 0.12em
   text-transform: uppercase
-  color: rgba(255,255,255,0.74)
+  color: rgba(61, 127, 255, 0.8)
   font-weight: 700
+  font-family: "Consolas", "SFMono-Regular", monospace
 
 .weekly-report-capture-empty
   color: rgba(255,255,255,0.8)

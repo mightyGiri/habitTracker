@@ -7,28 +7,37 @@
   --page-pad-mobile: 14px
   --tabbar-height: 72px
 
-  /* brand + accent */
-  --accent: #4c8dff
-  --accent-weak: color-mix(in oklab, var(--accent) 35%, transparent)
-  --accent-strong: color-mix(in oklab, var(--accent) 70%, black)
-  --accent-contrast: #1f1b16
-  --glow: 0 0 0 1px color-mix(in oklab, var(--accent) 30%, transparent), 0 0 18px color-mix(in oklab, var(--accent) 20%, transparent)
+  /* System Core Colors */
+  --bg: #00000f
+  --bg-soft: #050510
+  --card: #080820
+  --card-2: #060618
+  --border: rgba(70, 130, 255, 0.18)
+  --border-subtle: rgba(70, 130, 255, 0.12)
 
-  /* surfaces */
-  --bg: #070b16
-  --bg-soft: #0d1324
-  --card: #101625
-  --card-2: #0c1220
-  --border: color-mix(in oklab, white 10%, transparent)
+  /* System Accent */
+  --accent: #3d7fff
+  --accent-weak: rgba(61, 127, 255, 0.2)
+  --accent-strong: #6aa0ff
+  --accent-contrast: #ffffff
+  --system-cyan: #00e5ff
+  --system-purple: #7b5fff
+  --system-gold: #ffd700
+  --system-red: #ff3355
+
+  /* Glows */
+  --glow: 0 0 0 1px rgba(61, 127, 255, 0.4), 0 0 24px rgba(61, 127, 255, 0.25)
+  --glow-soft: 0 0 18px rgba(61, 127, 255, 0.15)
+  --glow-cyan: 0 0 20px rgba(0, 229, 255, 0.2)
+  --glow-strong: 0 0 40px rgba(61, 127, 255, 0.4)
   --app-bg: var(--bg)
   --surface-1: var(--card)
   --surface-2: var(--card-2)
-  --border-subtle: var(--border)
 
   /* text */
-  --text: rgba(255, 255, 255, 0.92)
-  --muted: rgba(255, 255, 255, 0.65)
-  --muted-2: rgba(255, 255, 255, 0.45)
+  --text: rgba(200, 220, 255, 0.95)
+  --muted: rgba(120, 160, 220, 0.7)
+  --muted-2: rgba(80, 120, 180, 0.5)
   --text-1: var(--text)
   --text-2: var(--muted)
   --text-muted: var(--muted-2)
@@ -49,10 +58,9 @@
   --pad-3: var(--space-3)
 
   /* shadows */
-  --shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.3)
-  --shadow-card: 0 10px 24px rgba(0, 0, 0, 0.26)
+  --shadow-soft: 0 14px 40px rgba(0, 0, 15, 0.7)
+  --shadow-card: 0 8px 24px rgba(0, 0, 15, 0.7)
   --shadow-0: none
-  --glow-soft: 0 0 18px color-mix(in oklab, var(--accent) 12%, transparent)
 
   /* typography */
   --font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif
@@ -82,45 +90,46 @@
   /* legacy token mapping */
   --theme-bg: var(--bg)
   --theme-bg-2: var(--bg-soft)
-  --theme-bg-spot-1: color-mix(in oklab, var(--accent) 12%, transparent)
-  --theme-bg-spot-2: color-mix(in oklab, var(--accent) 8%, transparent)
-  --theme-pattern: none
+  --theme-bg-spot-1: rgba(61, 127, 255, 0.12)
+  --theme-bg-spot-2: rgba(123, 95, 255, 0.08)
+  --theme-pattern: repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(61, 127, 255, 0.03) 60px), repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(61, 127, 255, 0.03) 60px)
   --theme-surface: var(--card)
   --theme-surface-2: var(--card-2)
   --theme-border: var(--border)
-  --theme-shadow: var(--shadow-card)
-  --theme-shadow-hover: 0 12px 26px rgba(0, 0, 0, 0.3)
+  --theme-shadow: 0 8px 32px rgba(0, 0, 15, 0.8), 0 0 0 1px rgba(61, 127, 255, 0.08)
+  --theme-shadow-hover: 0 12px 40px rgba(0, 0, 15, 0.9), 0 0 0 1px rgba(61, 127, 255, 0.2)
   --theme-text: var(--text)
   --theme-text-muted: var(--muted)
-  --theme-text-inverse: #1f1b16
+  --theme-text-inverse: #ffffff
   --theme-accent: var(--accent)
   --theme-accent-soft: var(--accent-weak)
-  --theme-success: #3fb57a
-  --theme-success-soft: color-mix(in oklab, #3fb57a 18%, transparent)
-  --theme-warning: #f4b23a
-  --theme-danger: #ef4444
-  --theme-danger-soft: color-mix(in oklab, #ef4444 18%, transparent)
+  --theme-success: #00e5a0
+  --theme-success-soft: rgba(0, 229, 160, 0.15)
+  --theme-warning: #ffd700
+  --theme-danger: #ff3355
+  --theme-danger-soft: rgba(255, 51, 85, 0.15)
   --success: var(--theme-success)
   --danger: var(--theme-danger)
-  --theme-chart-grid: color-mix(in oklab, white 10%, transparent)
-  --theme-chart-text: color-mix(in oklab, white 80%, transparent)
-  --theme-glow: color-mix(in oklab, var(--accent) 30%, transparent)
-  --theme-input-bg: color-mix(in oklab, white 6%, transparent)
-  --theme-input-border: color-mix(in oklab, var(--accent) 35%, transparent)
-  --theme-input-border-hover: color-mix(in oklab, var(--accent) 55%, transparent)
-  --theme-input-focus: color-mix(in oklab, var(--accent) 45%, transparent)
-  --theme-nav-bg: color-mix(in oklab, black 70%, transparent)
+  --theme-chart-grid: rgba(61, 127, 255, 0.12)
+  --theme-chart-text: rgba(150, 190, 255, 0.8)
+  --theme-glow: rgba(61, 127, 255, 0.35)
+  --theme-input-bg: rgba(61, 127, 255, 0.06)
+  --theme-input-border: rgba(61, 127, 255, 0.3)
+  --theme-input-border-hover: rgba(61, 127, 255, 0.5)
+  --theme-input-focus: rgba(61, 127, 255, 0.5)
+  --theme-nav-bg: rgba(0, 0, 15, 0.85)
 
   --app-font-family: var(--font-family)
   --app-font-size: var(--font-size)
   --app-font: var(--app-font-family)
   --app-accent: var(--accent)
-  --accent-10: color-mix(in oklab, var(--accent) 12%, transparent)
-  --accent-20: color-mix(in oklab, var(--accent) 20%, transparent)
-  --accent-28: color-mix(in oklab, var(--accent) 28%, transparent)
-  --accent-35: color-mix(in oklab, var(--accent) 35%, transparent)
-  --accent-45: color-mix(in oklab, var(--accent) 45%, transparent)
-  --accent-60: color-mix(in oklab, var(--accent) 60%, transparent)
+  --accent-10: rgba(61, 127, 255, 0.1)
+  --accent-20: rgba(61, 127, 255, 0.2)
+  --accent-28: rgba(61, 127, 255, 0.28)
+  --accent-35: rgba(61, 127, 255, 0.35)
+  --accent-45: rgba(61, 127, 255, 0.45)
+  --accent-60: rgba(61, 127, 255, 0.6)
+  --focus: 0 0 0 3px rgba(61, 127, 255, 0.5)
 
 :root[data-accent='orange']
   --accent: #f27a2a
