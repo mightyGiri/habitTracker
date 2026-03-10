@@ -1,0 +1,20 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.giri.levelup.app-mergeDebugResources-30:/values-v16/values-v16.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\vicky\\.gradle\\caches\\9.1.0\\transforms\\9e4296eb19acab49d5eb6597b8e88b95\\workspace\\transformed\\appcompat-1.7.1\\res\\values-v16\\values-v16.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "5",
+                        "endColumns": "12",
+                        "endOffsets": "223"
+                    }
+                }
+            ]
+        }
+    ]
+}

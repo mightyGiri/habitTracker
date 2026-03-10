@@ -1,0 +1,42 @@
+com.giri.levelup.app-lifecycle-runtime-2.6.2-0 C:\Users\vicky\.gradle\caches\9.1.0\transforms\03a8c54b9d5a89bda2d5929dcbc4b673\workspace\transformed\lifecycle-runtime-2.6.2\res
+com.giri.levelup.app-activity-ktx-1.11.0-1 C:\Users\vicky\.gradle\caches\9.1.0\transforms\1648f2cf3146678e0d8fbba6e898d730\workspace\transformed\activity-ktx-1.11.0\res
+com.giri.levelup.app-emoji2-views-helper-1.3.0-2 C:\Users\vicky\.gradle\caches\9.1.0\transforms\194412b4860bb7dcc2086ba3bc021a76\workspace\transformed\emoji2-views-helper-1.3.0\res
+com.giri.levelup.app-lifecycle-livedata-core-2.6.2-3 C:\Users\vicky\.gradle\caches\9.1.0\transforms\38ff4623a92d8d5d4ed6911265d0cd98\workspace\transformed\lifecycle-livedata-core-2.6.2\res
+com.giri.levelup.app-webkit-1.14.0-4 C:\Users\vicky\.gradle\caches\9.1.0\transforms\3fbbd244ecde99b83b031f62180fa48b\workspace\transformed\webkit-1.14.0\res
+com.giri.levelup.app-lifecycle-viewmodel-savedstate-2.6.2-5 C:\Users\vicky\.gradle\caches\9.1.0\transforms\4d09a3c18f18e1e188b03d516b44b588\workspace\transformed\lifecycle-viewmodel-savedstate-2.6.2\res
+com.giri.levelup.app-tracing-1.2.0-6 C:\Users\vicky\.gradle\caches\9.1.0\transforms\6641d92b32ddf12f35aaac39c1c152bd\workspace\transformed\tracing-1.2.0\res
+com.giri.levelup.app-fragment-1.8.9-7 C:\Users\vicky\.gradle\caches\9.1.0\transforms\6a598e66d3a70e7dba2e67f9e1a6d3cc\workspace\transformed\fragment-1.8.9\res
+com.giri.levelup.app-emoji2-1.3.0-8 C:\Users\vicky\.gradle\caches\9.1.0\transforms\6f2552ce778147a8510738c25c9667d2\workspace\transformed\emoji2-1.3.0\res
+com.giri.levelup.app-core-ktx-1.17.0-9 C:\Users\vicky\.gradle\caches\9.1.0\transforms\819349b15639ee5a6ea252ffe0f8bab0\workspace\transformed\core-ktx-1.17.0\res
+com.giri.levelup.app-savedstate-ktx-1.2.1-10 C:\Users\vicky\.gradle\caches\9.1.0\transforms\884b187832b672e65664626f99337761\workspace\transformed\savedstate-ktx-1.2.1\res
+com.giri.levelup.app-startup-runtime-1.1.1-11 C:\Users\vicky\.gradle\caches\9.1.0\transforms\8ce0b6709cc494c57ed0813426537d1e\workspace\transformed\startup-runtime-1.1.1\res
+com.giri.levelup.app-savedstate-1.2.1-12 C:\Users\vicky\.gradle\caches\9.1.0\transforms\90b2ba1be5f23cf5a9b81b27068db041\workspace\transformed\savedstate-1.2.1\res
+com.giri.levelup.app-lifecycle-process-2.6.2-13 C:\Users\vicky\.gradle\caches\9.1.0\transforms\9308e928a499aca15c50eb177dad7956\workspace\transformed\lifecycle-process-2.6.2\res
+com.giri.levelup.app-core-1.17.0-14 C:\Users\vicky\.gradle\caches\9.1.0\transforms\9363a389de376c332422f6b9c2dc8c64\workspace\transformed\core-1.17.0\res
+com.giri.levelup.app-appcompat-1.7.1-15 C:\Users\vicky\.gradle\caches\9.1.0\transforms\9e4296eb19acab49d5eb6597b8e88b95\workspace\transformed\appcompat-1.7.1\res
+com.giri.levelup.app-lifecycle-livedata-2.6.2-16 C:\Users\vicky\.gradle\caches\9.1.0\transforms\b12d46a4b0cbc1a3c985a07d1425bfcf\workspace\transformed\lifecycle-livedata-2.6.2\res
+com.giri.levelup.app-lifecycle-runtime-ktx-2.6.2-17 C:\Users\vicky\.gradle\caches\9.1.0\transforms\ba993d211ce4b8aee28c3612c069b96b\workspace\transformed\lifecycle-runtime-ktx-2.6.2\res
+com.giri.levelup.app-appcompat-resources-1.7.1-18 C:\Users\vicky\.gradle\caches\9.1.0\transforms\c003ab668da5d84338a0ff3a1d63456f\workspace\transformed\appcompat-resources-1.7.1\res
+com.giri.levelup.app-core-viewtree-1.0.0-19 C:\Users\vicky\.gradle\caches\9.1.0\transforms\c8f0647bbfcf62a7396fe67cf34030fc\workspace\transformed\core-viewtree-1.0.0\res
+com.giri.levelup.app-core-runtime-2.2.0-20 C:\Users\vicky\.gradle\caches\9.1.0\transforms\c97fa594c88532ce2b8ed68e0e2d2a0c\workspace\transformed\core-runtime-2.2.0\res
+com.giri.levelup.app-lifecycle-viewmodel-ktx-2.6.2-21 C:\Users\vicky\.gradle\caches\9.1.0\transforms\de49d9c5961fdba76f4634b870b7f96c\workspace\transformed\lifecycle-viewmodel-ktx-2.6.2\res
+com.giri.levelup.app-activity-1.11.0-22 C:\Users\vicky\.gradle\caches\9.1.0\transforms\e165085bb0f882bf42140423b0d1acf2\workspace\transformed\activity-1.11.0\res
+com.giri.levelup.app-coordinatorlayout-1.3.0-23 C:\Users\vicky\.gradle\caches\9.1.0\transforms\e9f73aa296b5cc28e63204bc4f8535be\workspace\transformed\coordinatorlayout-1.3.0\res
+com.giri.levelup.app-profileinstaller-1.4.0-24 C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\res
+com.giri.levelup.app-annotation-experimental-1.4.1-25 C:\Users\vicky\.gradle\caches\9.1.0\transforms\f3837a780aa209832d2fe43cc191bd7f\workspace\transformed\annotation-experimental-1.4.1\res
+com.giri.levelup.app-lifecycle-viewmodel-2.6.2-26 C:\Users\vicky\.gradle\caches\9.1.0\transforms\f92d4a49433b812cc2337a9ea7043e0a\workspace\transformed\lifecycle-viewmodel-2.6.2\res
+com.giri.levelup.app-core-splashscreen-1.2.0-27 C:\Users\vicky\.gradle\caches\9.1.0\transforms\fbf41510fc575b9c45f7dbae91b791d2\workspace\transformed\core-splashscreen-1.2.0\res
+com.giri.levelup.app-pngs-28 C:\Users\vicky\Mock Projects\habitTracker\android\app\build\generated\res\pngs\debug
+com.giri.levelup.app-resValues-29 C:\Users\vicky\Mock Projects\habitTracker\android\app\build\generated\res\resValues\debug
+com.giri.levelup.app-updated_navigation_xml-30 C:\Users\vicky\Mock Projects\habitTracker\android\app\build\generated\updated_navigation_xml\debug
+com.giri.levelup.app-packageDebugResources-31 C:\Users\vicky\Mock Projects\habitTracker\android\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.giri.levelup.app-packageDebugResources-32 C:\Users\vicky\Mock Projects\habitTracker\android\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.giri.levelup.app-debug-33 C:\Users\vicky\Mock Projects\habitTracker\android\app\build\intermediates\merged_res\debug\mergeDebugResources
+com.giri.levelup.app-debug-34 C:\Users\vicky\Mock Projects\habitTracker\android\app\src\debug\res
+com.giri.levelup.app-main-35 C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\res
+com.giri.levelup.app-debug-36 C:\Users\vicky\Mock Projects\habitTracker\android\capacitor-cordova-android-plugins\build\intermediates\packaged_res\debug\packageDebugResources
+com.giri.levelup.app-debug-37 C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\android\capacitor\build\intermediates\packaged_res\debug\packageDebugResources
+com.giri.levelup.app-debug-38 C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\app\android\build\intermediates\packaged_res\debug\packageDebugResources
+com.giri.levelup.app-debug-39 C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\filesystem\android\build\intermediates\packaged_res\debug\packageDebugResources
+com.giri.levelup.app-debug-40 C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\packaged_res\debug\packageDebugResources
+com.giri.levelup.app-debug-41 C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\share\android\build\intermediates\packaged_res\debug\packageDebugResources

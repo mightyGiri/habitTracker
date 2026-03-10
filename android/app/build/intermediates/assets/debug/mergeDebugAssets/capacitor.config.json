@@ -1,0 +1,11 @@
+{
+	"appId": "com.giri.levelup",
+	"appName": "Level-Up",
+	"version": "1.7",
+	"webDir": "dist/habitTracker/browser",
+	"plugins": {
+		"StatusBar": {
+			"overlaysWebView": false
+		}
+	}
+}

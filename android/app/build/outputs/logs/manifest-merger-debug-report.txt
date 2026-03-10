@@ -1,0 +1,372 @@
+-- Merging decision tree log ---
+provider#androidx.core.content.FileProvider
+INJECTED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:24:9-30:20
+	android:grantUriPermissions
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:28:13-47
+	android:authorities
+		INJECTED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:26:13-64
+	android:exported
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:27:13-37
+	android:name
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:25:13-62
+manifest
+ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:2:1-37:12
+INJECTED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:2:1-37:12
+INJECTED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:2:1-37:12
+INJECTED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:2:1-37:12
+MERGED from [:capacitor-app] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\app\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:2:1-7:12
+MERGED from [:capacitor-filesystem] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\filesystem\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:2:1-7:12
+MERGED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:2:1-26:12
+MERGED from [:capacitor-share] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\share\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:2:1-7:12
+MERGED from [:capacitor-android] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\android\capacitor\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:2:1-7:12
+MERGED from [:capacitor-cordova-android-plugins] C:\Users\vicky\Mock Projects\habitTracker\android\capacitor-cordova-android-plugins\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:2:1-11:12
+MERGED from [org.apache.cordova:framework:14.0.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6475363bb22628b016bb492e5d2659d7\workspace\transformed\framework-14.0.1\AndroidManifest.xml:20:1-27:12
+MERGED from [androidx.core:core-splashscreen:1.2.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\fbf41510fc575b9c45f7dbae91b791d2\workspace\transformed\core-splashscreen-1.2.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.appcompat:appcompat-resources:1.7.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\c003ab668da5d84338a0ff3a1d63456f\workspace\transformed\appcompat-resources-1.7.1\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.appcompat:appcompat:1.7.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9e4296eb19acab49d5eb6597b8e88b95\workspace\transformed\appcompat-1.7.1\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.coordinatorlayout:coordinatorlayout:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\e9f73aa296b5cc28e63204bc4f8535be\workspace\transformed\coordinatorlayout-1.3.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.fragment:fragment:1.8.9] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6a598e66d3a70e7dba2e67f9e1a6d3cc\workspace\transformed\fragment-1.8.9\AndroidManifest.xml:2:1-7:12
+MERGED from [io.ionic.libs:ionfilesystem-android:1.1.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\cdc4ffd1700fcbd5c9bbe8e3a9f0d5b9\workspace\transformed\ionfilesystem-android-1.1.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.activity:activity-ktx:1.11.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\1648f2cf3146678e0d8fbba6e898d730\workspace\transformed\activity-ktx-1.11.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.activity:activity:1.11.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\e165085bb0f882bf42140423b0d1acf2\workspace\transformed\activity-1.11.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.cursoradapter:cursoradapter:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\d9c19d434332b747161c2f465a03de0a\workspace\transformed\cursoradapter-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.drawerlayout:drawerlayout:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\1d030831bff257fa427d3a3b1ec5043f\workspace\transformed\drawerlayout-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.emoji2:emoji2-views-helper:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\194412b4860bb7dcc2086ba3bc021a76\workspace\transformed\emoji2-views-helper-1.3.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.emoji2:emoji2:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6f2552ce778147a8510738c25c9667d2\workspace\transformed\emoji2-1.3.0\AndroidManifest.xml:17:1-35:12
+MERGED from [androidx.viewpager:viewpager:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\5c1a2b65453f897518a698b4fde794a9\workspace\transformed\viewpager-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.customview:customview:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\b380049e817fb402b581e63683fe9d01\workspace\transformed\customview-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.webkit:webkit:1.14.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\3fbbd244ecde99b83b031f62180fa48b\workspace\transformed\webkit-1.14.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\e53871b8bf6389dcf01f59d31ad403a6\workspace\transformed\vectordrawable-animated-1.1.0\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\c0989d56c154755ce1c944316b9561ac\workspace\transformed\vectordrawable-1.1.0\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.core:core-ktx:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\819349b15639ee5a6ea252ffe0f8bab0\workspace\transformed\core-ktx-1.17.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.loader:loader:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9faccd6a18c2fd0a0129f1e20e2c3a98\workspace\transformed\loader-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.core:core:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9363a389de376c332422f6b9c2dc8c64\workspace\transformed\core-1.17.0\AndroidManifest.xml:17:1-30:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\de49d9c5961fdba76f4634b870b7f96c\workspace\transformed\lifecycle-viewmodel-ktx-2.6.2\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\ba993d211ce4b8aee28c3612c069b96b\workspace\transformed\lifecycle-runtime-ktx-2.6.2\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\b12d46a4b0cbc1a3c985a07d1425bfcf\workspace\transformed\lifecycle-livedata-2.6.2\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f92d4a49433b812cc2337a9ea7043e0a\workspace\transformed\lifecycle-viewmodel-2.6.2\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9308e928a499aca15c50eb177dad7956\workspace\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:17:1-35:12
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\38ff4623a92d8d5d4ed6911265d0cd98\workspace\transformed\lifecycle-livedata-core-2.6.2\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\03a8c54b9d5a89bda2d5929dcbc4b673\workspace\transformed\lifecycle-runtime-2.6.2\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\4d09a3c18f18e1e188b03d516b44b588\workspace\transformed\lifecycle-viewmodel-savedstate-2.6.2\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.savedstate:savedstate-ktx:1.2.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\884b187832b672e65664626f99337761\workspace\transformed\savedstate-ktx-1.2.1\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.savedstate:savedstate:1.2.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\90b2ba1be5f23cf5a9b81b27068db041\workspace\transformed\savedstate-1.2.1\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:17:1-55:12
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\8ce0b6709cc494c57ed0813426537d1e\workspace\transformed\startup-runtime-1.1.1\AndroidManifest.xml:17:1-33:12
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\5db5ee298e20fb74fd48ed281387ca98\workspace\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:17:1-27:12
+MERGED from [androidx.interpolator:interpolator:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\2eb53cfa1baa9ad661f1f54f27acf0bb\workspace\transformed\interpolator-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.tracing:tracing:1.2.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6641d92b32ddf12f35aaac39c1c152bd\workspace\transformed\tracing-1.2.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.arch.core:core-runtime:2.2.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\c97fa594c88532ce2b8ed68e0e2d2a0c\workspace\transformed\core-runtime-2.2.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.annotation:annotation-experimental:1.4.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f3837a780aa209832d2fe43cc191bd7f\workspace\transformed\annotation-experimental-1.4.1\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.core:core-viewtree:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\c8f0647bbfcf62a7396fe67cf34030fc\workspace\transformed\core-viewtree-1.0.0\AndroidManifest.xml:2:1-7:12
+	package
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:3:5-31
+		INJECTED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml
+	android:versionName
+		INJECTED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml
+	android:versionCode
+		INJECTED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml
+	xmlns:android
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:2:11-69
+application
+ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:4:5-31:19
+INJECTED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:4:5-31:19
+MERGED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:11:5-24:19
+MERGED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:11:5-24:19
+MERGED from [:capacitor-cordova-android-plugins] C:\Users\vicky\Mock Projects\habitTracker\android\capacitor-cordova-android-plugins\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:8:5-9:19
+MERGED from [:capacitor-cordova-android-plugins] C:\Users\vicky\Mock Projects\habitTracker\android\capacitor-cordova-android-plugins\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:8:5-9:19
+MERGED from [androidx.emoji2:emoji2:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6f2552ce778147a8510738c25c9667d2\workspace\transformed\emoji2-1.3.0\AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.emoji2:emoji2:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6f2552ce778147a8510738c25c9667d2\workspace\transformed\emoji2-1.3.0\AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.core:core:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9363a389de376c332422f6b9c2dc8c64\workspace\transformed\core-1.17.0\AndroidManifest.xml:28:5-89
+MERGED from [androidx.core:core:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9363a389de376c332422f6b9c2dc8c64\workspace\transformed\core-1.17.0\AndroidManifest.xml:28:5-89
+MERGED from [androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9308e928a499aca15c50eb177dad7956\workspace\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9308e928a499aca15c50eb177dad7956\workspace\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:23:5-53:19
+MERGED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:23:5-53:19
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\8ce0b6709cc494c57ed0813426537d1e\workspace\transformed\startup-runtime-1.1.1\AndroidManifest.xml:25:5-31:19
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\8ce0b6709cc494c57ed0813426537d1e\workspace\transformed\startup-runtime-1.1.1\AndroidManifest.xml:25:5-31:19
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\5db5ee298e20fb74fd48ed281387ca98\workspace\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:24:5-25:19
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\5db5ee298e20fb74fd48ed281387ca98\workspace\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:24:5-25:19
+	android:extractNativeLibs
+		INJECTED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml
+	android:appComponentFactory
+		ADDED from [androidx.core:core:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9363a389de376c332422f6b9c2dc8c64\workspace\transformed\core-1.17.0\AndroidManifest.xml:28:18-86
+	android:supportsRtl
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:9:9-35
+	android:label
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:7:9-41
+	android:roundIcon
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:8:9-54
+	android:icon
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:6:9-43
+	android:allowBackup
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:5:9-35
+	android:theme
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:10:9-40
+activity#com.giri.levelup.MainActivity
+ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:11:9-22:20
+	android:label
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:14:13-56
+	android:launchMode
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:16:13-44
+	android:exported
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:17:13-36
+	android:configChanges
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:12:13-148
+	android:theme
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:15:13-47
+	android:name
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:13:13-57
+intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
+ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:18:13-21:29
+action#android.intent.action.MAIN
+ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:19:17-69
+	android:name
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:19:25-66
+category#android.intent.category.LAUNCHER
+ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:20:17-77
+	android:name
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:20:27-74
+uses-permission#android.permission.INTERNET
+ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:35:5-67
+	android:name
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:35:22-64
+uses-permission#android.permission.POST_NOTIFICATIONS
+ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:36:5-77
+MERGED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:9:5-77
+MERGED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:9:5-77
+	android:name
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:36:22-74
+meta-data#android.support.FILE_PROVIDER_PATHS
+ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:29:13-112
+	android:resource
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:29:75-109
+	android:name
+		ADDED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml:29:24-74
+uses-sdk
+INJECTED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml
+INJECTED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml
+MERGED from [:capacitor-app] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\app\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:5:5-44
+MERGED from [:capacitor-app] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\app\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:5:5-44
+MERGED from [:capacitor-filesystem] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\filesystem\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:5:5-44
+MERGED from [:capacitor-filesystem] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\filesystem\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:5:5-44
+MERGED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:5:5-44
+MERGED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:5:5-44
+MERGED from [:capacitor-share] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\share\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:5:5-44
+MERGED from [:capacitor-share] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\share\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:5:5-44
+MERGED from [:capacitor-android] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\android\capacitor\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:5:5-44
+MERGED from [:capacitor-android] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\android\capacitor\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:5:5-44
+MERGED from [:capacitor-cordova-android-plugins] C:\Users\vicky\Mock Projects\habitTracker\android\capacitor-cordova-android-plugins\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:6:5-44
+MERGED from [:capacitor-cordova-android-plugins] C:\Users\vicky\Mock Projects\habitTracker\android\capacitor-cordova-android-plugins\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:6:5-44
+MERGED from [org.apache.cordova:framework:14.0.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6475363bb22628b016bb492e5d2659d7\workspace\transformed\framework-14.0.1\AndroidManifest.xml:25:5-44
+MERGED from [org.apache.cordova:framework:14.0.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6475363bb22628b016bb492e5d2659d7\workspace\transformed\framework-14.0.1\AndroidManifest.xml:25:5-44
+MERGED from [androidx.core:core-splashscreen:1.2.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\fbf41510fc575b9c45f7dbae91b791d2\workspace\transformed\core-splashscreen-1.2.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.core:core-splashscreen:1.2.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\fbf41510fc575b9c45f7dbae91b791d2\workspace\transformed\core-splashscreen-1.2.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.appcompat:appcompat-resources:1.7.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\c003ab668da5d84338a0ff3a1d63456f\workspace\transformed\appcompat-resources-1.7.1\AndroidManifest.xml:5:5-44
+MERGED from [androidx.appcompat:appcompat-resources:1.7.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\c003ab668da5d84338a0ff3a1d63456f\workspace\transformed\appcompat-resources-1.7.1\AndroidManifest.xml:5:5-44
+MERGED from [androidx.appcompat:appcompat:1.7.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9e4296eb19acab49d5eb6597b8e88b95\workspace\transformed\appcompat-1.7.1\AndroidManifest.xml:5:5-44
+MERGED from [androidx.appcompat:appcompat:1.7.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9e4296eb19acab49d5eb6597b8e88b95\workspace\transformed\appcompat-1.7.1\AndroidManifest.xml:5:5-44
+MERGED from [androidx.coordinatorlayout:coordinatorlayout:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\e9f73aa296b5cc28e63204bc4f8535be\workspace\transformed\coordinatorlayout-1.3.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.coordinatorlayout:coordinatorlayout:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\e9f73aa296b5cc28e63204bc4f8535be\workspace\transformed\coordinatorlayout-1.3.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.fragment:fragment:1.8.9] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6a598e66d3a70e7dba2e67f9e1a6d3cc\workspace\transformed\fragment-1.8.9\AndroidManifest.xml:5:5-44
+MERGED from [androidx.fragment:fragment:1.8.9] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6a598e66d3a70e7dba2e67f9e1a6d3cc\workspace\transformed\fragment-1.8.9\AndroidManifest.xml:5:5-44
+MERGED from [io.ionic.libs:ionfilesystem-android:1.1.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\cdc4ffd1700fcbd5c9bbe8e3a9f0d5b9\workspace\transformed\ionfilesystem-android-1.1.0\AndroidManifest.xml:5:5-44
+MERGED from [io.ionic.libs:ionfilesystem-android:1.1.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\cdc4ffd1700fcbd5c9bbe8e3a9f0d5b9\workspace\transformed\ionfilesystem-android-1.1.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.activity:activity-ktx:1.11.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\1648f2cf3146678e0d8fbba6e898d730\workspace\transformed\activity-ktx-1.11.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.activity:activity-ktx:1.11.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\1648f2cf3146678e0d8fbba6e898d730\workspace\transformed\activity-ktx-1.11.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.activity:activity:1.11.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\e165085bb0f882bf42140423b0d1acf2\workspace\transformed\activity-1.11.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.activity:activity:1.11.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\e165085bb0f882bf42140423b0d1acf2\workspace\transformed\activity-1.11.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.cursoradapter:cursoradapter:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\d9c19d434332b747161c2f465a03de0a\workspace\transformed\cursoradapter-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.cursoradapter:cursoradapter:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\d9c19d434332b747161c2f465a03de0a\workspace\transformed\cursoradapter-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.drawerlayout:drawerlayout:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\1d030831bff257fa427d3a3b1ec5043f\workspace\transformed\drawerlayout-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.drawerlayout:drawerlayout:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\1d030831bff257fa427d3a3b1ec5043f\workspace\transformed\drawerlayout-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.emoji2:emoji2-views-helper:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\194412b4860bb7dcc2086ba3bc021a76\workspace\transformed\emoji2-views-helper-1.3.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.emoji2:emoji2-views-helper:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\194412b4860bb7dcc2086ba3bc021a76\workspace\transformed\emoji2-views-helper-1.3.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.emoji2:emoji2:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6f2552ce778147a8510738c25c9667d2\workspace\transformed\emoji2-1.3.0\AndroidManifest.xml:21:5-44
+MERGED from [androidx.emoji2:emoji2:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6f2552ce778147a8510738c25c9667d2\workspace\transformed\emoji2-1.3.0\AndroidManifest.xml:21:5-44
+MERGED from [androidx.viewpager:viewpager:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\5c1a2b65453f897518a698b4fde794a9\workspace\transformed\viewpager-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.viewpager:viewpager:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\5c1a2b65453f897518a698b4fde794a9\workspace\transformed\viewpager-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.customview:customview:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\b380049e817fb402b581e63683fe9d01\workspace\transformed\customview-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.customview:customview:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\b380049e817fb402b581e63683fe9d01\workspace\transformed\customview-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.webkit:webkit:1.14.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\3fbbd244ecde99b83b031f62180fa48b\workspace\transformed\webkit-1.14.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.webkit:webkit:1.14.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\3fbbd244ecde99b83b031f62180fa48b\workspace\transformed\webkit-1.14.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\e53871b8bf6389dcf01f59d31ad403a6\workspace\transformed\vectordrawable-animated-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\e53871b8bf6389dcf01f59d31ad403a6\workspace\transformed\vectordrawable-animated-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\c0989d56c154755ce1c944316b9561ac\workspace\transformed\vectordrawable-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\c0989d56c154755ce1c944316b9561ac\workspace\transformed\vectordrawable-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.core:core-ktx:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\819349b15639ee5a6ea252ffe0f8bab0\workspace\transformed\core-ktx-1.17.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.core:core-ktx:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\819349b15639ee5a6ea252ffe0f8bab0\workspace\transformed\core-ktx-1.17.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.loader:loader:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9faccd6a18c2fd0a0129f1e20e2c3a98\workspace\transformed\loader-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.loader:loader:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9faccd6a18c2fd0a0129f1e20e2c3a98\workspace\transformed\loader-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.core:core:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9363a389de376c332422f6b9c2dc8c64\workspace\transformed\core-1.17.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.core:core:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9363a389de376c332422f6b9c2dc8c64\workspace\transformed\core-1.17.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\de49d9c5961fdba76f4634b870b7f96c\workspace\transformed\lifecycle-viewmodel-ktx-2.6.2\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\de49d9c5961fdba76f4634b870b7f96c\workspace\transformed\lifecycle-viewmodel-ktx-2.6.2\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\ba993d211ce4b8aee28c3612c069b96b\workspace\transformed\lifecycle-runtime-ktx-2.6.2\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\ba993d211ce4b8aee28c3612c069b96b\workspace\transformed\lifecycle-runtime-ktx-2.6.2\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\b12d46a4b0cbc1a3c985a07d1425bfcf\workspace\transformed\lifecycle-livedata-2.6.2\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\b12d46a4b0cbc1a3c985a07d1425bfcf\workspace\transformed\lifecycle-livedata-2.6.2\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f92d4a49433b812cc2337a9ea7043e0a\workspace\transformed\lifecycle-viewmodel-2.6.2\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f92d4a49433b812cc2337a9ea7043e0a\workspace\transformed\lifecycle-viewmodel-2.6.2\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9308e928a499aca15c50eb177dad7956\workspace\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:21:5-44
+MERGED from [androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9308e928a499aca15c50eb177dad7956\workspace\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:21:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\38ff4623a92d8d5d4ed6911265d0cd98\workspace\transformed\lifecycle-livedata-core-2.6.2\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\38ff4623a92d8d5d4ed6911265d0cd98\workspace\transformed\lifecycle-livedata-core-2.6.2\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\03a8c54b9d5a89bda2d5929dcbc4b673\workspace\transformed\lifecycle-runtime-2.6.2\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\03a8c54b9d5a89bda2d5929dcbc4b673\workspace\transformed\lifecycle-runtime-2.6.2\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\4d09a3c18f18e1e188b03d516b44b588\workspace\transformed\lifecycle-viewmodel-savedstate-2.6.2\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\4d09a3c18f18e1e188b03d516b44b588\workspace\transformed\lifecycle-viewmodel-savedstate-2.6.2\AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate-ktx:1.2.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\884b187832b672e65664626f99337761\workspace\transformed\savedstate-ktx-1.2.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate-ktx:1.2.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\884b187832b672e65664626f99337761\workspace\transformed\savedstate-ktx-1.2.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate:1.2.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\90b2ba1be5f23cf5a9b81b27068db041\workspace\transformed\savedstate-1.2.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate:1.2.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\90b2ba1be5f23cf5a9b81b27068db041\workspace\transformed\savedstate-1.2.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:21:5-44
+MERGED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:21:5-44
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\8ce0b6709cc494c57ed0813426537d1e\workspace\transformed\startup-runtime-1.1.1\AndroidManifest.xml:21:5-23:41
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\8ce0b6709cc494c57ed0813426537d1e\workspace\transformed\startup-runtime-1.1.1\AndroidManifest.xml:21:5-23:41
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\5db5ee298e20fb74fd48ed281387ca98\workspace\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\5db5ee298e20fb74fd48ed281387ca98\workspace\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.interpolator:interpolator:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\2eb53cfa1baa9ad661f1f54f27acf0bb\workspace\transformed\interpolator-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.interpolator:interpolator:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\2eb53cfa1baa9ad661f1f54f27acf0bb\workspace\transformed\interpolator-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.tracing:tracing:1.2.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6641d92b32ddf12f35aaac39c1c152bd\workspace\transformed\tracing-1.2.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.tracing:tracing:1.2.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6641d92b32ddf12f35aaac39c1c152bd\workspace\transformed\tracing-1.2.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.arch.core:core-runtime:2.2.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\c97fa594c88532ce2b8ed68e0e2d2a0c\workspace\transformed\core-runtime-2.2.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.arch.core:core-runtime:2.2.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\c97fa594c88532ce2b8ed68e0e2d2a0c\workspace\transformed\core-runtime-2.2.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.annotation:annotation-experimental:1.4.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f3837a780aa209832d2fe43cc191bd7f\workspace\transformed\annotation-experimental-1.4.1\AndroidManifest.xml:5:5-44
+MERGED from [androidx.annotation:annotation-experimental:1.4.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f3837a780aa209832d2fe43cc191bd7f\workspace\transformed\annotation-experimental-1.4.1\AndroidManifest.xml:5:5-44
+MERGED from [androidx.core:core-viewtree:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\c8f0647bbfcf62a7396fe67cf34030fc\workspace\transformed\core-viewtree-1.0.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.core:core-viewtree:1.0.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\c8f0647bbfcf62a7396fe67cf34030fc\workspace\transformed\core-viewtree-1.0.0\AndroidManifest.xml:5:5-44
+	android:targetSdkVersion
+		INJECTED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from C:\Users\vicky\Mock Projects\habitTracker\android\app\src\main\AndroidManifest.xml
+uses-permission#android.permission.RECEIVE_BOOT_COMPLETED
+ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:7:5-81
+	android:name
+		ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:7:22-78
+uses-permission#android.permission.WAKE_LOCK
+ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:8:5-68
+	android:name
+		ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:8:22-65
+receiver#com.capacitorjs.plugins.localnotifications.TimedNotificationPublisher
+ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:12:9-106
+	android:name
+		ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:12:19-103
+receiver#com.capacitorjs.plugins.localnotifications.NotificationDismissReceiver
+ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:13:9-107
+	android:name
+		ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:13:19-104
+receiver#com.capacitorjs.plugins.localnotifications.LocalNotificationRestoreReceiver
+ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:14:9-23:20
+	android:exported
+		ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:17:13-37
+	android:directBootAware
+		ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:16:13-43
+	android:name
+		ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:15:13-103
+intent-filter#action:name:android.intent.action.BOOT_COMPLETED+action:name:android.intent.action.LOCKED_BOOT_COMPLETED+action:name:android.intent.action.QUICKBOOT_POWERON
+ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:18:13-22:29
+action#android.intent.action.LOCKED_BOOT_COMPLETED
+ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:19:17-86
+	android:name
+		ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:19:25-83
+action#android.intent.action.BOOT_COMPLETED
+ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:20:17-79
+	android:name
+		ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:20:25-76
+action#android.intent.action.QUICKBOOT_POWERON
+ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:21:17-82
+	android:name
+		ADDED from [:capacitor-local-notifications] C:\Users\vicky\Mock Projects\habitTracker\node_modules\@capacitor\local-notifications\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:21:25-79
+provider#androidx.startup.InitializationProvider
+ADDED from [androidx.emoji2:emoji2:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6f2552ce778147a8510738c25c9667d2\workspace\transformed\emoji2-1.3.0\AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9308e928a499aca15c50eb177dad7956\workspace\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9308e928a499aca15c50eb177dad7956\workspace\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\8ce0b6709cc494c57ed0813426537d1e\workspace\transformed\startup-runtime-1.1.1\AndroidManifest.xml:26:9-30:34
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\vicky\.gradle\caches\9.1.0\transforms\8ce0b6709cc494c57ed0813426537d1e\workspace\transformed\startup-runtime-1.1.1\AndroidManifest.xml:26:9-30:34
+	tools:node
+		ADDED from [androidx.emoji2:emoji2:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6f2552ce778147a8510738c25c9667d2\workspace\transformed\emoji2-1.3.0\AndroidManifest.xml:28:13-31
+	android:authorities
+		ADDED from [androidx.emoji2:emoji2:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6f2552ce778147a8510738c25c9667d2\workspace\transformed\emoji2-1.3.0\AndroidManifest.xml:26:13-68
+	android:exported
+		ADDED from [androidx.emoji2:emoji2:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6f2552ce778147a8510738c25c9667d2\workspace\transformed\emoji2-1.3.0\AndroidManifest.xml:27:13-37
+	android:name
+		ADDED from [androidx.emoji2:emoji2:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6f2552ce778147a8510738c25c9667d2\workspace\transformed\emoji2-1.3.0\AndroidManifest.xml:25:13-67
+meta-data#androidx.emoji2.text.EmojiCompatInitializer
+ADDED from [androidx.emoji2:emoji2:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6f2552ce778147a8510738c25c9667d2\workspace\transformed\emoji2-1.3.0\AndroidManifest.xml:29:13-31:52
+	android:value
+		ADDED from [androidx.emoji2:emoji2:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6f2552ce778147a8510738c25c9667d2\workspace\transformed\emoji2-1.3.0\AndroidManifest.xml:31:17-49
+	android:name
+		ADDED from [androidx.emoji2:emoji2:1.3.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\6f2552ce778147a8510738c25c9667d2\workspace\transformed\emoji2-1.3.0\AndroidManifest.xml:30:17-75
+permission#${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9363a389de376c332422f6b9c2dc8c64\workspace\transformed\core-1.17.0\AndroidManifest.xml:22:5-24:47
+	android:protectionLevel
+		ADDED from [androidx.core:core:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9363a389de376c332422f6b9c2dc8c64\workspace\transformed\core-1.17.0\AndroidManifest.xml:24:9-44
+	android:name
+		ADDED from [androidx.core:core:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9363a389de376c332422f6b9c2dc8c64\workspace\transformed\core-1.17.0\AndroidManifest.xml:23:9-81
+permission#com.giri.levelup.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9363a389de376c332422f6b9c2dc8c64\workspace\transformed\core-1.17.0\AndroidManifest.xml:22:5-24:47
+	android:protectionLevel
+		ADDED from [androidx.core:core:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9363a389de376c332422f6b9c2dc8c64\workspace\transformed\core-1.17.0\AndroidManifest.xml:24:9-44
+	android:name
+		ADDED from [androidx.core:core:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9363a389de376c332422f6b9c2dc8c64\workspace\transformed\core-1.17.0\AndroidManifest.xml:23:9-81
+uses-permission#${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9363a389de376c332422f6b9c2dc8c64\workspace\transformed\core-1.17.0\AndroidManifest.xml:26:5-97
+	android:name
+		ADDED from [androidx.core:core:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9363a389de376c332422f6b9c2dc8c64\workspace\transformed\core-1.17.0\AndroidManifest.xml:26:22-94
+uses-permission#com.giri.levelup.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9363a389de376c332422f6b9c2dc8c64\workspace\transformed\core-1.17.0\AndroidManifest.xml:26:5-97
+	android:name
+		ADDED from [androidx.core:core:1.17.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9363a389de376c332422f6b9c2dc8c64\workspace\transformed\core-1.17.0\AndroidManifest.xml:26:22-94
+meta-data#androidx.lifecycle.ProcessLifecycleInitializer
+ADDED from [androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9308e928a499aca15c50eb177dad7956\workspace\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:29:13-31:52
+	android:value
+		ADDED from [androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9308e928a499aca15c50eb177dad7956\workspace\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:31:17-49
+	android:name
+		ADDED from [androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\vicky\.gradle\caches\9.1.0\transforms\9308e928a499aca15c50eb177dad7956\workspace\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:30:17-78
+meta-data#androidx.profileinstaller.ProfileInstallerInitializer
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:29:13-31:52
+	android:value
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:31:17-49
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:30:17-85
+receiver#androidx.profileinstaller.ProfileInstallReceiver
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:34:9-52:20
+	android:enabled
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:37:13-35
+	android:exported
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:38:13-36
+	android:permission
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:39:13-57
+	android:directBootAware
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:36:13-44
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:35:13-76
+intent-filter#action:name:androidx.profileinstaller.action.INSTALL_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:40:13-42:29
+action#androidx.profileinstaller.action.INSTALL_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:41:17-91
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:41:25-88
+intent-filter#action:name:androidx.profileinstaller.action.SKIP_FILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:43:13-45:29
+action#androidx.profileinstaller.action.SKIP_FILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:44:17-85
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:44:25-82
+intent-filter#action:name:androidx.profileinstaller.action.SAVE_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:46:13-48:29
+action#androidx.profileinstaller.action.SAVE_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:47:17-88
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:47:25-85
+intent-filter#action:name:androidx.profileinstaller.action.BENCHMARK_OPERATION
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:49:13-51:29
+action#androidx.profileinstaller.action.BENCHMARK_OPERATION
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:50:17-95
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\vicky\.gradle\caches\9.1.0\transforms\f2145d14b139649e4e851c77f80cd7b0\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:50:25-92

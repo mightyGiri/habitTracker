@@ -1,0 +1,47 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.giri.levelup.app-mergeReleaseResources-30:/values-v31/values-v31.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\vicky\\.gradle\\caches\\8.14.3\\transforms\\4f5eb2e1ae45a07736e2f6ed862ea36a\\transformed\\core-splashscreen-1.2.0\\res\\values-v31\\values-v31.xml",
+                    "from": {
+                        "startLines": "2,6,13",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "55,295,713",
+                        "endLines": "5,12,17",
+                        "endColumns": "12,12,12",
+                        "endOffsets": "290,708,937"
+                    },
+                    "to": {
+                        "startLines": "2,14,21",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "55,783,1201",
+                        "endLines": "5,20,25",
+                        "endColumns": "12,12,12",
+                        "endOffsets": "290,1196,1425"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\vicky\\Mock Projects\\habitTracker\\android\\app\\src\\main\\res\\values-v31\\themes.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "9",
+                        "endColumns": "12",
+                        "endOffsets": "538"
+                    },
+                    "to": {
+                        "startLines": "6",
+                        "startColumns": "4",
+                        "startOffsets": "295",
+                        "endLines": "13",
+                        "endColumns": "12",
+                        "endOffsets": "778"
+                    }
+                }
+            ]
+        }
+    ]
+}
