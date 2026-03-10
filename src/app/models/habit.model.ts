@@ -20,6 +20,8 @@ export interface Habit {
   createdAt: number;
   isActive: boolean;
   sortOrder: number;
+  domain?: HabitDomain;
+  icon?: string;
 }
 
 export interface MonthKey {
@@ -126,4 +128,33 @@ export interface GamificationStats {
   currentPerfectStreak: number;
   bestDailyStreak: number;
   bestPerfectStreak: number;
+}
+
+export type HabitDomain =
+  | 'health'
+  | 'mind'
+  | 'creative'
+  | 'career'
+  | 'finance'
+  | 'social'
+  | 'spirit'
+  | 'productivity';
+
+export interface DomainConfig {
+  id: HabitDomain;
+  label: string;
+  emoji: string;
+  color: string;          // hex color for this domain
+  glowColor: string;      // rgba for glow effects
+  xpMultiplier: number;   // 1.0 = base, 1.5 = bonus
+  description: string;
+}
+
+export interface DomainXP {
+  [domain: string]: number;  // domain id -> total XP earned
+}
+
+export interface MultiDimXP {
+  domainXP: DomainXP;
+  totalXP: number;
 }

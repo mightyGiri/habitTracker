@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 import { openDB, IDBPDatabase } from 'idb';
-import { HabitCompletion, Habit, MonthKey, HabitSkips, UserProfile, ProfileSettings, TimerStateMap } from '../models/habit.model';
+import { HabitCompletion, Habit, MonthKey, HabitSkips, UserProfile, ProfileSettings, TimerStateMap, DomainXP } from '../models/habit.model';
 import { AppTheme } from './theme.service';
 
 const DB_NAME = 'habit-tracker-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'app-state';
 const STATE_KEY = 'state';
 const LOCAL_STORAGE_KEY = 'habit_tracker_data';
@@ -22,6 +22,8 @@ export type PersistedState = {
   defaultsSeeded?: boolean;
   /** Accumulated XP from claimed quest rewards — kept separate from habit XP. */
   questBonusXP?: number;
+  /** Cached per-domain XP totals — recomputed on load if missing. */
+  domainXPCache?: DomainXP;
   settings?: {
     theme?: AppTheme;
   };
@@ -63,10 +65,12 @@ export class StorageService {
   private async getDb(): Promise<IDBPDatabase> {
     if (!this.dbPromise) {
       this.dbPromise = openDB(DB_NAME, DB_VERSION, {
-        upgrade(db: IDBPDatabase) {
+        upgrade(db: IDBPDatabase, oldVersion: number) {
           if (!db.objectStoreNames.contains(STORE_NAME)) {
             db.createObjectStore(STORE_NAME);
           }
+          // v1 -> v2: domain fields added to habits at app level; no IDB structural change needed
+          void oldVersion;
         }
       });
     }

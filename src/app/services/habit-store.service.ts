@@ -1,6 +1,6 @@
 import { Injectable, isDevMode } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, combineLatest, map } from 'rxjs';
-import { Habit, MonthKey, HabitCompletion, DayCheck, MonthlyTotals, TopHabit, MonthInsights, HabitSkips, HabitSkip, UserProfile, ProfileSettings, TimerState, TimerStateMap, NotificationSettings } from '../models/habit.model';
+import { Habit, HabitDomain, MonthKey, HabitCompletion, DayCheck, MonthlyTotals, TopHabit, MonthInsights, HabitSkips, HabitSkip, UserProfile, ProfileSettings, TimerState, TimerStateMap, NotificationSettings } from '../models/habit.model';
 import { DateUtils } from '../shared/date-utils';
 import { getLevelProgress, LevelProgress } from '../shared/level-utils';
 import { StorageService, PersistedState } from './storage.service';
@@ -137,11 +137,11 @@ export class HabitStoreService {
     const now = Date.now();
     const todayDateKey = this.toIsoDateLocal(new Date());
     const habits: Habit[] = [
-      { id: this.createId(), name: 'Wake up on time', difficulty: 'easy', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now, isActive: true, sortOrder: 0 },
-      { id: this.createId(), name: 'Meditation', difficulty: 'medium', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: true, timerSeconds: 300, timerAutoComplete: true, type: 'timer', targetSeconds: 300, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 1, isActive: true, sortOrder: 1 },
-      { id: this.createId(), name: 'Move (walk/exercise)', difficulty: 'hard', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 2, isActive: true, sortOrder: 2 },
-      { id: this.createId(), name: 'Read', difficulty: 'easy', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 3, isActive: true, sortOrder: 3 },
-      { id: this.createId(), name: 'Reflect (journal)', difficulty: 'medium', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 4, isActive: true, sortOrder: 4 }
+      { id: this.createId(), name: 'Wake up on time', difficulty: 'easy', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now, isActive: true, sortOrder: 0, domain: 'productivity', icon: '⏰' },
+      { id: this.createId(), name: 'Meditation', difficulty: 'medium', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: true, timerSeconds: 300, timerAutoComplete: true, type: 'timer', targetSeconds: 300, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 1, isActive: true, sortOrder: 1, domain: 'spirit', icon: '🧘' },
+      { id: this.createId(), name: 'Move (walk/exercise)', difficulty: 'hard', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 2, isActive: true, sortOrder: 2, domain: 'health', icon: '💪' },
+      { id: this.createId(), name: 'Read', difficulty: 'easy', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 3, isActive: true, sortOrder: 3, domain: 'mind', icon: '📖' },
+      { id: this.createId(), name: 'Reflect (journal)', difficulty: 'medium', createdAtDateKey: todayDateKey, goalDays: 30, frequencyType: 'daily', timerEnabled: false, timerSeconds: 0, timerAutoComplete: true, type: 'check', targetSeconds: 0, allowManualComplete: false, timerCompleted: false, reminderEnabled: false, createdAt: now + 4, isActive: true, sortOrder: 4, domain: 'mind', icon: '✍️' }
     ];
     this.habits$.next(habits);
   }
@@ -400,7 +400,7 @@ export class HabitStoreService {
     return this.gamification.computeLevelProgressFromTotalXP(totalXP);
   }
 
-  addHabit(name: string, frequencyType: 'daily' | 'weekly', weeklyTarget: number | undefined, minimumVersion: string, goalDays = 30, timerEnabled = false, timerSeconds = 0, timerAutoComplete = true, difficulty: 'easy' | 'medium' | 'hard' = 'easy'): void {
+  addHabit(name: string, frequencyType: 'daily' | 'weekly', weeklyTarget: number | undefined, minimumVersion: string, goalDays = 30, timerEnabled = false, timerSeconds = 0, timerAutoComplete = true, difficulty: 'easy' | 'medium' | 'hard' = 'easy', domain: HabitDomain = 'productivity', icon = ''): void {
     const trimmed = name.trim();
     if (!trimmed) {
       return;
@@ -438,7 +438,9 @@ export class HabitStoreService {
         reminderTime: undefined,
         createdAt,
         isActive: true,
-        sortOrder
+        sortOrder,
+        domain,
+        icon: icon.trim()
       }
     ];
     this.habits$.next(this.sortHabits(nextHabits));
@@ -480,7 +482,7 @@ export class HabitStoreService {
     this.saveToStorage();
   }
 
-  updateHabit(habitId: string, patch: Partial<Pick<Habit, 'name' | 'difficulty' | 'isActive' | 'sortOrder' | 'goalDays' | 'frequencyType' | 'weeklyTarget' | 'minimumVersion' | 'timerEnabled' | 'timerSeconds' | 'timerAutoComplete' | 'type' | 'targetSeconds' | 'allowManualComplete' | 'timerCompleted' | 'reminderEnabled' | 'reminderTime'>>): void {
+  updateHabit(habitId: string, patch: Partial<Pick<Habit, 'name' | 'difficulty' | 'isActive' | 'sortOrder' | 'goalDays' | 'frequencyType' | 'weeklyTarget' | 'minimumVersion' | 'timerEnabled' | 'timerSeconds' | 'timerAutoComplete' | 'type' | 'targetSeconds' | 'allowManualComplete' | 'timerCompleted' | 'reminderEnabled' | 'reminderTime' | 'domain' | 'icon'>>): void {
     const habits = this.habits$.value.map(habit => {
       if (habit.id !== habitId) {
         return habit;
@@ -1295,7 +1297,7 @@ export class HabitStoreService {
       return;
     }
       const data: PersistedState = {
-        schemaVersion: 1,
+        schemaVersion: 2,
         habits: this.habits$.value,
         completions: this.completions$.value,
         skips: this.skips$.value,
@@ -1373,7 +1375,9 @@ export class HabitStoreService {
         reminderTime: reminderEnabled ? reminderTime : undefined,
         createdAt: habit.createdAt ?? Date.now() + index,
         isActive: habit.isActive ?? true,
-        sortOrder: habit.sortOrder ?? index
+        sortOrder: habit.sortOrder ?? index,
+        domain: (habit.domain as HabitDomain) ?? 'productivity',
+        icon: habit.icon ?? ''
       };
     }).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
   }
