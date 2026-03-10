@@ -1,0 +1,79 @@
+<ng-container *ngIf="open && reportData">
+  <div class="overlay" role="dialog" aria-modal="true" aria-label="Weekly report share preview">
+    <div class="header">
+      <div class="title">Weekly report</div>
+    </div>
+
+    <div class="previewArea">
+      <div class="previewViewport" #previewViewport>
+        <div class="reportScaler" [style.transform]="'scale(' + previewScale + ')'">
+          <section #reportBase class="reportBase exportMode">
+            <div class="captureCard">
+              <div class="captureHeader">
+                <div class="captureUser">{{ reportData.headerName || 'Player' }}</div>
+                <div class="captureMeta" *ngIf="reportData.headerMeta">{{ reportData.headerMeta }}</div>
+              </div>
+
+              <div class="captureTitle">WEEKLY REPORT</div>
+              <div class="captureRange">{{ reportData.weekRangeLabel }}</div>
+
+              <div class="captureStats">
+                <div class="captureStat">
+                  <div class="captureStatLabel">Completed</div>
+                  <div class="captureStatValue">{{ reportData.stats.completed }}/{{ reportData.stats.goal }}</div>
+                  <div class="captureStatSub">
+                    {{ reportData.stats.goal > 0 ? ((reportData.stats.completed / reportData.stats.goal) * 100 | number:'1.0-0') : 0 }}% • Week XP {{ reportData.stats.weekXp }}
+                  </div>
+                </div>
+                <div class="captureStat">
+                  <div class="captureStatLabel">Perfect days</div>
+                  <div class="captureStatValue">{{ reportData.stats.perfectDays }}</div>
+                </div>
+                <div class="captureStat">
+                  <div class="captureStatLabel">Weekly streak</div>
+                  <div class="captureStatValue">{{ reportData.stats.goal > 0 ? (reportData.stats.weeklyPerfectStreak + ' days') : '--' }}</div>
+                </div>
+                <div class="captureStat">
+                  <div class="captureStatLabel">Best streak</div>
+                  <div class="captureStatValue">{{ reportData.stats.bestStreak }}</div>
+                </div>
+              </div>
+
+              <div class="captureSection">Habits</div>
+              <div class="captureEmpty" *ngIf="reportData.habits.length === 0">No habits active this week</div>
+
+              <div class="captureHabits" *ngIf="reportData.habits.length > 0">
+                <div class="captureHabit" *ngFor="let habit of reportData.habits; let i = index">
+                  <div class="captureHabitHead">
+                    <div class="captureHabitName">{{ i + 1 }}. {{ habit.name }}</div>
+                    <div class="captureHabitMetric">{{ habit.doneCount }}/{{ habit.daysActive }}</div>
+                  </div>
+                  <div class="captureHabitBar">
+                    <div class="captureHabitFill" [style.width.%]="habit.daysActive > 0 ? ((habit.doneCount / habit.daysActive) * 100) : 0"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="captureLevel" *ngIf="reportData.levelLine">
+                <div class="captureStatLabel">Level</div>
+                <div class="captureLevelLine">{{ reportData.levelLine }}</div>
+                <div class="captureLevelSub" *ngIf="reportData.levelSubline">{{ reportData.levelSubline }}</div>
+              </div>
+
+              <div class="captureFooter">{{ reportData.footerSummary || 'LEVEL UP • One week stronger' }}</div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <button class="btn btn-outline glass-btn glass-btn--ghost actionBtn" type="button" (click)="requestClose()" [disabled]="exportBusy">
+        Close
+      </button>
+      <button class="btn btn-primary glass-btn glass-btn--primary actionBtn" type="button" (click)="share()" [disabled]="exportBusy || prepareBusy || (!preparedFileUri && !preparedDataUrl)">
+        {{ exportBusy ? 'Sharing...' : (prepareBusy ? 'Preparing...' : 'Share') }}
+      </button>
+    </div>
+  </div>
+</ng-container>

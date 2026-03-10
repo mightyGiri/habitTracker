@@ -1,6 +1,5 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatButtonModule } from '@angular/material/button';
 
 export interface ImportConfirmDialogData {
   title: string;
@@ -10,14 +9,14 @@ export interface ImportConfirmDialogData {
 @Component({
   selector: 'app-import-confirm-dialog',
   standalone: true,
-  imports: [MatDialogModule, MatButtonModule],
+  imports: [MatDialogModule],
   template: `
     <h2 mat-dialog-title>{{ data.title }}</h2>
     <mat-dialog-content>{{ data.message }}</mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button mat-button mat-dialog-close>Cancel</button>
-      <button mat-stroked-button [mat-dialog-close]="'merge'">Merge</button>
-      <button mat-raised-button color="warn" [mat-dialog-close]="'replace'">Replace</button>
+      <button class="btn btn-outline btn-sm" type="button" mat-dialog-close>Cancel</button>
+      <button class="btn btn-outline btn-sm" type="button" [mat-dialog-close]="'merge'">Merge</button>
+      <button class="btn btn-primary btn-sm" type="button" [mat-dialog-close]="'replace'">Replace</button>
     </mat-dialog-actions>
   `
 })

@@ -1,251 +1,192 @@
-import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { FormsModule } from '@angular/forms';
-import { Subscription, combineLatest } from 'rxjs';
+import { ToggleComponent } from '../../shared/ui/toggle/toggle.component';
+import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors, FormGroup } from '@angular/forms';
+import { Subscription, Observable } from 'rxjs';
 import { HabitStoreService } from '../../services/habit-store.service';
-import { Habit, MonthKey, MonthSlot } from '../../models/habit.model';
-import { DateUtils } from '../../shared/date-utils';
+import { Habit } from '../../models/habit.model';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/confirm-dialog.component';
-import { ImportConfirmDialogComponent, ImportConfirmDialogData } from '../../shared/import-confirm-dialog.component';
 import { ThemeService } from '../../services/theme.service';
-import { BackupService } from '../../services/backup.service';
 import { staggerFadeUp, fadeSlideInOut, noopAnimation } from '../../shared/list-animations';
-import { MobileHabitsViewComponent } from './mobile-habits-view.component';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-habits',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatCheckboxModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MatSelectModule, MatProgressBarModule, MatDialogModule, MatSlideToggleModule, MatSnackBarModule, FormsModule, MobileHabitsViewComponent],
+  imports: [
+    CommonModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatIconModule,
+    MatDialogModule,
+    ToggleComponent,
+    ReactiveFormsModule
+  ],
   animations: [staggerFadeUp || noopAnimation, fadeSlideInOut || noopAnimation],
-  template: `
+    template: `
     <div class="page-container" [@.disabled]="reduceMotion">
-      <mat-card class="aesthetic-card add-habit-card">
-        <div class="section-header text-section">Add New Habit</div>
+      <h1 class="text-title page-title">Your Habits</h1>
+      <ng-container *ngIf="ready$ | async; else loading">
+      <mat-card class="aesthetic-card habits-card arcane-card">
         <mat-card-content>
-          <form (ngSubmit)="addHabit()">
-            <mat-form-field>
-              <mat-label>Habit Name</mat-label>
-              <input matInput [(ngModel)]="newHabitName" name="name" required placeholder="Habit name">
-            </mat-form-field>
-            <mat-form-field>
-              <mat-label>Goal Days</mat-label>
-              <input matInput type="number" [(ngModel)]="newHabitGoal" name="goal" required min="1" placeholder="Goal days">
-            </mat-form-field>
-            <button mat-raised-button color="primary" type="submit">Add Habit</button>
-          </form>
-        </mat-card-content>
-      </mat-card>
+          <div class="habits-guidance arcane-card--tight" [class.is-warning]="isOverRecommended">
+            <div class="text-body">{{ guidanceMessage }}</div>
+            <div class="text-muted">Active: {{ activeCount }} / Recommended: 6</div>
+          </div>
+          <div class="habits-toolbar">
+            <button class="add-habit-btn btn btn-primary btn-sm glass-btn glass-btn--primary" type="button" (click)="startAdd()" aria-label="Add habit">
+              <mat-icon>add</mat-icon>
+              Add Habit
+            </button>
+          </div>
 
-      <mat-card class="aesthetic-card controls-card">
-        <div class="section-header text-section">Habit Controls</div>
-        <mat-card-content>
-          <div class="controls-row">
-            <mat-form-field>
-              <mat-label>Search Habits</mat-label>
-              <input matInput [(ngModel)]="searchTerm" (input)="applyFilters()" placeholder="Search by name">
+          <form class="habit-form" *ngIf="formOpen" [formGroup]="habitForm" (ngSubmit)="saveHabit()">
+            <mat-form-field appearance="fill">
+              <mat-label>Habit Name</mat-label>
+              <input matInput formControlName="name" placeholder="Habit name">
+              <mat-error *ngIf="nameControl?.hasError('required')">Name is required</mat-error>
+              <mat-error *ngIf="nameControl?.hasError('minlength')">Minimum 2 characters</mat-error>
+              <mat-error *ngIf="nameControl?.hasError('maxlength')">Maximum 24 characters</mat-error>
+              <mat-error *ngIf="nameControl?.hasError('duplicate')">Name already exists</mat-error>
             </mat-form-field>
-            <mat-form-field>
-              <mat-label>Filter</mat-label>
-              <mat-select [(ngModel)]="filterType" (selectionChange)="applyFilters()">
-                <mat-option value="all">All Habits</mat-option>
-                <mat-option value="low">Low Completion (< 40%)</mat-option>
-                <mat-option value="high">High Completion (> 80%)</mat-option>
+            <mat-form-field appearance="fill">
+              <mat-label>Frequency</mat-label>
+              <mat-select formControlName="frequencyType">
+                <mat-option value="daily">Daily</mat-option>
+                <mat-option value="weekly">Weekly</mat-option>
               </mat-select>
             </mat-form-field>
-            <button mat-stroked-button (click)="markAllToday()" [disabled]="!todayDayNumber" aria-label="Mark all habits for today">
-              Mark All Today
-            </button>
-            <button mat-stroked-button (click)="clearToday()" [disabled]="!todayDayNumber" aria-label="Clear all habits for today">
-              Clear Today
-            </button>
-            <mat-slide-toggle class="mobile-only" [(ngModel)]="collapseWeekHeaders">
-              Collapse week headers
-            </mat-slide-toggle>
-          </div>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="aesthetic-card backup-card">
-        <div class="section-header text-section">Backup & Restore</div>
-        <mat-card-content>
-          <div class="backup-actions">
-            <button mat-stroked-button (click)="exportJson()">Export JSON</button>
-            <button mat-stroked-button (click)="triggerImportJson(importInput)">Import JSON</button>
-            <button mat-stroked-button (click)="exportXlsx()" [disabled]="exportingXlsx">
-              {{ exportingXlsx ? 'Exporting...' : 'Export Excel (XLSX)' }}
-            </button>
-            <button mat-stroked-button (click)="exportCsv()">Export CSV</button>
-          </div>
-          <input
-            #importInput
-            type="file"
-            class="visually-hidden"
-            accept=".json,application/json"
-            (change)="onImportJson($event)">
-        </mat-card-content>
-      </mat-card>
-
-      <app-mobile-habits-view
-        *ngIf="isMobile"
-        [habits]="filteredHabits"
-        [year]="selectedMonthYear?.year || selectedYearFallback"
-        [monthIndex]="selectedMonthYear?.month || 0"
-        [daysInMonth]="daysInMonth"
-        [todayDayNumber]="todayDayNumber">
-      </app-mobile-habits-view>
-
-      <mat-card *ngIf="!isMobile" class="aesthetic-card grid-card">
-        <div class="section-header text-section">Habit Grid</div>
-        <mat-card-content class="grid-container">
-          <div class="habits-grid" [style.gridTemplateColumns]="gridTemplateColumns" [class.collapse-week-headers]="collapseWeekHeaders" [@staggerFadeUp]="animationKey">
-            <div class="header-row" *ngIf="!collapseWeekHeaders">
-              <div class="cell habit-cell sticky-left sticky-top text-label">Habit</div>
-              <div class="cell goal-cell sticky-left sticky-top text-label">Goal</div>
-              <div class="cell progress-cell sticky-left sticky-top text-label">Progress</div>
-              <div class="cell actions-cell sticky-left sticky-top text-label">Actions</div>
-              <div *ngFor="let week of monthMatrix; let weekIndex = index; trackBy: trackByWeekIndex" class="week-header sticky-top" [style.grid-column]="'span ' + week.length">
-                Week {{ weekIndex + 1 }}
-              </div>
+            <mat-form-field appearance="fill" *ngIf="habitForm.get('frequencyType')?.value === 'weekly'">
+              <mat-label>Days per week</mat-label>
+              <mat-select formControlName="weeklyTarget">
+                <mat-option *ngFor="let target of weeklyTargetOptions" [value]="target">{{ target }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="fill">
+              <mat-label>Minimum version (optional)</mat-label>
+              <input matInput formControlName="minimumVersion" placeholder="e.g., 1 page, 5 minutes">
+            </mat-form-field>
+            <mat-form-field appearance="fill">
+              <mat-label>Difficulty</mat-label>
+              <mat-select formControlName="difficulty">
+                <mat-option value="easy">Easy (+1 XP)</mat-option>
+                <mat-option value="medium">Medium (+2 XP)</mat-option>
+                <mat-option value="hard">Hard (+3 XP)</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <div class="reminder-controls">
+              <div class="text-label">Habit reminder</div>
+              <app-toggle [checked]="habitForm.get('reminderEnabled')?.value" [disabled]="!remindersNativeSupported" (checkedChange)="setReminderEnabled($event)"></app-toggle>
             </div>
-            <div class="subheader-row">
-              <div class="cell habit-cell sticky-left sticky-top-secondary"></div>
-              <div class="cell goal-cell sticky-left sticky-top-secondary"></div>
-              <div class="cell progress-cell sticky-left sticky-top-secondary"></div>
-              <div class="cell actions-cell sticky-left sticky-top-secondary"></div>
-              <div *ngFor="let slot of flatDays; trackBy: trackBySlotIndex" class="cell day-cell sticky-top-secondary text-muted">
-                {{ slot.dayLabel }}<br>{{ slot.dayNumber || '' }}
-              </div>
+            <mat-form-field appearance="fill" *ngIf="habitForm.get('reminderEnabled')?.value">
+              <mat-label>Reminder time</mat-label>
+              <input matInput type="time" formControlName="reminderTime" [disabled]="!remindersNativeSupported">
+            </mat-form-field>
+            <div class="text-muted reminder-note" *ngIf="!remindersNativeSupported">Reminders work in the installed app.</div>
+            <div class="form-actions">
+              <button class="btn btn-primary glass-btn glass-btn--primary" type="submit" [disabled]="habitForm.invalid">
+                {{ editingHabitId ? 'Save' : 'Add' }}
+              </button>
+              <button class="btn btn-outline glass-btn glass-btn--ghost" type="button" (click)="cancelEdit()">Cancel</button>
             </div>
-            <div *ngFor="let habit of filteredHabits; trackBy: trackByHabitId" class="habit-row" [@fadeSlideInOut]>
-              <div class="cell habit-cell sticky-left">
-                <input
-                  *ngIf="editingHabit === habit.id"
-                  matInput
-                  [(ngModel)]="editName"
-                  (keyup.enter)="saveRename(habit.id)"
-                  aria-label="Rename habit">
-              <span *ngIf="editingHabit !== habit.id" class="text-body">{{ habit.name }}</span>
+          </form>
+
+          <div class="habits-empty" *ngIf="habits.length === 0">
+            No habits yet. Add your first habit.
+          </div>
+
+          <div class="habits-list" *ngIf="habits.length > 0">
+            <div class="habit-row arcane-card--tight" *ngFor="let habit of habits; let i = index; trackBy: trackByHabitId">
+              <div class="habit-header">
+                <div class="habit-left">
+                  <div class="habit-title text-body">{{ habit.name }}</div>
+                  <div class="habit-sub text-muted">
+                    {{ habit.isActive ? 'Active' : 'Inactive' }}
+                    <span *ngIf="habit.frequencyType">- {{ habit.frequencyType === 'daily' ? 'Daily' : 'Weekly' }}</span>
+                    <span *ngIf="habit.frequencyType === 'weekly' && habit.weeklyTarget">- {{ habit.weeklyTarget }}x/week</span>
+                  </div>
+                  <div class="habit-sub text-muted">Difficulty - {{ (habit.difficulty || 'easy') | titlecase }}</div>
+                  <div class="habit-sub text-muted" *ngIf="habit.minimumVersion">{{ habit.minimumVersion }}</div>
+                  <div class="habit-sub text-muted" *ngIf="habit.reminderEnabled && habit.reminderTime">Reminder - {{ habit.reminderTime }}</div>
+                </div>
+                <app-toggle class="glass-toggle" [checked]="habit.isActive" (checkedChange)="toggleActive(habit.id)"></app-toggle>
               </div>
-              <div class="cell goal-cell sticky-left">
-                <input
-                  class="goal-input"
-                  type="number"
-                  min="1"
-                  [(ngModel)]="habit.goalDays"
-                  (blur)="updateGoal(habit.id, habit.goalDays)"
-                  aria-label="Goal days for habit">
-              </div>
-              <div class="cell progress-cell sticky-left">
-                <mat-progress-bar mode="determinate" [value]="habitProgressMap[habit.id] || 0"></mat-progress-bar>
-              <span class="text-label">{{ habitProgressMap[habit.id] || 0 }}%</span>
-              </div>
-              <div class="cell actions-cell sticky-left">
-                <button
-                  mat-icon-button
-                  (click)="fillCurrentWeek(habit.id)"
-                  [disabled]="currentWeekIndex < 0"
-                  aria-label="Fill current week for this habit">
-                  <mat-icon>playlist_add_check</mat-icon>
+              <div class="habit-actions">
+                <button class="btn btn-icon glass-btn glass-btn--ghost" type="button" (click)="moveHabit(i, i - 1)" [disabled]="i === 0" aria-label="Move habit up">
+                  <mat-icon>arrow_upward</mat-icon>
                 </button>
-                <ng-container *ngIf="editingHabit !== habit.id; else editActions">
-                  <button mat-icon-button (click)="startEdit(habit)" aria-label="Edit habit name">
-                    <mat-icon>edit</mat-icon>
-                  </button>
-                  <button mat-icon-button (click)="confirmDelete(habit)" aria-label="Delete habit">
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                </ng-container>
-                <ng-template #editActions>
-                  <button mat-icon-button color="primary" (click)="saveRename(habit.id)" aria-label="Save habit name">
-                    <mat-icon>check</mat-icon>
-                  </button>
-                  <button mat-icon-button (click)="cancelEdit()" aria-label="Cancel habit edit">
-                    <mat-icon>close</mat-icon>
-                  </button>
-                </ng-template>
-              </div>
-              <div *ngFor="let slot of flatDays; trackBy: trackBySlotIndex" class="cell checkbox-cell" [class.is-checked]="slot.dayNumber && isChecked(slot.dayNumber!, habit.id)">
-                <mat-checkbox
-                  *ngIf="slot.dayNumber"
-                  [checked]="isChecked(slot.dayNumber!, habit.id)"
-                  (change)="toggleCheck(slot.dayNumber!, habit.id)"
-                  [aria-label]="'Toggle ' + habit.name + ' for day ' + slot.dayNumber">
-                </mat-checkbox>
+                <button class="btn btn-icon glass-btn glass-btn--ghost" type="button" (click)="moveHabit(i, i + 1)" [disabled]="i === habits.length - 1" aria-label="Move habit down">
+                  <mat-icon>arrow_downward</mat-icon>
+                </button>
+                <button class="btn btn-icon glass-btn glass-btn--ghost" type="button" (click)="startEdit(habit)" aria-label="Edit habit">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button class="btn btn-icon glass-btn glass-btn--ghost" type="button" (click)="confirmDelete(habit)" aria-label="Delete habit">
+                  <mat-icon>delete</mat-icon>
+                </button>
               </div>
             </div>
           </div>
         </mat-card-content>
       </mat-card>
+      </ng-container>
+      <ng-template #loading>
+        <mat-card class="aesthetic-card">
+          <mat-card-content>Loading habits...</mat-card-content>
+        </mat-card>
+      </ng-template>
+
     </div>
   `,
   styleUrls: ['./habits.component.sass']
 })
 export class HabitsComponent implements OnInit, OnDestroy {
   habits: Habit[] = [];
-  filteredHabits: Habit[] = [];
-  monthMatrix: MonthSlot[][] = [];
-  flatDays: MonthSlot[] = [];
-  gridTemplateColumns = '';
-  selectedMonthYear: MonthKey | null = null;
-  selectedYearFallback = 2026;
-  daysInMonth = 0;
-  newHabitName = '';
-  newHabitGoal = 30;
-  editingHabit: string | null = null;
-  editName = '';
-  searchTerm = '';
-  filterType = 'all';
-  habitProgressMap: Record<string, number> = {};
-  todayDayNumber: number | null = null;
-  currentWeekIndex = -1;
-  collapseWeekHeaders = false;
-  animationKey = 0;
+  formOpen = false;
+  editingHabitId: string | null = null;
+  habitForm: FormGroup;
   reduceMotion = false;
-  isMobile = false;
-  exportingXlsx = false;
-  private lastMonthKey: string | null = null;
-  private resizeListener?: () => void;
-
+  ready$!: Observable<boolean>;
+  activeCount = 0;
+  weeklyTargetOptions = [1, 2, 3, 4, 5, 6, 7];
+  remindersNativeSupported = false;
   private subscription: Subscription = new Subscription();
 
   constructor(
     private habitStore: HabitStoreService,
     private dialog: MatDialog,
     private themeService: ThemeService,
-    private snackBar: MatSnackBar,
-    private backupService: BackupService,
-    @Inject(PLATFORM_ID) private platformId: Object
-  ) {}
+    private fb: FormBuilder,
+    private notificationService: NotificationService
+  ) {
+    this.habitForm = this.fb.group({
+      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(24), this.nameUniqueValidator]],
+      frequencyType: ['daily', [Validators.required]],
+      weeklyTarget: [3],
+      minimumVersion: [''],
+      difficulty: ['easy'],
+      reminderEnabled: [false],
+      reminderTime: ['20:30'],
+      timerEnabled: [false],
+      timerMinutes: [10]
+    });
+  }
 
   ngOnInit(): void {
+    this.ready$ = this.habitStore.getReady();
     this.subscription.add(
-      combineLatest([
-        this.habitStore.getSelectedMonthYear(),
-        this.habitStore.getHabits(),
-        this.habitStore.getCompletions()
-      ]).subscribe(([monthYear, habits]) => {
-        this.selectedMonthYear = monthYear;
-        this.selectedYearFallback = monthYear.year;
-        this.habits = habits;
-        this.updateMatrix();
-        this.updateComputed();
-        this.applyFilters();
-        const monthKey = `${monthYear.year}-${monthYear.month}`;
-        if (this.lastMonthKey !== monthKey) {
-          this.animationKey++;
-          this.lastMonthKey = monthKey;
-        }
+      this.habitStore.getHabits().subscribe(habits => {
+        this.habits = [...habits].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+        this.activeCount = habits.filter(habit => habit.isActive).length;
+        this.nameControl?.updateValueAndValidity({ emitEvent: false });
       })
     );
     this.subscription.add(
@@ -253,230 +194,135 @@ export class HabitsComponent implements OnInit, OnDestroy {
         this.reduceMotion = reduce;
       })
     );
-
-    if (isPlatformBrowser(this.platformId)) {
-      this.updateViewport();
-      this.resizeListener = () => this.updateViewport();
-      window.addEventListener('resize', this.resizeListener);
-    }
+    this.remindersNativeSupported = this.notificationService.isNativeSchedulingAvailable();
   }
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
-    if (this.resizeListener && isPlatformBrowser(this.platformId)) {
-      window.removeEventListener('resize', this.resizeListener);
-    }
   }
 
-  applyFilters(): void {
-    let filtered = this.habits.filter(h => h.name.toLowerCase().includes(this.searchTerm.toLowerCase()));
-    if (this.filterType === 'low') {
-      filtered = filtered.filter(h => (this.habitProgressMap[h.id] || 0) < 40);
-    } else if (this.filterType === 'high') {
-      filtered = filtered.filter(h => (this.habitProgressMap[h.id] || 0) > 80);
-    }
-    this.filteredHabits = filtered;
+  get nameControl() {
+    return this.habitForm.get('name');
   }
 
-  markAllToday(): void {
-    if (this.todayDayNumber) {
-      this.habitStore.setAllForDay(this.todayDayNumber, true);
-    }
-  }
-
-  clearToday(): void {
-    if (this.todayDayNumber) {
-      this.habitStore.setAllForDay(this.todayDayNumber, false);
-    }
-  }
-
-  exportJson(): void {
-    try {
-      this.backupService.exportJsonBackup();
-      this.snackBar.open('Export completed', 'Close', { duration: 2000 });
-    } catch (error) {
-      console.error('Export failed', error);
-      this.snackBar.open('Export failed', 'Close', { duration: 2000 });
-    }
-  }
-
-  exportCsv(): void {
-    try {
-      this.backupService.exportDailyCountsCsv();
-      this.snackBar.open('Export completed', 'Close', { duration: 2000 });
-    } catch (error) {
-      console.error('Export failed', error);
-      this.snackBar.open('Export failed', 'Close', { duration: 2000 });
-    }
-  }
-
-  exportXlsx(): void {
-    this.exportingXlsx = true;
-    try {
-      this.backupService.exportXlsx();
-      this.snackBar.open('Export completed', 'Close', { duration: 2000 });
-    } catch (error) {
-      console.error('Export failed', error);
-      this.snackBar.open('Export failed', 'Close', { duration: 2000 });
-    } finally {
-      this.exportingXlsx = false;
-    }
-  }
-
-  triggerImportJson(input: HTMLInputElement): void {
-    input.click();
-  }
-
-  onImportJson(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    const file = target.files && target.files[0];
-    if (!file) {
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const raw = String(reader.result || '');
-        const parsed = JSON.parse(raw);
-        const validation = this.validateBackup(parsed);
-        if (!validation.valid) {
-          this.snackBar.open(validation.message, 'Close', { duration: 2500 });
-          return;
-        }
-
-        const dialogRef = this.dialog.open<ImportConfirmDialogComponent, ImportConfirmDialogData, 'replace' | 'merge' | undefined>(
-          ImportConfirmDialogComponent,
-          {
-            data: {
-              title: 'Import backup?',
-              message: 'This will replace your current data or merge it with the backup.'
-            }
-          }
-        );
-
-        dialogRef.afterClosed().subscribe(result => {
-          if (!result) {
-            return;
-          }
-          this.habitStore.restoreFromBackup(parsed, result);
-          if (parsed.appSettings?.theme === 'dark' || parsed.appSettings?.theme === 'light') {
-            this.themeService.setTheme(parsed.appSettings.theme);
-          }
-          if (Array.isArray(parsed.habits) && parsed.habits.length === 0) {
-            this.snackBar.open('Import completed (no habits found)', 'Close', { duration: 2500 });
-          } else {
-            this.snackBar.open(result === 'merge' ? 'Import completed (merged)' : 'Import completed', 'Close', { duration: 2000 });
-          }
-        });
-      } catch (error) {
-        console.error('Import failed', error);
-        this.snackBar.open('Invalid JSON file', 'Close', { duration: 2500 });
-      }
-    };
-    reader.onerror = () => {
-      this.snackBar.open('Failed to read file', 'Close', { duration: 2500 });
-    };
-    reader.readAsText(file);
-    target.value = '';
-  }
-
-  private validateBackup(data: any): { valid: boolean; message: string } {
-    if (!data || typeof data !== 'object') {
-      return { valid: false, message: 'Invalid backup file' };
-    }
-    if (data.schemaVersion !== 1) {
-      return { valid: false, message: 'Unsupported schema version' };
-    }
-    if (!data.exportedAt || typeof data.exportedAt !== 'string') {
-      return { valid: false, message: 'Missing exportedAt' };
-    }
-    if (!Array.isArray(data.habits)) {
-      return { valid: false, message: 'Missing habits list' };
-    }
-    if (!data.checks || typeof data.checks !== 'object') {
-      return { valid: false, message: 'Missing checks data' };
-    }
-    return { valid: true, message: 'OK' };
-  }
-
-  fillCurrentWeek(habitId: string): void {
-    if (this.currentWeekIndex >= 0 && this.currentWeekIndex < this.monthMatrix.length) {
-      this.monthMatrix[this.currentWeekIndex].forEach(slot => {
-        if (slot.dayNumber && !this.isChecked(slot.dayNumber, habitId)) {
-          this.toggleCheck(slot.dayNumber, habitId);
-        }
-      });
-    }
-  }
-
-  getCurrentWeekIndex(): number {
-    const todayDayNumber = this.habitStore.getTodayDayNumberIfInSelectedMonth();
-    if (!todayDayNumber) {
-      return -1;
-    }
-    return this.monthMatrix.findIndex(week => week.some(slot => slot.dayNumber === todayDayNumber));
-  }
-
-  private updateMatrix(): void {
-    if (this.selectedMonthYear) {
-      this.monthMatrix = DateUtils.getMonthMatrix(this.selectedMonthYear.year, this.selectedMonthYear.month);
-      this.daysInMonth = DateUtils.daysInMonth(this.selectedMonthYear.year, this.selectedMonthYear.month);
-      this.flatDays = this.monthMatrix.flat();
-      this.gridTemplateColumns = `var(--habit-col-width) var(--goal-col-width) var(--progress-col-width) var(--actions-col-width) repeat(${this.flatDays.length}, var(--day-col-width))`;
-    }
-  }
-
-  private updateComputed(): void {
-    if (!this.selectedMonthYear) return;
-    this.todayDayNumber = this.habitStore.getTodayDayNumberIfInSelectedMonth();
-    this.currentWeekIndex = this.getCurrentWeekIndex();
-    this.habitProgressMap = this.habits.reduce((acc, habit) => {
-      acc[habit.id] = this.habitStore.getHabitCompletionPercent(
-        habit.id,
-        this.selectedMonthYear!.year,
-        this.selectedMonthYear!.month
-      );
-      return acc;
-    }, {} as Record<string, number>);
-  }
-
-  addHabit(): void {
-    if (this.newHabitName.trim()) {
-      this.habitStore.addHabit(this.newHabitName.trim(), this.newHabitGoal);
-      this.newHabitName = '';
-      this.newHabitGoal = 30;
-    }
+  startAdd(): void {
+    this.editingHabitId = null;
+    this.habitForm.reset({ frequencyType: 'daily', weeklyTarget: 3, minimumVersion: '', difficulty: 'easy', reminderEnabled: false, reminderTime: '20:30', timerEnabled: false, timerMinutes: 10 });
+    this.formOpen = true;
   }
 
   startEdit(habit: Habit): void {
-    this.editingHabit = habit.id;
-    this.editName = habit.name;
-  }
-
-  saveRename(habitId: string): void {
-    if (this.editName.trim()) {
-      this.habitStore.renameHabit(habitId, this.editName.trim());
-    }
-    this.editingHabit = null;
-    this.editName = '';
+    this.editingHabitId = habit.id;
+    this.habitForm.setValue({
+      name: habit.name,
+      frequencyType: habit.frequencyType ?? 'daily',
+      weeklyTarget: habit.weeklyTarget ?? 3,
+      minimumVersion: habit.minimumVersion ?? '',
+      difficulty: habit.difficulty ?? 'easy',
+      reminderEnabled: habit.reminderEnabled ?? false,
+      reminderTime: habit.reminderTime ?? '20:30',
+      timerEnabled: habit.timerEnabled ?? false,
+      timerMinutes: habit.timerSeconds ? Math.max(1, Math.round(habit.timerSeconds / 60)) : 10
+    });
+    this.formOpen = true;
   }
 
   cancelEdit(): void {
-    this.editingHabit = null;
-    this.editName = '';
+    this.formOpen = false;
+    this.editingHabitId = null;
+    this.habitForm.reset({ frequencyType: 'daily', weeklyTarget: 3, minimumVersion: '', difficulty: 'easy', reminderEnabled: false, reminderTime: '20:30', timerEnabled: false, timerMinutes: 10 });
   }
 
-  updateGoal(habitId: string, goal: number): void {
-    if (goal > 0) {
-      this.habitStore.updateGoalDays(habitId, goal);
+  saveHabit(): void {
+    if (this.habitForm.invalid) {
+      return;
+    }
+    const name = this.nameControl?.value?.toString().trim() || '';
+    const frequencyType = (this.habitForm.get('frequencyType')?.value as 'daily' | 'weekly') || 'daily';
+    const weeklyTargetRaw = Number(this.habitForm.get('weeklyTarget')?.value);
+    const weeklyTarget = frequencyType === 'weekly' && Number.isFinite(weeklyTargetRaw)
+      ? Math.min(7, Math.max(1, weeklyTargetRaw))
+      : undefined;
+    const minimumVersion = String(this.habitForm.get('minimumVersion')?.value || '').trim();
+    const difficulty = String(this.habitForm.get('difficulty')?.value || 'easy') as 'easy' | 'medium' | 'hard';
+    const reminderEnabled = this.remindersNativeSupported && Boolean(this.habitForm.get('reminderEnabled')?.value);
+    const reminderTime = String(this.habitForm.get('reminderTime')?.value || '20:30');
+    const timerEnabled = Boolean(this.habitForm.get('timerEnabled')?.value);
+    const timerMinutesRaw = Number(this.habitForm.get('timerMinutes')?.value);
+    const timerMinutes = Number.isFinite(timerMinutesRaw) ? Math.max(1, Math.min(120, timerMinutesRaw)) : 10;
+    const timerSeconds = timerEnabled ? timerMinutes * 60 : 0;
+    if (!name) {
+      return;
+    }
+    if (this.editingHabitId) {
+      this.habitStore.updateHabit(this.editingHabitId, {
+        name,
+        frequencyType,
+        weeklyTarget,
+        minimumVersion,
+        difficulty,
+        timerEnabled,
+        timerSeconds,
+        timerAutoComplete: true,
+        type: timerEnabled ? 'timer' : 'check',
+        targetSeconds: timerSeconds,
+        allowManualComplete: false
+        ,
+        reminderEnabled,
+        reminderTime
+      });
+    } else {
+      this.habitStore.addHabit(name, frequencyType, weeklyTarget, minimumVersion, 30, timerEnabled, timerSeconds, true, difficulty);
+      const created = this.habitStore.getHabitsSync().find(h => h.name.toLowerCase() === name.toLowerCase());
+      if (created && reminderEnabled) {
+        this.habitStore.updateHabitReminder(created.id, true, reminderTime);
+      }
+    }
+    this.cancelEdit();
+  }
+
+  setTimerEnabled(enabled: boolean): void {
+    this.habitForm.patchValue({ timerEnabled: enabled });
+    if (!enabled) {
+      this.habitForm.patchValue({ timerMinutes: 10 });
     }
   }
+
+  setReminderEnabled(enabled: boolean): void {
+    this.habitForm.patchValue({ reminderEnabled: enabled });
+    if (!enabled) {
+      this.habitForm.patchValue({ reminderTime: '20:30' });
+    }
+  }
+
+  get isOverRecommended(): boolean {
+    return this.activeCount > 6;
+  }
+
+  get guidanceMessage(): string {
+    if (this.activeCount <= 3) {
+      return 'Great - keep it small. Consistency beats intensity.';
+    }
+    if (this.activeCount <= 6) {
+      return 'Nice. Try to keep it under 6 for the best streak success.';
+    }
+    return 'More habits = less consistency. Consider pausing some.';
+  }
+
+  toggleActive(habitId: string): void {
+    this.habitStore.toggleHabitActive(habitId);
+  }
+
+  moveHabit(fromIndex: number, toIndex: number): void {
+    this.habitStore.reorderHabits(fromIndex, toIndex);
+  }
+
 
   confirmDelete(habit: Habit): void {
     const dialogRef = this.dialog.open<ConfirmDialogComponent, ConfirmDialogData, boolean>(ConfirmDialogComponent, {
       data: {
         title: 'Delete habit?',
-        message: `Delete "${habit.name}" from your habits list?`,
+        message: `Delete "${habit.name}"? This won't remove history unless you confirm.`,
         confirmLabel: 'Delete'
       }
     });
@@ -488,27 +334,21 @@ export class HabitsComponent implements OnInit, OnDestroy {
     });
   }
 
-  isChecked(dayNumber: number, habitId: string): boolean {
-    return this.habitStore.isChecked(dayNumber, habitId);
-  }
-
-  toggleCheck(dayNumber: number, habitId: string): void {
-    this.habitStore.toggleCheck(dayNumber, habitId);
-  }
-
   trackByHabitId(index: number, habit: Habit): string {
     return habit.id;
   }
 
-  trackByWeekIndex(index: number): number {
-    return index;
-  }
-
-  trackBySlotIndex(index: number, slot: MonthSlot): string {
-    return `${slot.dayLabel}-${slot.dayNumber ?? 'x'}-${index}`;
-  }
-
-  private updateViewport(): void {
-    this.isMobile = window.innerWidth <= 768;
-  }
+  private nameUniqueValidator = (control: AbstractControl): ValidationErrors | null => {
+    const value = String(control.value || '').trim().toLowerCase();
+    if (!value) {
+      return null;
+    }
+    const duplicate = this.habits.some(habit => {
+      if (this.editingHabitId && habit.id === this.editingHabitId) {
+        return false;
+      }
+      return habit.name.toLowerCase() === value;
+    });
+    return duplicate ? { duplicate: true } : null;
+  };
 }

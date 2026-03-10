@@ -1,13 +1,13 @@
 import { Component, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatBottomSheetRef, MAT_BOTTOM_SHEET_DATA } from '@angular/material/bottom-sheet';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { Habit } from '../../models/habit.model';
 import { HabitStoreService } from '../../services/habit-store.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/confirm-dialog.component';
 import { HabitEditDialogComponent, HabitEditDialogData } from './mobile-habits.edit-dialog.component';
+import { DayCountPipe } from '../../shared/day-count.pipe';
 
 type HabitActionsData = {
   habit: Habit;
@@ -17,23 +17,23 @@ type HabitActionsData = {
 @Component({
   selector: 'app-habit-actions-sheet',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatDialogModule, MatIconModule],
+  imports: [CommonModule, MatDialogModule, MatIconModule, DayCountPipe],
   template: `
     <div class="sheet">
       <div class="sheet-header">
         <div class="sheet-title">{{ data.habit.name }}</div>
-        <div class="sheet-subtitle text-muted">Goal {{ data.habit.goalDays }} days</div>
+        <div class="sheet-subtitle text-muted">Goal {{ data.habit.goalDays | dayCount }}</div>
       </div>
       <div class="sheet-actions">
-        <button mat-stroked-button (click)="editName()">
+        <button class="btn btn-outline btn-sm" type="button" (click)="editName()">
           <mat-icon>edit</mat-icon>
           Edit name
         </button>
-        <button mat-stroked-button (click)="editGoal()">
+        <button class="btn btn-outline btn-sm" type="button" (click)="editGoal()">
           <mat-icon>calendar_month</mat-icon>
           Edit goal days
         </button>
-        <button mat-stroked-button color="warn" (click)="confirmDelete()">
+        <button class="btn btn-primary btn-sm" type="button" (click)="confirmDelete()">
           <mat-icon>delete</mat-icon>
           Delete
         </button>

@@ -1,24 +1,25 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { HabitStoreService } from './services/habit-store.service';
 import { ThemeService } from './services/theme.service';
 import { routeAnimations } from './shared/route-animations';
-
-type BeforeInstallPromptEvent = Event & {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-};
+import { BottomNavComponent } from './shared/bottom-nav/bottom-nav.component';
+import { NotificationService } from './services/notification.service';
+import { NotificationPermissionService } from './services/notification-permission.service';
+import { TabStateService } from './services/tab-state.service';
+import { SoundService } from './services/sound.service';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -32,9 +33,9 @@ type BeforeInstallPromptEvent = Event & {
     MatTabsModule,
     MatCardModule,
     MatFormFieldModule,
-    MatButtonModule,
     MatIconModule,
     MatMenuModule,
+    BottomNavComponent,
     CommonModule,
     FormsModule
   ],
@@ -62,17 +63,26 @@ export class App implements OnInit, OnDestroy {
     { value: 11, label: 'Dec' }
   ];
 
-  currentTheme: 'dark' | 'light' = 'dark';
   reduceMotion = false;
-  showInstallBanner = false;
-  private deferredPrompt: BeforeInstallPromptEvent | null = null;
-  private installListener?: (event: Event) => void;
+  pageTitle = 'Today';
+  showChrome = true;
 
   private subscription: Subscription = new Subscription();
 
-  constructor(private habitStore: HabitStoreService, private themeService: ThemeService) {}
+  constructor(
+    private habitStore: HabitStoreService,
+    private themeService: ThemeService,
+    private router: Router,
+    private notificationService: NotificationService,
+    private notificationPermissionService: NotificationPermissionService,
+    private soundService: SoundService,
+    private tabState: TabStateService,
+    @Inject(PLATFORM_ID) private platformId: object
+  ) {}
 
   ngOnInit(): void {
+    console.log(`App Version ${environment.appVersion} (Build ${environment.buildNumber})`);
+    this.enforceDarkTheme();
     this.subscription.add(
       this.habitStore.getSelectedMonthYear().subscribe(monthYear => {
         this.selectedYear = monthYear.year;
@@ -80,34 +90,33 @@ export class App implements OnInit, OnDestroy {
       })
     );
     this.subscription.add(
-      this.themeService.getTheme().subscribe(theme => {
-        this.currentTheme = theme;
-      })
-    );
-    this.subscription.add(
       this.themeService.getReducedMotion().subscribe(reduce => {
         this.reduceMotion = reduce;
       })
     );
-
-    if (typeof window !== 'undefined') {
-      const dismissed = window.localStorage?.getItem('pwa_install_banner_dismissed') === 'true';
-      this.installListener = (event: Event) => {
-        event.preventDefault();
-        this.deferredPrompt = event as BeforeInstallPromptEvent;
-        if (!dismissed && this.isMobileDevice()) {
-          this.showInstallBanner = true;
-        }
-      };
-      window.addEventListener('beforeinstallprompt', this.installListener);
+    this.subscription.add(
+      this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
+        this.pageTitle = this.getTitleFromUrl(this.router.url);
+        this.showChrome = !this.isSplashOrOnboarding(this.router.url);
+        this.tabState.setCurrentTab(this.getTabFromUrl(this.router.url));
+      })
+    );
+    this.pageTitle = this.getTitleFromUrl(this.router.url);
+    this.showChrome = !this.isSplashOrOnboarding(this.router.url);
+    this.tabState.setCurrentTab(this.getTabFromUrl(this.router.url));
+    this.notificationService.init();
+    this.soundService.init();
+    if (this.notificationService.isNativeSchedulingAvailable()) {
+      void this.notificationPermissionService.ensurePermission(false);
+    }
+    if (this.notificationService.isEnabled()) {
+      void this.notificationService.resyncForToday();
     }
   }
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
-    if (typeof window !== 'undefined' && this.installListener) {
-      window.removeEventListener('beforeinstallprompt', this.installListener);
-    }
+    this.notificationService.dispose();
   }
 
   onYearChange(): void {
@@ -118,39 +127,42 @@ export class App implements OnInit, OnDestroy {
     this.habitStore.setSelectedMonthYear(this.selectedYear, this.selectedMonth);
   }
 
-  toggleTheme(): void {
-    this.themeService.toggleTheme();
-  }
-
-  installPwa(): void {
-    if (!this.deferredPrompt) {
-      return;
-    }
-    void this.deferredPrompt.prompt();
-    void this.deferredPrompt.userChoice.then(choice => {
-      this.showInstallBanner = false;
-      this.deferredPrompt = null;
-      if (choice.outcome === 'dismissed') {
-        this.dismissInstallBanner();
-      }
-    });
-  }
-
-  dismissInstallBanner(): void {
-    this.showInstallBanner = false;
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.setItem('pwa_install_banner_dismissed', 'true');
-    }
-  }
-
   prepareRoute(outlet: RouterOutlet): string {
     return outlet?.activatedRouteData?.['animation'] || '';
   }
 
-  private isMobileDevice(): boolean {
-    if (typeof window === 'undefined') {
-      return false;
-    }
-    return window.matchMedia?.('(max-width: 768px)').matches ?? window.innerWidth <= 768;
+  private getTitleFromUrl(url: string): string {
+    if (url.startsWith('/overview')) return 'Overview';
+    if (url.startsWith('/habits')) return 'Habits';
+    if (url.startsWith('/profile')) return 'Profile';
+    return 'Today';
   }
+
+  private isSplashOrOnboarding(url: string): boolean {
+    return url.startsWith('/splash')
+      || url.startsWith('/onboarding')
+      || url.startsWith('/getting-started')
+      || url.startsWith('/system-loading')
+      || url.startsWith('/welcome')
+      || url.includes('setup');
+  }
+
+  private getTabFromUrl(url: string): string {
+    if (url.startsWith('/overview')) return 'overview';
+    if (url.startsWith('/habits')) return 'habits';
+    if (url.startsWith('/profile')) return 'profile';
+    return 'today';
+  }
+
+  private enforceDarkTheme(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.documentElement.classList.remove('light-theme');
+    document.documentElement.classList.add('dark-theme');
+    document.body.classList.remove('light-theme');
+    document.body.classList.add('dark-theme');
+  }
+
 }

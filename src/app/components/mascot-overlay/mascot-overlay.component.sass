@@ -1,0 +1,39 @@
+.mascot-overlay
+  position: fixed
+  inset: 0
+  pointer-events: none
+  z-index: 998
+  display: flex
+  align-items: center
+  justify-content: center
+  animation: mascotEnter 2s ease forwards
+
+.mascot-orb
+  width: 90px
+  height: 90px
+  border-radius: 50%
+  background: radial-gradient(circle, var(--theme-accent) 0%, rgba(0,0,0,0) 60%)
+  filter: blur(0.5px)
+  opacity: 0.9
+
+.mascot-core
+  position: absolute
+  width: 48px
+  height: 48px
+  border-radius: 12px
+  background: linear-gradient(135deg, var(--theme-accent), color-mix(in oklab, var(--theme-accent) 50%, black))
+  transform: rotate(45deg)
+  box-shadow: 0 0 20px var(--theme-glow)
+
+@keyframes mascotEnter
+  0%
+    transform: translate3d(60%, -40%, 0) scale(0.7)
+    opacity: 0
+  30%
+    transform: translate3d(0, 0, 0) scale(1)
+    opacity: 1
+  60%
+    transform: translate3d(0, 0, 0) scale(1.02) rotate(10deg)
+  100%
+    transform: translate3d(-60%, 40%, 0) scale(0.6)
+    opacity: 0

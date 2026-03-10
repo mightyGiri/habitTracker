@@ -1,0 +1,69 @@
+:host
+  display: block
+  margin-bottom: 12px
+
+.level-xp-banner
+  border-radius: 16px
+  padding: 12px 14px
+  border: 1px solid color-mix(in oklab, var(--system-border) 38%, transparent)
+  background: linear-gradient(180deg, rgba(10, 14, 26, 0.58), rgba(10, 14, 26, 0.42))
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, white 4%, transparent)
+  display: grid
+  gap: 8px
+
+  &.compact
+    padding: 10px 12px
+    gap: 6px
+
+    .banner-xp
+      font-size: 1rem
+
+    .banner-sub,
+    .banner-meta
+      font-size: 0.76rem
+
+.banner-top
+  display: flex
+  align-items: center
+  justify-content: space-between
+  gap: 8px
+
+.banner-label
+  font-size: 0.72rem
+  text-transform: uppercase
+  letter-spacing: 0.08em
+  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
+  font-weight: 700
+
+.banner-level
+  display: inline-flex
+
+.banner-main
+  display: grid
+  gap: 2px
+
+.banner-xp
+  color: var(--theme-text)
+  font-size: 1.15rem
+  font-weight: 800
+
+.banner-sub
+  color: color-mix(in oklab, var(--theme-text) 75%, var(--system-highlight))
+  font-size: 0.82rem
+
+.banner-progress
+  height: 6px
+  border-radius: 999px
+  background: rgba(255, 255, 255, 0.06)
+  border: 1px solid color-mix(in oklab, var(--system-border) 40%, transparent)
+  overflow: hidden
+
+.banner-progress-fill
+  height: 100%
+  border-radius: inherit
+  background: linear-gradient(90deg, var(--theme-accent), var(--accent-strong))
+
+.banner-meta
+  color: rgba(255, 255, 255, 0.72)
+  font-size: 0.78rem
+

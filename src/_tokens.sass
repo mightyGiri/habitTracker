@@ -1,0 +1,153 @@
+/* Design tokens */
+:root
+  /* safe area + shell spacing */
+  --safe-top: env(safe-area-inset-top, 0px)
+  --safe-bottom: env(safe-area-inset-bottom, 0px)
+  --page-pad: 18px
+  --page-pad-mobile: 14px
+  --tabbar-height: 72px
+
+  /* brand + accent */
+  --accent: #4c8dff
+  --accent-weak: color-mix(in oklab, var(--accent) 35%, transparent)
+  --accent-strong: color-mix(in oklab, var(--accent) 70%, black)
+  --accent-contrast: #1f1b16
+  --glow: 0 0 0 1px color-mix(in oklab, var(--accent) 30%, transparent), 0 0 18px color-mix(in oklab, var(--accent) 20%, transparent)
+
+  /* surfaces */
+  --bg: #070b16
+  --bg-soft: #0d1324
+  --card: #101625
+  --card-2: #0c1220
+  --border: color-mix(in oklab, white 10%, transparent)
+  --app-bg: var(--bg)
+  --surface-1: var(--card)
+  --surface-2: var(--card-2)
+  --border-subtle: var(--border)
+
+  /* text */
+  --text: rgba(255, 255, 255, 0.92)
+  --muted: rgba(255, 255, 255, 0.65)
+  --muted-2: rgba(255, 255, 255, 0.45)
+  --text-1: var(--text)
+  --text-2: var(--muted)
+  --text-muted: var(--muted-2)
+
+  /* layout + radius */
+  --radius-lg: 20px
+  --radius-md: 16px
+  --radius-sm: 12px
+  --radius: var(--radius-md)
+
+  --space-1: 8px
+  --space-2: 12px
+  --space-3: 16px
+  --space-4: 24px
+  --space-5: 32px
+  --pad-1: var(--space-1)
+  --pad-2: var(--space-2)
+  --pad-3: var(--space-3)
+
+  /* shadows */
+  --shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.3)
+  --shadow-card: 0 10px 24px rgba(0, 0, 0, 0.26)
+  --shadow-0: none
+  --glow-soft: 0 0 18px color-mix(in oklab, var(--accent) 12%, transparent)
+
+  /* typography */
+  --font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif
+  --font-size: 15px
+  --line-height: 1.35
+  --font-base: 15px
+  --font-scale: 1
+  --fs-title: 24px
+  --fs-body: 14px
+  --fs-muted: 12px
+  --fs-label: 12px
+  --text-title: 24px
+  --text-section: 13px
+  --text-value: 26px
+  --text-body: 15px
+  --text-label: 13px
+  --text-muted: 12px
+
+  /* motion */
+  --ease: cubic-bezier(.2, .8, .2, 1)
+  --dur-1: 120ms
+  --dur-2: 220ms
+
+  /* focus */
+  --focus: 0 0 0 3px color-mix(in oklab, var(--accent) 45%, transparent)
+
+  /* legacy token mapping */
+  --theme-bg: var(--bg)
+  --theme-bg-2: var(--bg-soft)
+  --theme-bg-spot-1: color-mix(in oklab, var(--accent) 12%, transparent)
+  --theme-bg-spot-2: color-mix(in oklab, var(--accent) 8%, transparent)
+  --theme-pattern: none
+  --theme-surface: var(--card)
+  --theme-surface-2: var(--card-2)
+  --theme-border: var(--border)
+  --theme-shadow: var(--shadow-card)
+  --theme-shadow-hover: 0 12px 26px rgba(0, 0, 0, 0.3)
+  --theme-text: var(--text)
+  --theme-text-muted: var(--muted)
+  --theme-text-inverse: #1f1b16
+  --theme-accent: var(--accent)
+  --theme-accent-soft: var(--accent-weak)
+  --theme-success: #3fb57a
+  --theme-success-soft: color-mix(in oklab, #3fb57a 18%, transparent)
+  --theme-warning: #f4b23a
+  --theme-danger: #ef4444
+  --theme-danger-soft: color-mix(in oklab, #ef4444 18%, transparent)
+  --success: var(--theme-success)
+  --danger: var(--theme-danger)
+  --theme-chart-grid: color-mix(in oklab, white 10%, transparent)
+  --theme-chart-text: color-mix(in oklab, white 80%, transparent)
+  --theme-glow: color-mix(in oklab, var(--accent) 30%, transparent)
+  --theme-input-bg: color-mix(in oklab, white 6%, transparent)
+  --theme-input-border: color-mix(in oklab, var(--accent) 35%, transparent)
+  --theme-input-border-hover: color-mix(in oklab, var(--accent) 55%, transparent)
+  --theme-input-focus: color-mix(in oklab, var(--accent) 45%, transparent)
+  --theme-nav-bg: color-mix(in oklab, black 70%, transparent)
+
+  --app-font-family: var(--font-family)
+  --app-font-size: var(--font-size)
+  --app-font: var(--app-font-family)
+  --app-accent: var(--accent)
+  --accent-10: color-mix(in oklab, var(--accent) 12%, transparent)
+  --accent-20: color-mix(in oklab, var(--accent) 20%, transparent)
+  --accent-28: color-mix(in oklab, var(--accent) 28%, transparent)
+  --accent-35: color-mix(in oklab, var(--accent) 35%, transparent)
+  --accent-45: color-mix(in oklab, var(--accent) 45%, transparent)
+  --accent-60: color-mix(in oklab, var(--accent) 60%, transparent)
+
+:root[data-accent='orange']
+  --accent: #f27a2a
+
+:root[data-accent='purple']
+  --accent: #7b68ee
+
+:root[data-accent='green']
+  --accent: #3fb57a
+
+:root[data-accent='teal']
+  --accent: #2fb6b1
+
+:root[data-accent='blue']
+  --accent: #4a90e2
+
+:root[data-accent='pink']
+  --accent: #ff6b9a
+
+:root[data-accent='red']
+  --accent: #ef4444
+
+:root[data-accent='yellow']
+  --accent: #f4b23a
+
+:root[data-accent='cyan']
+  --accent: #22d3ee
+
+:root[data-accent='violet']
+  --accent: #8b5cf6

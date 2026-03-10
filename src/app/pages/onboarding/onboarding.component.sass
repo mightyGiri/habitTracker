@@ -1,0 +1,356 @@
+.onboarding-flow
+  min-height: 100%
+  display: flex
+  align-items: flex-start
+  justify-content: center
+
+.onboarding-shell
+  width: min(680px, 100%)
+  display: grid
+  gap: 14px
+
+.panel-screen
+  display: grid
+  gap: 14px
+
+.cinematic-panel
+  border-radius: 22px
+  border: 1px solid color-mix(in oklab, var(--theme-border) 60%, transparent)
+  background: linear-gradient(180deg, rgba(9, 12, 20, 0.84), rgba(10, 14, 24, 0.72))
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32)
+  backdrop-filter: blur(10px)
+  -webkit-backdrop-filter: blur(10px)
+
+.kicker-label
+  color: rgba(255, 255, 255, 0.72)
+  font-size: 0.72rem
+  font-weight: 700
+  letter-spacing: 0.18em
+  text-transform: uppercase
+
+.hero-title
+  margin: 0
+  color: #fff
+  font-size: clamp(1.55rem, 4vw, 2.2rem)
+  line-height: 1.08
+  font-weight: 800
+  letter-spacing: -0.02em
+
+.hero-subtitle
+  margin: 0
+  color: rgba(255, 255, 255, 0.84)
+  line-height: 1.45
+  font-size: 0.96rem
+
+.intro-screen
+  justify-items: center
+  align-content: center
+  min-height: calc(100dvh - 140px)
+
+.intro-mark-wrap
+  width: 116px
+  height: 116px
+  position: relative
+  display: grid
+  place-items: center
+
+.intro-mark-glow
+  position: absolute
+  inset: 6px
+  border-radius: 50%
+  background: radial-gradient(circle, color-mix(in oklab, var(--theme-accent) 26%, transparent), transparent 72%)
+  filter: blur(10px)
+
+.intro-mark
+  width: 112px
+  height: 112px
+  object-fit: contain
+  position: relative
+  z-index: 1
+
+.intro-copy
+  width: 100%
+  display: grid
+  gap: 12px
+  text-align: center
+  padding: 20px 18px
+  justify-items: center
+
+.benefit-list
+  list-style: none
+  padding: 0
+  margin: 2px 0 0
+  width: 100%
+  display: grid
+  gap: 8px
+  text-align: left
+
+.benefit-item
+  padding: 10px 12px
+  border-radius: 14px
+  color: rgba(255, 255, 255, 0.86)
+  border: 1px solid color-mix(in oklab, var(--theme-border) 42%, transparent)
+  background: rgba(255, 255, 255, 0.02)
+
+  &::before
+    content: '•'
+    margin-right: 8px
+    color: color-mix(in oklab, var(--theme-accent) 70%, white 10%)
+
+.cta-stack
+  width: 100%
+  display: grid
+  gap: 8px
+  margin-top: 4px
+
+.cta-primary
+  min-height: 54px
+  border-radius: 16px
+
+.cta-primary.compact
+  min-height: 46px
+  width: auto
+  min-width: 140px
+
+.cta-secondary
+  color: rgba(255, 255, 255, 0.78)
+  min-height: 40px
+
+.wizard-progress-wrap
+  position: sticky
+  top: 0
+  z-index: 2
+  display: grid
+  gap: 8px
+  padding-top: 2px
+  background: linear-gradient(180deg, rgba(8, 12, 22, 0.78), rgba(8, 12, 22, 0))
+
+.wizard-progress-track
+  width: 100%
+  height: 5px
+  border-radius: 999px
+  background: rgba(255, 255, 255, 0.06)
+  border: 1px solid color-mix(in oklab, var(--theme-border) 40%, transparent)
+  overflow: hidden
+
+.wizard-progress-fill
+  height: 100%
+  width: 0
+  border-radius: inherit
+  background: linear-gradient(90deg, color-mix(in oklab, var(--theme-accent) 82%, white 8%), color-mix(in oklab, #60a5fa 45%, var(--theme-accent)))
+  box-shadow: 0 0 16px color-mix(in oklab, var(--theme-accent) 18%, transparent)
+  transition: width 220ms ease
+
+.wizard-progress-label
+  text-align: right
+  font-size: 0.78rem
+
+.wizard-card
+  display: grid
+  gap: 12px
+  padding: 18px
+
+.field-label
+  text-align: left
+  color: rgba(255, 255, 255, 0.82)
+  font-weight: 600
+  font-size: 0.9rem
+
+.onboarding-input
+  width: 100%
+  border-radius: 14px
+  border: 1px solid color-mix(in oklab, var(--theme-border) 55%, transparent)
+  background: rgba(8, 12, 20, 0.6)
+  color: #fff
+  padding: 10px 12px
+  resize: vertical
+
+  &::placeholder
+    color: rgba(255, 255, 255, 0.45)
+
+.goal-grid
+  display: grid
+  grid-template-columns: repeat(2, minmax(0, 1fr))
+  gap: 10px
+
+.goal-option
+  appearance: none
+  width: 100%
+  text-align: left
+  border-radius: 16px
+  border: 1px solid color-mix(in oklab, var(--theme-border) 55%, transparent)
+  background: rgba(10, 14, 24, 0.62)
+  color: rgba(255, 255, 255, 0.92)
+  padding: 12px 14px
+  font-weight: 600
+  cursor: pointer
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease, background 160ms ease
+
+  &:hover
+    transform: translateY(-1px)
+    border-color: color-mix(in oklab, var(--theme-accent) 35%, transparent)
+    box-shadow: 0 0 14px color-mix(in oklab, var(--theme-accent) 14%, transparent)
+
+  &.is-active
+    border-color: color-mix(in oklab, var(--theme-accent) 55%, transparent)
+    background: color-mix(in oklab, var(--theme-accent) 10%, rgba(10, 14, 24, 0.62))
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--theme-accent) 14%, transparent) inset, 0 0 16px color-mix(in oklab, var(--theme-accent) 16%, transparent)
+
+.custom-goal-wrap
+  display: grid
+  gap: 8px
+
+.validation-error
+  text-align: left
+  font-size: 0.84rem
+  color: rgba(255, 255, 255, 0.74)
+
+.char-count
+  text-align: right
+  font-size: 0.8rem
+  color: rgba(255, 255, 255, 0.64)
+
+.wizard-actions
+  display: flex
+  align-items: center
+  justify-content: flex-end
+  gap: 10px
+  margin-top: 4px
+
+.wizard-actions.split
+  justify-content: space-between
+
+.summary-card
+  display: grid
+  gap: 8px
+  border-radius: 16px
+  border: 1px solid color-mix(in oklab, var(--theme-border) 45%, transparent)
+  background: rgba(255, 255, 255, 0.02)
+  padding: 12px
+
+.summary-row
+  display: grid
+  grid-template-columns: 80px 1fr
+  gap: 10px
+  align-items: start
+
+.summary-key
+  color: rgba(255, 255, 255, 0.68)
+  font-size: 0.84rem
+  font-weight: 600
+
+.summary-value
+  color: #fff
+  font-weight: 600
+  line-height: 1.35
+
+.summary-why
+  color: rgba(255, 255, 255, 0.88)
+
+.wizard-footer
+  display: flex
+  justify-content: center
+
+.loading-screen
+  min-height: calc(100dvh - 140px)
+  align-content: center
+
+.loading-shell
+  display: grid
+  justify-items: center
+  gap: 10px
+  padding: 24px 18px
+  text-align: center
+
+.aura-stage
+  width: min(280px, 72vw)
+  height: min(280px, 72vw)
+  position: relative
+  display: grid
+  place-items: center
+  margin-bottom: 8px
+
+.aura-ring
+  position: absolute
+  border-radius: 50%
+  border: 1px solid color-mix(in oklab, var(--theme-accent) 25%, transparent)
+  box-shadow: 0 0 26px color-mix(in oklab, var(--theme-accent) 14%, transparent)
+  animation: ringPulse 2.4s ease-in-out infinite
+
+.aura-ring-one
+  inset: 16%
+
+.aura-ring-two
+  inset: 6%
+  animation-delay: 0.35s
+  opacity: 0.7
+
+.silhouette-core
+  position: absolute
+  width: 38%
+  height: 38%
+  border-radius: 50%
+  background: radial-gradient(circle, color-mix(in oklab, var(--theme-accent) 20%, rgba(255,255,255,0.05)), transparent 70%)
+  filter: blur(12px)
+
+.silhouette-shape
+  position: relative
+  width: 38%
+  height: 56%
+  border-radius: 44% 44% 34% 34% / 32% 32% 64% 64%
+  background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03))
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05)
+
+  &::before
+    content: ''
+    position: absolute
+    width: 52%
+    height: 28%
+    top: -16%
+    left: 24%
+    border-radius: 50%
+    background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.04))
+
+.loading-title
+  color: #fff
+  font-size: 1.1rem
+  font-weight: 700
+
+.loading-subtitle
+  color: rgba(255,255,255,0.8)
+  font-size: 0.92rem
+
+.reduce-motion
+  .wizard-progress-fill,
+  .goal-option,
+  .aura-ring
+    animation: none !important
+    transition: none !important
+
+@keyframes ringPulse
+  0%, 100%
+    transform: scale(1)
+    opacity: 0.55
+  50%
+    transform: scale(1.03)
+    opacity: 0.9
+
+@media (max-width: 600px)
+  .goal-grid
+    grid-template-columns: 1fr
+
+  .wizard-actions.split
+    flex-direction: column
+    align-items: stretch
+
+  .cta-primary.compact
+    width: 100%
+
+  .summary-row
+    grid-template-columns: 1fr
+    gap: 4px
+
+  .intro-copy,
+  .wizard-card,
+  .loading-shell
+    padding: 16px 14px

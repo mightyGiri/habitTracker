@@ -1,59 +1,58 @@
-# HabitTracker
+# Level-Up Habit Tracker
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.11.
+Level-Up is a habit tracking app focused on daily momentum: complete habits, build streaks, earn XP, and level up. It runs as an Angular web app and ships to Android via Capacitor.
 
-## Development server
+The app centers around a "Today" flow with habit completion, streak status, insights, and timer-based habits (e.g., Meditation). All data is stored locally for offline-first use.
 
-To start a local development server, run:
+For deeper docs, see `docs/README.md`.
 
+## Features
+- Daily habits list with completion and skip logic
+- Streak tracking, XP, and level progression
+- Insights charts (monthly totals, completion trends, top habits)
+- Timer-based habits (Meditation timer)
+- Local notifications (Android, via Capacitor)
+- Backup/export (JSON/CSV/XLSX)
+- Theme and personalization settings
+
+## Tech stack
+- Angular 20 + RxJS
+- Angular Material UI
+- Capacitor (Android)
+- Chart.js
+- IndexedDB via `idb` (with localStorage fallback)
+
+## Quick start
 ```bash
-ng serve
+npm install
+npm run start
 ```
+Open `http://localhost:4200/`.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
+## Run on Android (Capacitor)
 ```bash
-ng generate component component-name
+npm run build:android
+npx cap open android
 ```
+Then build/run from Android Studio.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Environment requirements
+- Node.js + npm (TODO: confirm required versions)
+- Android Studio (for Android builds)
+- JDK + Android SDK (TODO: confirm required versions)
 
+## Folder structure
+See `docs/ARCHITECTURE.md` for the structure and responsibilities.
+
+## Release build (AAB)
 ```bash
-ng generate --help
+npm run build:android
+cd android
+gradlew.bat bundleRelease
 ```
+See `docs/RELEASE_GUIDE.md` for signing and Play Console steps.
 
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Troubleshooting
+- Android Gradle sync errors: run `npx cap sync android`, then sync in Android Studio.
+- Stale Android build: `cd android` then `gradlew.bat clean` and rebuild.
+- Web assets not updated: re-run `npm run build` or `npm run build:android`.

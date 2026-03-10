@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
-export type AppTheme = 'dark' | 'light';
+export type AppTheme = 'dark';
 
 const STORAGE_KEY = 'habit_tracker_theme';
+const THEME_KEY = 'themeKey';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
@@ -31,27 +32,26 @@ export class ThemeService {
     return this.reduceMotion$.value;
   }
 
-  toggleTheme(): void {
-    const next: AppTheme = this.theme$.value === 'dark' ? 'light' : 'dark';
-    this.setTheme(next);
-  }
-
-  setTheme(theme: AppTheme): void {
-    this.theme$.next(theme);
+  setTheme(theme: AppTheme = 'dark', themeKey?: string): void {
+    this.theme$.next('dark');
     if (typeof document !== 'undefined') {
-      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.documentElement.classList.remove('light-theme');
+      document.documentElement.classList.add('dark-theme');
+      if (typeof document.body !== 'undefined') {
+        document.body.classList.remove('light-theme');
+        document.body.classList.add('dark-theme');
+      }
     }
     if (typeof window !== 'undefined' && window.localStorage) {
-      localStorage.setItem(STORAGE_KEY, theme);
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(THEME_KEY);
+      localStorage.removeItem('theme');
     }
   }
 
   private initTheme(): void {
-    let stored: AppTheme | null = null;
-    if (typeof window !== 'undefined' && window.localStorage) {
-      stored = (localStorage.getItem(STORAGE_KEY) as AppTheme) || null;
-    }
-    this.setTheme(stored || 'dark');
+    this.setTheme('dark', 'dark');
   }
 
   private initReducedMotion(): void {
