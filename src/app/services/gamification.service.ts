@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Habit, HabitCompletion, HabitDifficulty } from '../models/habit.model';
-import { LevelProgress, computeLevelFromTotalXp, getXpRequiredForNextLevel } from '../shared/level-utils';
+import { LevelProgress, CurrentLevelProgress, computeLevelFromTotalXp, computeCurrentLevelProgress, getXpRequiredForNextLevel } from '../shared/level-utils';
 import { GAMIFICATION_CONFIG, GamificationConfig } from '../config/gamification.config';
 
 export type DayXpSummary = {
@@ -221,6 +221,19 @@ export class GamificationService {
 
   xpNeededForNextLevel(level: number): number {
     return getXpRequiredForNextLevel(level);
+  }
+
+  /**
+   * Returns a CurrentLevelProgress snapshot for a given totalXP value.
+   * Wrap in a computed(() => ...) signal in consuming components if needed.
+   *
+   * Example:
+   *   readonly levelProgress = computed(() =>
+   *     this.gamificationService.getCurrentLevelProgress(this.totalXPSignal())
+   *   );
+   */
+  getCurrentLevelProgress(totalXP: number): CurrentLevelProgress {
+    return computeCurrentLevelProgress(totalXP);
   }
 
   getWeeklyQuote(percent: number): string {

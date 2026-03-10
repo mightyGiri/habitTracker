@@ -67,6 +67,7 @@ export class HabitStoreService {
   private profile$ = new BehaviorSubject<ProfileSettings>({});
   private ready$ = new BehaviorSubject<boolean>(false);
   private badgeUnlockEvents$ = new Subject<AchievementBadgeId[]>();
+  private questBonusXp$ = new BehaviorSubject<number>(0);
   private defaultsSeeded = false;
   private isHydrated = false;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -78,9 +79,11 @@ export class HabitStoreService {
     private achievements: AchievementsService
   ) {
     void this.initialize();
-    combineLatest([this.habits$, this.completions$]).subscribe(([habits, completions]) => {
-      this.levelStats$.next(this.buildLevelStats(habits, completions));
-    });
+    combineLatest([this.habits$, this.completions$, this.questBonusXp$]).subscribe(
+      ([habits, completions, questBonusXp]) => {
+        this.levelStats$.next(this.buildLevelStats(habits, completions, questBonusXp));
+      }
+    );
   }
 
   private async initialize(): Promise<void> {
@@ -112,6 +115,7 @@ export class HabitStoreService {
       if (state.selectedMonthYear) {
         this.selectedMonthYear$.next(state.selectedMonthYear);
       }
+      this.questBonusXp$.next(state.questBonusXP ?? 0);
       this.isHydrated = true;
       this.enforceAdminDateLock();
       this.refreshUnlockedBadges(false);
@@ -376,8 +380,23 @@ export class HabitStoreService {
     return this.computeTotalXpFromState(this.habits$.value, this.completions$.value);
   }
 
-  private buildLevelStats(habits: Habit[], completions: HabitCompletion): LevelProgress {
-    const totalXP = this.computeTotalXpFromState(habits, completions);
+  /**
+   * Awards bonus XP from a claimed quest reward.
+   * The amount is added to `questBonusXp$` which feeds directly into
+   * `buildLevelStats`, so Overview/Profile level bars update immediately.
+   */
+  addQuestBonusXP(amount: number): void {
+    if (amount <= 0) return;
+    this.questBonusXp$.next(this.questBonusXp$.value + amount);
+    this.saveToStorage();
+  }
+
+  getQuestBonusXPSync(): number {
+    return this.questBonusXp$.value;
+  }
+
+  private buildLevelStats(habits: Habit[], completions: HabitCompletion, questBonusXp = 0): LevelProgress {
+    const totalXP = this.computeTotalXpFromState(habits, completions) + questBonusXp;
     return this.gamification.computeLevelProgressFromTotalXP(totalXP);
   }
 
@@ -1285,7 +1304,8 @@ export class HabitStoreService {
         onboardingCompleted: this.onboardingCompleted$.value,
         userProfile: this.userProfile$.value ?? undefined,
         profile: this.profile$.value,
-        defaultsSeeded: this.defaultsSeeded
+        defaultsSeeded: this.defaultsSeeded,
+        questBonusXP: this.questBonusXp$.value
       };
 
     this.pendingState = data;

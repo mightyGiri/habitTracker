@@ -21,6 +21,7 @@ import { DayCountPipe } from '../../shared/day-count.pipe';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AchievementsService } from '../../services/achievements.service';
 import { SoundService } from '../../services/sound.service';
+import { QuestService } from '../../services/quest.service';
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -469,6 +470,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     private achievementsService: AchievementsService,
     private soundService: SoundService,
     private themeService: ThemeService,
+    private questService: QuestService,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private cdr: ChangeDetectorRef,
@@ -785,6 +787,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.refreshTodayState();
     const summaryAfter = this.habitStore.getDaySummary(this.selectedDate);
     this.handleRewards(summaryBefore, summaryAfter);
+    // Update quest progress on every toggle (complete OR uncomplete) for today only.
+    // Called here — outside the isDoneNow guard — so unchecking a habit that drops
+    // the count below a quest threshold immediately removes today's counted day.
+    if (this.isSameDate(this.selectedDate, this.todayDate)) {
+      this.questService.checkQuestProgress(summaryAfter.doneCount, summaryAfter.totalCount);
+    }
     const isPerfectAfter = this.isStrictPerfect(summaryAfter);
     if (this.isSameDate(this.selectedDate, this.todayDate) && wasPerfectBefore && !isPerfectAfter) {
       this.showToast('Perfect bonus removed');

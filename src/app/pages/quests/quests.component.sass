@@ -1,0 +1,170 @@
+.quests-page
+  display: flex
+  flex-direction: column
+  gap: 16px
+  padding-bottom: calc(var(--tabbar-height, 72px) + 24px)
+
+// ── Page header ────────────────────────────────────────────────────────────────
+
+.quests-header
+  display: flex
+  flex-direction: column
+  gap: 12px
+
+.quests-header__title-row
+  display: flex
+  align-items: center
+  gap: 12px
+
+.quests-header__icon-wrap
+  display: flex
+  align-items: center
+  justify-content: center
+  width: 44px
+  height: 44px
+  border-radius: var(--radius-sm)
+  background: color-mix(in oklab, var(--accent) 14%, transparent)
+  border: 1px solid color-mix(in oklab, var(--accent) 22%, transparent)
+  flex-shrink: 0
+
+  mat-icon
+    font-size: 24px
+    width: 24px
+    height: 24px
+    color: var(--accent)
+
+.quests-header__title
+  margin: 0
+  font-size: 22px
+  font-weight: 800
+  color: var(--text-1)
+  line-height: 1.1
+
+.quests-header__subtitle
+  margin: 2px 0 0
+  font-size: 13px
+  color: var(--text-2)
+
+.quests-header__chips
+  display: flex
+  flex-wrap: wrap
+  gap: 8px
+
+.quests-chip
+  display: inline-flex
+  align-items: center
+  gap: 4px
+  font-size: 12px
+  font-weight: 600
+  padding: 4px 10px
+  border-radius: 99px
+  background: color-mix(in oklab, var(--border-subtle) 50%, transparent)
+  color: var(--text-2)
+  border: 1px solid color-mix(in oklab, var(--border-subtle) 40%, transparent)
+
+  mat-icon
+    font-size: 13px
+    width: 13px
+    height: 13px
+
+  &--gold
+    color: #facc15
+    background: color-mix(in oklab, #facc15 12%, transparent)
+    border-color: color-mix(in oklab, #facc15 20%, transparent)
+
+    mat-icon
+      color: #facc15
+
+  &--green
+    color: #4ade80
+    background: color-mix(in oklab, #4ade80 10%, transparent)
+    border-color: color-mix(in oklab, #4ade80 18%, transparent)
+
+    mat-icon
+      color: #4ade80
+
+// ── Tab bar ────────────────────────────────────────────────────────────────────
+
+.quests-tabs
+  display: flex
+  gap: 4px
+  padding: 4px
+  border-radius: var(--radius-sm)
+  background: color-mix(in oklab, var(--surface-2) 80%, transparent)
+  border: 1px solid color-mix(in oklab, var(--border-subtle) 40%, transparent)
+
+.quests-tab
+  flex: 1
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  gap: 6px
+  padding: 8px 12px
+  border-radius: calc(var(--radius-sm) - 2px)
+  border: none
+  background: transparent
+  color: var(--text-2)
+  font-family: inherit
+  font-size: 13px
+  font-weight: 600
+  cursor: pointer
+  transition: background 160ms var(--ease), color 160ms var(--ease)
+
+  &:hover
+    color: var(--text-1)
+    background: color-mix(in oklab, var(--border-subtle) 30%, transparent)
+
+  &--active
+    background: color-mix(in oklab, var(--accent) 14%, transparent)
+    color: var(--text-1)
+    border: 1px solid color-mix(in oklab, var(--accent) 22%, transparent)
+
+.quests-tab__badge
+  font-size: 11px
+  font-weight: 700
+  padding: 1px 6px
+  border-radius: 99px
+  background: color-mix(in oklab, var(--accent) 22%, transparent)
+  color: var(--accent)
+  line-height: 1.5
+
+  &--green
+    background: color-mix(in oklab, #4ade80 16%, transparent)
+    color: #4ade80
+
+// ── Card list ──────────────────────────────────────────────────────────────────
+
+section
+  display: flex
+  flex-direction: column
+  gap: 12px
+
+// ── Empty states ───────────────────────────────────────────────────────────────
+
+.quests-empty
+  display: flex
+  flex-direction: column
+  align-items: center
+  gap: 8px
+  padding: 48px 24px
+  text-align: center
+  color: var(--text-2)
+
+  mat-icon
+    font-size: 40px
+    width: 40px
+    height: 40px
+    opacity: 0.4
+
+.quests-empty__title
+  margin: 0
+  font-size: 15px
+  font-weight: 700
+  color: var(--text-2)
+
+.quests-empty__sub
+  margin: 0
+  font-size: 13px
+  color: var(--text-muted)
+  max-width: 260px
+  line-height: 1.5

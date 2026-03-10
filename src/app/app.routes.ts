@@ -51,6 +51,12 @@ export const routes: Routes = [
     canMatch: [onboardingGuard]
   },
   {
+    path: 'quests',
+    loadComponent: () => import('./pages/quests/quests.component').then(m => m.QuestsComponent),
+    data: { animation: 'quests' },
+    canMatch: [onboardingGuard]
+  },
+  {
     path: 'profile',
     loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent),
     data: { animation: 'profile' },

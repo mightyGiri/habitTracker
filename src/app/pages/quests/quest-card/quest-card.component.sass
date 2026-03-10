@@ -1,0 +1,299 @@
+.quest-card
+  position: relative
+  padding: 16px
+  border-radius: var(--radius-md)
+  border: 1px solid color-mix(in oklab, var(--border-subtle) 60%, transparent)
+  background: linear-gradient(160deg, color-mix(in oklab, var(--surface-1) 96%, white 1%), var(--surface-2))
+  box-shadow: var(--shadow-card)
+  cursor: pointer
+  transition: transform 160ms var(--ease), box-shadow 160ms var(--ease), border-color 160ms var(--ease)
+  outline: none
+
+  &:hover
+    transform: translateY(-2px)
+    box-shadow: var(--shadow-soft), var(--glow-soft)
+    border-color: color-mix(in oklab, var(--accent) 30%, transparent)
+
+  &:focus-visible
+    box-shadow: var(--focus), var(--shadow-card)
+
+  &--ready
+    border-color: color-mix(in oklab, var(--accent) 50%, transparent)
+    box-shadow: var(--shadow-card), 0 0 18px color-mix(in oklab, var(--accent) 14%, transparent)
+
+  &--completed
+    opacity: 0.72
+
+  &--expanded
+    border-color: color-mix(in oklab, var(--accent) 28%, transparent)
+
+// ── Header ────────────────────────────────────────────────────────────────────
+
+.quest-card__header
+  display: flex
+  align-items: center
+  justify-content: space-between
+  gap: 8px
+  margin-bottom: 10px
+
+.quest-card__meta
+  display: flex
+  align-items: center
+  gap: 8px
+  flex-wrap: wrap
+
+.quest-card__type-badge
+  font-size: 11px
+  font-weight: 700
+  letter-spacing: 0.06em
+  text-transform: uppercase
+  padding: 3px 8px
+  border-radius: 99px
+  background: color-mix(in oklab, var(--accent) 14%, transparent)
+  color: var(--accent)
+  border: 1px solid color-mix(in oklab, var(--accent) 22%, transparent)
+
+.quest-card__days-left
+  display: inline-flex
+  align-items: center
+  gap: 3px
+  font-size: 12px
+  color: var(--text-2)
+
+  mat-icon
+    font-size: 13px
+    width: 13px
+    height: 13px
+
+.quest-card__claimed-tag
+  display: inline-flex
+  align-items: center
+  gap: 3px
+  font-size: 12px
+  font-weight: 600
+  color: #4ade80
+
+  mat-icon
+    font-size: 13px
+    width: 13px
+    height: 13px
+
+.quest-card__xp-badge
+  display: inline-flex
+  align-items: center
+  gap: 2px
+  font-size: 13px
+  font-weight: 700
+  color: #facc15
+  white-space: nowrap
+
+  mat-icon
+    font-size: 15px
+    width: 15px
+    height: 15px
+    color: #facc15
+
+// ── Title & description ───────────────────────────────────────────────────────
+
+.quest-card__title
+  margin: 0 0 4px
+  font-size: 15px
+  font-weight: 700
+  color: var(--text-1)
+  line-height: 1.25
+
+.quest-card__desc
+  margin: 0 0 14px
+  font-size: 13px
+  color: var(--text-2)
+  line-height: 1.45
+
+// ── Progress bar ──────────────────────────────────────────────────────────────
+
+.quest-card__progress
+  margin-bottom: 10px
+
+.quest-card__progress-labels
+  display: flex
+  justify-content: space-between
+  align-items: center
+  margin-bottom: 6px
+
+.quest-card__progress-right
+  display: flex
+  align-items: center
+  gap: 2px
+
+.quest-card__progress-text
+  font-size: 12px
+  color: var(--text-2)
+
+.quest-card__progress-pct
+  font-size: 12px
+  font-weight: 700
+  color: var(--text-1)
+
+.quest-card__chevron
+  font-size: 18px
+  width: 18px
+  height: 18px
+  color: var(--text-2)
+  transition: transform 240ms var(--ease)
+
+  &--open
+    transform: rotate(180deg)
+
+.quest-card__progress-track
+  height: 6px
+  width: 100%
+  border-radius: 99px
+  background: color-mix(in oklab, var(--border-subtle) 60%, transparent)
+  overflow: hidden
+
+.quest-card__progress-fill
+  height: 100%
+  border-radius: 99px
+  background: linear-gradient(90deg, var(--accent), color-mix(in oklab, var(--accent) 70%, white))
+  transition: width 400ms var(--ease)
+
+  &--done
+    background: linear-gradient(90deg, #4ade80, #22d3ee)
+
+// ── Week breakdown (expand/collapse) ─────────────────────────────────────────
+
+.quest-card__week
+  overflow: hidden
+  max-height: 0
+  opacity: 0
+  transition: max-height 300ms var(--ease), opacity 220ms ease
+
+  &--open
+    max-height: 140px
+    opacity: 1
+
+.quest-card__week-inner
+  display: flex
+  gap: 0
+  padding-top: 12px
+  padding-bottom: 4px
+  border-top: 1px solid color-mix(in oklab, var(--border-subtle) 35%, transparent)
+  margin-top: 10px
+
+// ── Day column ────────────────────────────────────────────────────────────────
+
+.quest-day
+  flex: 1
+  display: flex
+  flex-direction: column
+  align-items: center
+  gap: 4px
+  min-width: 0
+
+  &--future
+    opacity: 0.45
+
+// Day name label — "Mon", "Tue" …
+.quest-day__name
+  font-size: 10px
+  font-weight: 600
+  color: var(--text-2)
+  text-transform: uppercase
+  letter-spacing: 0.04em
+
+// Circle indicator
+.quest-day__circle
+  width: 28px
+  height: 28px
+  border-radius: 50%
+  display: flex
+  align-items: center
+  justify-content: center
+  border: 1.5px solid color-mix(in oklab, var(--border-subtle) 70%, transparent)
+  background: transparent
+  transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease
+  flex-shrink: 0
+
+  mat-icon
+    font-size: 14px
+    width: 14px
+    height: 14px
+    color: var(--text-2)
+
+// Counted day — filled green
+.quest-day--counted .quest-day__circle
+  background: #4ade80
+  border-color: #4ade80
+
+  mat-icon
+    color: #052e16
+
+// Today — glowing accent border (uncounted state)
+.quest-day--today:not(.quest-day--counted) .quest-day__circle
+  border-color: var(--accent)
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 20%, transparent)
+
+// Today counted — green fill + accent glow
+.quest-day--today.quest-day--counted .quest-day__circle
+  box-shadow: 0 0 0 3px color-mix(in oklab, #4ade80 22%, transparent)
+
+// Short date — "Mar 8"
+.quest-day__date
+  font-size: 10px
+  color: var(--text-2)
+  white-space: nowrap
+  overflow: hidden
+  text-overflow: ellipsis
+  max-width: 100%
+  text-align: center
+
+// Habit count — "5/6"
+.quest-day__count
+  font-size: 10px
+  font-weight: 600
+  color: var(--text-muted)
+  min-height: 13px
+
+.quest-day--counted .quest-day__count
+  color: #4ade80
+
+// ── Completed done row ────────────────────────────────────────────────────────
+
+.quest-card__done-row
+  display: flex
+  align-items: center
+  gap: 6px
+  font-size: 13px
+  color: #4ade80
+  font-weight: 600
+  margin-top: 4px
+
+  mat-icon
+    font-size: 17px
+    width: 17px
+    height: 17px
+
+// ── Claim button ──────────────────────────────────────────────────────────────
+
+.quest-card__claim-btn
+  display: inline-flex
+  align-items: center
+  gap: 6px
+  font-size: 13px
+  font-weight: 700
+  padding: 9px 18px
+  border-radius: var(--radius-sm)
+  width: 100%
+  justify-content: center
+  margin-top: 4px
+  animation: questClaimPulse 2s ease-in-out infinite
+
+  mat-icon
+    font-size: 17px
+    width: 17px
+    height: 17px
+
+@keyframes questClaimPulse
+  0%, 100%
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 40%, transparent)
+  50%
+    box-shadow: 0 0 0 6px color-mix(in oklab, var(--accent) 0%, transparent)

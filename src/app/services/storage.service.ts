@@ -20,6 +20,8 @@ export type PersistedState = {
   userProfile?: UserProfile;
   profile?: ProfileSettings;
   defaultsSeeded?: boolean;
+  /** Accumulated XP from claimed quest rewards — kept separate from habit XP. */
+  questBonusXP?: number;
   settings?: {
     theme?: AppTheme;
   };
