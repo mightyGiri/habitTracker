@@ -7,6 +7,8 @@
   display: flex
   flex-direction: column
   gap: 12px
+  border: 1px solid color-mix(in oklab, var(--system-border) 60%, transparent)
+  box-shadow: var(--system-shadow-deep), inset 0 0 16px rgba(0, 0, 0, 0.35)
 
 .hero-grid
   display: grid
@@ -19,15 +21,16 @@
   gap: 6px
   padding: 10px 12px
   border-radius: var(--radius-md)
-  background: var(--theme-surface-2)
-  border: 1px solid var(--theme-border)
+  background: transparent
+  border: 1px solid color-mix(in oklab, var(--system-border) 35%, transparent)
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, white 6%, transparent)
 
 .hero-action
   gap: 8px
 
 .hero-label
   font-size: 0.75rem
-  color: var(--theme-text-muted)
+  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
   letter-spacing: 0.08em
   text-transform: uppercase
 
@@ -38,6 +41,7 @@
 
 .details-button
   width: 100%
+  box-shadow: 0 0 14px var(--system-glow-soft)
 
 .details-section
   display: grid
@@ -72,7 +76,7 @@
   font-size: 0.7rem
   text-transform: uppercase
   letter-spacing: 0.08em
-  color: var(--theme-text-muted)
+  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
   text-align: center
 
 .calendar-cell
@@ -80,8 +84,8 @@
   min-height: 60px
   padding: 8px
   border-radius: 12px
-  border: 1px solid var(--theme-border)
-  background: var(--theme-surface-2)
+  border: 1px solid color-mix(in oklab, var(--system-border) 45%, transparent)
+  background: rgba(10, 14, 26, 0.45)
   color: var(--theme-text)
   display: flex
   flex-direction: column
@@ -92,7 +96,7 @@
 
   &:hover
     transform: translateY(-1px)
-    box-shadow: 0 0 14px var(--theme-glow)
+    box-shadow: 0 0 16px var(--system-glow-soft)
 
   &.is-empty
     background: transparent
@@ -100,7 +104,7 @@
     cursor: default
 
   &.is-selected
-    box-shadow: 0 0 0 2px var(--theme-accent), 0 0 16px var(--theme-glow)
+    box-shadow: 0 0 0 2px var(--system-border), 0 0 16px var(--system-glow-soft)
 
   &.is-perfect,
   &.perfect-day
@@ -143,23 +147,114 @@
   .card-body
     padding: var(--space-3)
 
+.weekly-header-row
+  display: flex
+  align-items: center
+  justify-content: space-between
+  gap: 10px
+  flex-wrap: wrap
+
+.weekly-header-copy
+  display: flex
+  flex-direction: column
+  gap: 2px
+
+.week-selector
+  display: flex
+  flex-wrap: wrap
+  gap: 8px
+  margin-bottom: 10px
+
+.week-selector-btn
+  min-width: 52px
+  min-height: 34px
+  padding: 0 12px
+  border-radius: 999px
+  border: 1px solid color-mix(in oklab, var(--system-border) 35%, transparent)
+  background: rgba(10, 14, 26, 0.35)
+  color: var(--theme-text)
+  font-weight: 700
+
+  &.is-selected
+    border-color: color-mix(in oklab, var(--theme-accent) 55%, transparent)
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--theme-accent) 14%, transparent) inset, 0 0 14px color-mix(in oklab, var(--theme-accent) 16%, transparent)
+
+.weekly-share-btn
+  display: inline-flex
+  flex-direction: column
+  align-items: flex-start
+  justify-content: center
+  gap: 1px
+  min-height: 40px
+  line-height: 1.1
+
+  small
+    font-size: 0.68rem
+    letter-spacing: 0.02em
+    color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
+
+.selected-date-card
+  .card-body
+    padding: var(--space-3)
+
+.selected-date-columns
+  display: grid
+  grid-template-columns: repeat(2, minmax(0, 1fr))
+  gap: 12px
+
+.selected-date-group
+  border: 1px solid color-mix(in oklab, var(--system-border) 35%, transparent)
+  border-radius: var(--radius-md)
+  padding: 10px 12px
+  background: color-mix(in oklab, var(--theme-surface) 85%, transparent)
+
+.selected-date-title
+  margin: 0 0 8px
+  font-size: 0.85rem
+  font-weight: 700
+  color: var(--theme-text)
+
+.selected-date-list
+  margin: 0
+  padding-left: 18px
+  display: grid
+  gap: 6px
+  color: var(--theme-text)
+
+.selected-date-empty
+  margin: 0
+
 .weekly-row
   display: grid
   grid-template-columns: 60px 90px 1fr 52px 70px
   align-items: center
   gap: 10px
   padding: 8px 0
-  border-bottom: 1px solid var(--theme-border)
-  color: var(--theme-text-muted)
+  border-bottom: 1px solid color-mix(in oklab, var(--system-border) 35%, transparent)
+  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
 
   &:last-child
     border-bottom: none
+
+.weekly-row-button
+  width: 100%
+  text-align: left
+  background: transparent
+  border-left: none
+  border-right: none
+  border-top: none
+  cursor: pointer
+
+  &.is-selected
+    background: color-mix(in oklab, var(--theme-accent) 8%, transparent)
+    border-radius: 10px
+    border-bottom-color: color-mix(in oklab, var(--theme-accent) 20%, transparent)
 
 .weekly-header
   text-transform: uppercase
   font-size: 0.7rem
   letter-spacing: 0.08em
-  color: var(--theme-text-muted)
+  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
 
 .week-label
   font-weight: 700
@@ -175,8 +270,8 @@
   position: relative
   height: 8px
   border-radius: 999px
-  background: var(--theme-surface-2)
-  border: 1px solid var(--theme-border)
+  background: rgba(10, 14, 26, 0.45)
+  border: 1px solid color-mix(in oklab, var(--system-border) 45%, transparent)
   overflow: hidden
 
 .week-bar-fill
@@ -209,8 +304,15 @@
     grid-template-columns: 1fr
 
 @media (max-width: 640px)
+  .weekly-share-btn
+    width: 100%
+    align-items: center
+
   .calendar-grid
     gap: 6px
+
+  .selected-date-columns
+    grid-template-columns: 1fr
 
   .weekly-row
     grid-template-columns: 1fr 1fr
@@ -220,3 +322,177 @@
 
   .week-bar
     grid-column: 1 / -1
+
+.weekly-report-export-host
+  position: fixed
+  left: -10000px
+  top: 0
+  width: 900px
+  height: 1600px
+  pointer-events: none
+  z-index: -1
+  background: #05070f
+
+.weekly-report-export-root
+  width: 900px
+  height: 1600px
+  background: #0b1020
+  color: #fff
+  padding: 36px
+  border-radius: 22px
+  overflow: hidden
+  box-sizing: border-box
+
+.weekly-report-export-mode *
+  backdrop-filter: none !important
+  -webkit-backdrop-filter: none !important
+  filter: none !important
+  box-shadow: none !important
+  text-shadow: none !important
+
+.weekly-report-capture-card
+  border-radius: 18px
+  background: linear-gradient(180deg, #11182b, #0d1324)
+  border: 1px solid rgba(255, 255, 255, 0.08)
+  color: #fff
+  padding: 18px
+  display: grid
+  gap: 12px
+  height: 100%
+  box-sizing: border-box
+
+.weekly-report-capture-header
+  display: flex
+  align-items: baseline
+  justify-content: space-between
+  gap: 10px
+  padding-bottom: 10px
+  border-bottom: 1px solid rgba(255,255,255,0.06)
+
+.weekly-report-capture-user
+  font-size: 1.15rem
+  font-weight: 700
+  overflow: hidden
+  text-overflow: ellipsis
+  white-space: nowrap
+
+.weekly-report-capture-meta
+  font-size: 0.92rem
+  font-weight: 700
+  color: rgba(255,255,255,0.82)
+  white-space: nowrap
+
+.weekly-report-capture-title
+  font-size: 0.9rem
+  letter-spacing: 0.14em
+  font-weight: 800
+  color: rgba(255,255,255,0.82)
+
+.weekly-report-capture-range
+  margin-top: -6px
+  font-size: 1.35rem
+  font-weight: 800
+
+.weekly-report-capture-stats
+  display: grid
+  grid-template-columns: 1fr 1fr
+  gap: 10px
+
+.weekly-report-capture-stat
+  border-radius: 14px
+  background: rgba(255,255,255,0.03)
+  border: 1px solid rgba(255,255,255,0.05)
+  padding: 10px
+  display: grid
+  gap: 4px
+
+.weekly-report-capture-stat-label
+  font-size: 0.8rem
+  letter-spacing: 0.08em
+  text-transform: uppercase
+  color: rgba(255,255,255,0.62)
+  font-weight: 700
+
+.weekly-report-capture-stat-value
+  font-size: 1.15rem
+  font-weight: 800
+
+.weekly-report-capture-stat-sub
+  font-size: 0.8rem
+  color: rgba(255,255,255,0.8)
+
+.weekly-report-capture-section
+  font-size: 0.86rem
+  letter-spacing: 0.1em
+  text-transform: uppercase
+  color: rgba(255,255,255,0.74)
+  font-weight: 700
+
+.weekly-report-capture-empty
+  color: rgba(255,255,255,0.8)
+  font-size: 1rem
+
+.weekly-report-capture-habits
+  display: grid
+  gap: 8px
+  align-content: start
+
+.weekly-report-capture-habit
+  border-radius: 12px
+  background: rgba(255,255,255,0.02)
+  border: 1px solid rgba(255,255,255,0.04)
+  padding: 8px 10px
+  display: grid
+  gap: 8px
+
+.weekly-report-capture-habit-head
+  display: grid
+  grid-template-columns: 1fr auto
+  gap: 10px
+  align-items: center
+
+.weekly-report-capture-habit-name
+  font-size: 0.98rem
+  font-weight: 600
+  overflow: hidden
+  text-overflow: ellipsis
+  white-space: nowrap
+
+.weekly-report-capture-habit-metric
+  font-size: 0.92rem
+  color: rgba(255,255,255,0.8)
+  font-weight: 700
+
+.weekly-report-capture-habit-bar
+  width: 100%
+  height: 8px
+  border-radius: 999px
+  background: rgba(255,255,255,0.07)
+  overflow: hidden
+
+.weekly-report-capture-habit-fill
+  height: 100%
+  border-radius: inherit
+  background: linear-gradient(90deg, var(--theme-accent, #4c8dff), rgba(94, 234, 212, 0.9))
+
+.weekly-report-capture-level
+  border-top: 1px solid rgba(255,255,255,0.06)
+  padding-top: 10px
+  display: grid
+  gap: 4px
+
+.weekly-report-capture-level-line
+  font-size: 1rem
+  font-weight: 700
+
+.weekly-report-capture-level-sub
+  font-size: 0.9rem
+  color: rgba(255,255,255,0.76)
+
+.weekly-report-capture-footer
+  margin-top: auto
+  border-top: 1px solid rgba(255,255,255,0.06)
+  padding-top: 10px
+  font-size: 0.92rem
+  color: rgba(255,255,255,0.88)
+  font-weight: 700

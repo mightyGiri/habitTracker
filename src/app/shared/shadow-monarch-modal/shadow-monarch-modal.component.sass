@@ -1,0 +1,89 @@
+.monarch-scrim
+  position: fixed
+  inset: 0
+  z-index: 1200
+  display: grid
+  place-items: center
+  padding: 16px
+  background: rgba(0, 0, 0, 0.6)
+
+.monarch-modal
+  position: relative
+  width: min(480px, calc(100vw - 32px))
+  border-radius: 24px
+  padding: 24px
+  background: linear-gradient(180deg, rgba(20, 35, 70, 0.92), rgba(10, 18, 40, 0.88))
+  border: 1px solid rgba(120, 160, 255, 0.55)
+  box-shadow: 0 0 22px rgba(80, 120, 255, 0.25), 0 18px 60px rgba(0, 0, 0, 0.55)
+  backdrop-filter: blur(14px)
+
+.x-btn
+  position: absolute
+  top: 12px
+  right: 12px
+  width: 32px
+  height: 32px
+  border-radius: 50%
+  border: 1px solid rgba(120, 160, 255, 0.6)
+  background: rgba(10, 18, 40, 0.55)
+  color: #fff
+  cursor: pointer
+  box-shadow: 0 0 10px rgba(80, 120, 255, 0.25)
+
+  &:hover
+    box-shadow: 0 0 14px rgba(80, 120, 255, 0.4)
+
+  &:focus-visible
+    outline: 2px solid rgba(140, 175, 255, 0.9)
+    outline-offset: 2px
+
+.modal-title
+  margin: 0 36px 10px 0
+  color: #fff
+  font-size: 1.05rem
+  font-weight: 700
+  letter-spacing: 0.03em
+
+.modal-message
+  margin: 0
+  color: rgba(255, 255, 255, 0.9)
+  line-height: 1.45
+
+.modal-actions
+  margin-top: 18px
+  display: flex
+  justify-content: flex-end
+  gap: 12px
+
+.modal-btn
+  min-width: 108px
+  padding: 10px 16px
+  border-radius: 12px
+  color: #fff
+  cursor: pointer
+  font: inherit
+  font-weight: 600
+  border: 1px solid transparent
+  transition: box-shadow 150ms ease, transform 150ms ease, border-color 150ms ease
+
+  &:active
+    transform: translateY(1px)
+
+  &:focus-visible
+    outline: 2px solid rgba(140, 175, 255, 0.9)
+    outline-offset: 2px
+
+.modal-btn--secondary
+  background: rgba(10, 18, 40, 0.35)
+  border-color: rgba(120, 160, 255, 0.55)
+
+  &:hover
+    box-shadow: 0 0 12px rgba(80, 120, 255, 0.25)
+
+.modal-btn--primary
+  background: linear-gradient(135deg, rgba(66, 113, 245, 0.95), rgba(90, 61, 200, 0.95))
+  border-color: rgba(120, 160, 255, 0.75)
+  box-shadow: 0 0 14px rgba(80, 120, 255, 0.35)
+
+  &:hover
+    box-shadow: 0 0 18px rgba(80, 120, 255, 0.5)

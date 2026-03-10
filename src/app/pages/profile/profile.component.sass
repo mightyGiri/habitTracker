@@ -1,11 +1,121 @@
 .page-title
   margin-bottom: var(--space-3)
+  font-size: calc(var(--fs-title) * var(--font-scale))
 
 .profile-page
-  padding-bottom: calc(var(--space-4) + 80px)
+  font-size: calc(var(--fs-body) * var(--font-scale))
 
 .profile-section
   margin-bottom: var(--space-2)
+
+.profile-header
+  display: grid
+  grid-template-columns: auto 1fr auto
+  align-items: center
+  gap: var(--space-2)
+  padding: var(--space-2) var(--space-3)
+  border-radius: 16px
+  background: rgba(10, 14, 26, 0.65)
+  border: 1px solid color-mix(in oklab, var(--system-border) 60%, transparent)
+  box-shadow: var(--system-shadow-deep), inset 0 0 18px rgba(0, 0, 0, 0.35)
+  margin-bottom: var(--space-3)
+
+.avatar-circle
+  width: 48px
+  height: 48px
+  border-radius: 999px
+  display: grid
+  place-items: center
+  font-weight: 700
+  color: #fff
+  background: linear-gradient(135deg, #f27a2a, #8b5cf6)
+  font-size: 1rem
+
+.profile-meta
+  display: grid
+  gap: 4px
+
+.profile-name
+  font-size: calc(var(--fs-title) * var(--font-scale))
+  font-weight: 700
+  color: var(--theme-text)
+
+.profile-subtitle
+  font-size: calc(var(--fs-muted) * var(--font-scale))
+  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
+
+.edit-pill
+  border: 1px solid color-mix(in oklab, var(--system-border) 60%, transparent)
+  background: rgba(10, 14, 26, 0.4)
+  color: var(--theme-text)
+  padding: 6px 14px
+  border-radius: 999px
+  font-size: calc(var(--fs-muted) * var(--font-scale))
+  cursor: pointer
+  white-space: nowrap
+
+.edit-pill:hover
+  border-color: var(--system-border)
+  color: var(--theme-text)
+  box-shadow: 0 0 14px var(--system-glow-soft)
+
+.settings-section
+  margin-bottom: var(--space-3)
+
+.settings-list
+  display: grid
+  gap: 4px
+  border-radius: 16px
+  background: rgba(10, 14, 26, 0.6)
+  border: 1px solid color-mix(in oklab, var(--system-border) 55%, transparent)
+  padding: 6px 0
+
+.settings-row
+  display: grid
+  grid-template-columns: 120px 1fr
+  gap: 12px
+  align-items: center
+  padding: 10px var(--space-3)
+  border-bottom: 1px solid color-mix(in oklab, var(--system-border) 35%, transparent)
+
+  &:last-child
+    border-bottom: 0
+
+.row-label
+  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
+  font-size: calc(var(--fs-label) * var(--font-scale))
+  text-transform: uppercase
+  letter-spacing: 0.08em
+
+.row-value
+  font-weight: 600
+  color: var(--theme-text)
+  font-size: calc(var(--fs-body) * var(--font-scale))
+  text-align: right
+
+.row-wrap
+  text-align: left
+  font-weight: 500
+
+.settings-links .row-value
+  text-align: left
+
+.link-list
+  margin-top: 10px
+  display: flex
+  flex-direction: column
+  gap: 8px
+
+.link
+  background: transparent
+  border: 0
+  padding: 0
+  text-align: left
+  color: var(--theme-text)
+  text-decoration: underline
+  font-size: calc(var(--fs-body) * var(--font-scale))
+  opacity: 0.9
+  cursor: pointer
 
 .card-body
   padding: var(--space-3)
@@ -37,23 +147,58 @@
   -webkit-box-orient: vertical
   overflow: hidden
 
-.meta-grid
+.section-block
+  border-radius: 16px
+  background: rgba(10, 14, 26, 0.6)
+  border: 1px solid color-mix(in oklab, var(--system-border) 55%, transparent)
+  margin-bottom: var(--space-2)
+  overflow: hidden
+
+.section-body
+  padding: 0 var(--space-3) var(--space-3)
+
+.badge-grid
   display: grid
-  grid-template-columns: 92px 1fr
-  gap: 10px 14px
-  align-items: start
+  grid-template-columns: repeat(2, minmax(0, 1fr))
+  gap: 10px
 
-.meta-label
-  color: var(--theme-text-muted)
-  font-size: 0.85em
+.badge-tile
+  border-radius: 14px
+  border: 1px solid color-mix(in oklab, var(--system-border) 40%, transparent)
+  background: rgba(10, 14, 26, 0.45)
+  padding: 12px
+  display: grid
+  grid-template-columns: 28px 1fr
+  gap: 10px
+  align-items: center
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, white 4%, transparent)
 
-.meta-value
-  font-weight: 600
+  &.is-locked
+    opacity: 0.6
+
+.badge-icon
+  width: 28px
+  height: 28px
+  display: grid
+  place-items: center
+  color: var(--theme-accent)
+
+  .mat-icon
+    font-size: 20px
+    width: 20px
+    height: 20px
+
+.badge-tile.is-locked .badge-icon
+  color: color-mix(in oklab, var(--theme-text) 55%, var(--system-highlight))
+
+.badge-title
   color: var(--theme-text)
-  text-align: right
+  font-size: calc(var(--fs-muted) * var(--font-scale))
+  font-weight: 600
+  line-height: 1.25
 
-.meta-privacy
-  text-align: left
+.section-title
+  padding: 14px var(--space-3) 0
 
 .section-toggle
   width: 100%
@@ -61,12 +206,44 @@
   align-items: center
   justify-content: space-between
   gap: var(--space-2)
-  padding: 12px var(--space-3)
+  padding: 14px var(--space-3)
   border: 0
   background: transparent
   color: var(--theme-text)
   cursor: pointer
   font: inherit
+  border-radius: 12px
+  transition: box-shadow 160ms ease, border-color 160ms ease, transform 160ms ease
+
+  &:hover
+    box-shadow: 0 0 14px var(--system-glow-soft)
+
+  &:active
+    transform: translateY(1px)
+
+  .chevron
+    transition: transform 180ms ease
+
+    &.is-open
+      transform: rotate(180deg)
+
+.achievements-toggle
+  margin-bottom: 0
+
+.achievements-panel
+  display: grid
+  grid-template-rows: 0fr
+  opacity: 0
+  transition: grid-template-rows 180ms ease, opacity 180ms ease
+
+  &.is-open
+    grid-template-rows: 1fr
+    opacity: 1
+
+.achievements-body
+  min-height: 0
+  overflow: hidden
+  padding-top: 2px
 
 .data-actions
   display: grid
@@ -75,13 +252,14 @@
 
   .btn
     width: 100%
-    background: var(--theme-surface)
-    color: var(--theme-text-muted)
-    border-color: var(--theme-border)
+    background: rgba(10, 14, 26, 0.45)
+    color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
+    border-color: color-mix(in oklab, var(--system-border) 45%, transparent)
 
   .btn:hover
     color: var(--theme-text)
-    border-color: var(--theme-accent)
+    border-color: var(--system-border)
+    box-shadow: 0 0 14px var(--system-glow-soft)
 
 .field-grid
   display: grid
@@ -106,10 +284,23 @@
 .compact-label
   margin-bottom: 6px
 
+.control-group
+  min-width: 0
+
 .font-slider
   width: 100%
   margin-top: 4px
   accent-color: var(--app-accent)
+
+.reminder-time-input
+  width: 100%
+  min-height: 40px
+  border-radius: 10px
+  border: 1px solid var(--theme-input-border)
+  background: var(--theme-input-bg)
+  color: var(--theme-text)
+  padding: 8px 12px
+  font: inherit
 
 .font-family-row
   margin-bottom: var(--space-2)
@@ -121,8 +312,10 @@
 
 .accent-swatches
   display: flex
-  gap: 10px
-  flex-wrap: wrap
+  gap: 12px
+  flex-wrap: nowrap
+  overflow-x: auto
+  padding-bottom: 4px
 
 .custom-accent
   display: flex
@@ -142,20 +335,20 @@
     outline-offset: 2px
 
 .accent-swatch
-  width: 28px
-  height: 28px
+  width: 26px
+  height: 26px
   border-radius: 999px
   border: 2px solid transparent
   cursor: pointer
-  box-shadow: 0 0 0 1px var(--theme-border)
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--system-border) 45%, transparent)
   position: relative
   display: inline-flex
   align-items: center
   justify-content: center
 
   &.is-active
-    border-color: var(--app-accent)
-    box-shadow: var(--glow)
+    border-color: var(--system-border)
+    box-shadow: 0 0 14px var(--system-glow-soft)
 
 .swatch-check
   color: var(--theme-text)
@@ -187,6 +380,10 @@
   color: var(--theme-text-muted)
   cursor: pointer
   text-decoration: none
+
+  &:hover
+    color: var(--theme-text)
+    text-decoration: underline
   font: inherit
 
   &:hover
@@ -194,12 +391,36 @@
     text-decoration: underline
 
 @media (max-width: 768px)
+  .badge-grid
+    grid-template-columns: 1fr
+
   .field-grid
     grid-template-columns: 1fr
 
-  .row-between
-    flex-direction: column
-    align-items: flex-start
+  .profile-header
+    grid-template-columns: auto 1fr
+    grid-auto-rows: auto
+
+  .edit-pill
+    grid-column: 1 / -1
+    justify-self: start
+
+  .settings-row
+    grid-template-columns: 1fr
+    text-align: left
+
+  .row-value
+    text-align: left
 
   .data-actions
     grid-template-columns: 1fr
+
+:host ::ng-deep .profile-edit-modal .mat-mdc-dialog-container
+  padding: 0
+  background: transparent
+  box-shadow: none
+
+:host ::ng-deep .profile-edit-modal .mat-mdc-dialog-surface
+  padding: 0
+  background: transparent
+  box-shadow: none

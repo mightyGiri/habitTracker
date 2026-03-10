@@ -1,11 +1,22 @@
 export interface Habit {
   id: string;
   name: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  createdAtDateKey: string;
   goalDays: number;
   frequencyType?: 'daily' | 'weekly';
   weeklyTarget?: number;
   minimumVersion?: string;
+  timerEnabled?: boolean;
+  timerSeconds?: number;
+  timerAutoComplete?: boolean;
+  type?: 'check' | 'timer';
+  targetSeconds?: number;
+  allowManualComplete?: boolean;
+  timerCompleted?: boolean;
   color?: string;
+  reminderEnabled?: boolean;
+  reminderTime?: string;
   createdAt: number;
   isActive: boolean;
   sortOrder: number;
@@ -37,17 +48,40 @@ export interface HabitSkips {
   [dateKey: string]: Record<string, HabitSkip>; // "YYYY-MM-DD" -> habitId -> skip meta
 }
 
+export interface TimerState {
+  elapsedSeconds: number;
+  running: boolean;
+  lastStartTimestamp?: number;
+}
+
+export interface TimerStateMap {
+  [dateKey: string]: Record<string, TimerState>;
+}
+
 export interface UserProfile {
   name: string;
   persona?: string;
   primaryGoal?: string;
   why?: string;
   whyStatement?: string;
+  statement?: string;
   createdAt: number;
 }
 
 export interface ProfileSettings {
   displayName?: string;
+  dailyWinTarget?: number;
+  requiredHabitsCount?: number;
+  remindersEnabled?: boolean;
+  dailyReminderEnabled?: boolean;
+  dailyReminderTime?: string;
+  soundsEnabled?: boolean;
+  unlockedBadgeIds?: string[];
+}
+
+export interface NotificationSettings {
+  dailyEnabled: boolean;
+  dailyTime: string;
 }
 
 export interface MonthlyTotals {
@@ -72,4 +106,24 @@ export interface MonthInsights {
   worstDay: number;
   currentStreak: number;
   perfectDays: number;
+}
+
+export type HabitDifficulty = 'easy' | 'medium' | 'hard';
+
+export interface DailyLog {
+  dateISO: string;
+  completedHabitIds: string[];
+  dayXP: number;
+  isPerfectDay: boolean;
+}
+
+export interface GamificationStats {
+  totalXP: number;
+  level: number;
+  xpNeededForNextLevel: number;
+  progressPercent: number;
+  currentDailyStreak: number;
+  currentPerfectStreak: number;
+  bestDailyStreak: number;
+  bestPerfectStreak: number;
 }

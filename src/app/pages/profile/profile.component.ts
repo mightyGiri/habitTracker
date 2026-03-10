@@ -1,465 +1,1037 @@
-import { Component, OnDestroy, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnDestroy, OnInit, Inject, PLATFORM_ID, ChangeDetectorRef } from '@angular/core';
+
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
+
 import { MatIconModule } from '@angular/material/icon';
+
 import { MatFormFieldModule } from '@angular/material/form-field';
+
 import { MatSelectModule } from '@angular/material/select';
+
 import { MatInputModule } from '@angular/material/input';
+
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { RouterModule } from '@angular/router';
+
 import { Subscription } from 'rxjs';
+
 import { BackupService } from '../../services/backup.service';
+
 import { HabitStoreService } from '../../services/habit-store.service';
-import { SettingsService, ThemeMode, FontSizePx, AccentId, AccentSetting, FontFamilyId } from '../../services/settings.service';
+
+import { SettingsService, FontSizePx, AccentId, AccentSetting, FontFamilyId } from '../../services/settings.service';
+
 import { ThemeService } from '../../services/theme.service';
-import { ImportConfirmDialogComponent, ImportConfirmDialogData } from '../../shared/import-confirm-dialog.component';
+
 import { staggerFadeUp, noopAnimation } from '../../shared/list-animations';
-import { ProfileNameDialogComponent } from './profile-name-dialog.component';
+
+import { ProfileEditDialogComponent, ProfileEditResult } from './profile-edit-dialog.component';
+
 import { ProfileSettings, UserProfile } from '../../models/habit.model';
+import { ToggleComponent } from '../../shared/ui/toggle/toggle.component';
+
 import { getLevelProgress, LevelProgress } from '../../shared/level-utils';
+import { NotificationService } from '../../services/notification.service';
+import { ShadowMonarchModalComponent } from '../../shared/shadow-monarch-modal/shadow-monarch-modal.component';
+import { STARTER_BADGES, type AchievementBadgeDef } from '../../services/achievements.service';
+import { environment } from '../../../environments/environment';
+
+
 
 type AccentPreset = { id: AccentId; name: string; color: string };
+
 type BeforeInstallPromptEvent = Event & {
+
   prompt: () => Promise<void>;
+
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+
 };
 
-@Component({
-  selector: 'app-profile',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatCardModule,
-    MatIconModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatInputModule,
-    MatDialogModule,
-    MatSnackBarModule
-  ],
-  animations: [staggerFadeUp || noopAnimation],
-  template: `
-    <div class="page-container profile-page" [@.disabled]="reduceMotion">
-      <h1 class="text-title page-title">Profile</h1>
 
-      <mat-card class="aesthetic-card profile-section" [@staggerFadeUp]="animationKey">
-        <div class="section-header text-section">Account</div>
-        <mat-card-content class="card-body">
-          <div class="row-between">
-            <div>
-              <div class="text-body">Your name</div>
-              <div class="text-muted">{{ displayName }}</div>
-              <div class="text-muted helper-text">Used for motivation messages and streaks.</div>
-              <div class="text-muted helper-text">Your character name in this game.</div>
-              <div class="text-muted level-row">Level {{ levelStats.level }} • {{ levelStats.totalDone }} total wins</div>
-              <div class="account-meta">
-                <span *ngIf="personaLabel" class="text-muted">Persona: {{ personaLabel }}</span>
-                <span *ngIf="goalLabel" class="text-muted">Goal: {{ goalLabel }}</span>
-                <span *ngIf="whyStatement" class="text-muted why-text">Why: {{ whyStatement }}</span>
+
+@Component({
+
+  selector: 'app-profile',
+
+  standalone: true,
+
+  imports: [
+
+    CommonModule,
+
+    MatIconModule,
+
+    MatFormFieldModule,
+
+    MatSelectModule,
+
+    MatInputModule,
+
+    MatDialogModule,
+
+    MatSnackBarModule,
+    RouterModule,
+    ToggleComponent,
+    ShadowMonarchModalComponent
+  ],
+
+  animations: [staggerFadeUp || noopAnimation],
+
+  
+  template: `
+    <div class=\"page-container profile-page\" [@.disabled]=\"reduceMotion\">
+      <h1 class=\"page-title\">Profile</h1>
+      <div class=\"profile-header arcane-card\" [@staggerFadeUp]=\"animationKey\">
+        <div class=\"avatar-circle\">{{ initials }}</div>
+        <div class=\"profile-meta\">
+          <div class=\"profile-name\">{{ displayName }}</div>
+          <div class=\"profile-subtitle\">{{ profileSubtitle }}</div>
+        </div>
+        <button class=\"edit-pill glass-btn glass-btn--ghost\" type=\"button\" (click)=\"openEditProfileDialog()\">Edit</button>
+      </div>
+
+      <section class=\"settings-section arcane-card\" [@staggerFadeUp]=\"animationKey\">
+        <div class=\"settings-list\">
+          <div class=\"settings-row\">
+            <div class=\"row-label\">Level</div>
+            <div class=\"row-value\"><span class=\"glass-pill\">Lv {{ levelStats.level }}</span></div>
+          </div>
+          <div class=\"settings-row\">
+            <div class=\"row-label\">Total XP</div>
+            <div class=\"row-value\">{{ levelStats.totalXp }}</div>
+          </div>
+          <div class=\"settings-row\" *ngIf=\"personaLabel\">
+            <div class=\"row-label\">Persona</div>
+            <div class=\"row-value\">{{ personaLabel }}</div>
+          </div>
+          <div class=\"settings-row\" *ngIf=\"goalLabel\">
+            <div class=\"row-label\">Goal</div>
+            <div class=\"row-value\">{{ goalLabel }}</div>
+          </div>
+          <div class=\"settings-row\" *ngIf=\"whyStatement\">
+            <div class=\"row-label\">Why</div>
+            <div class=\"row-value row-wrap\">{{ whyStatement }}</div>
+          </div>
+        </div>
+      </section>
+
+      <section class=\"section-block arcane-card\" [@staggerFadeUp]=\"animationKey\">
+        <button
+          class=\"section-toggle achievements-toggle glass-btn glass-btn--ghost\"
+          type=\"button\"
+          [attr.aria-expanded]=\"achievementsOpen\"
+          aria-controls=\"achievements-panel\"
+          (click)=\"toggleAchievementsOpen()\">
+          <span class=\"text-section\">Achievements</span>
+          <mat-icon class=\"chevron\" [class.is-open]=\"achievementsOpen\">expand_more</mat-icon>
+        </button>
+        <div
+          id=\"achievements-panel\"
+          class=\"achievements-panel\"
+          [class.is-open]=\"achievementsOpen\"
+          [attr.aria-hidden]=\"!achievementsOpen\">
+          <div class=\"section-body achievements-body\">
+            <div class=\"section-helper text-muted\">Unlock badges by showing up consistently.</div>
+            <div class=\"badge-grid\">
+              <div class=\"badge-tile\" *ngFor=\"let badge of achievementBadges\" [class.is-locked]=\"!isBadgeUnlocked(badge.id)\">
+                <div class=\"badge-icon\">
+                  <mat-icon>{{ isBadgeUnlocked(badge.id) ? badge.icon : 'help_outline' }}</mat-icon>
+                </div>
+                <div class=\"badge-title\">{{ isBadgeUnlocked(badge.id) ? badge.title : '?' }}</div>
               </div>
             </div>
-            <button class="btn btn-outline btn-sm edit-button" type="button" (click)="openNameDialog()">Edit</button>
           </div>
-        </mat-card-content>
-      </mat-card>
+        </div>
+      </section>
 
-      <mat-card class="aesthetic-card profile-section" [@staggerFadeUp]="animationKey">
-        <button class="section-toggle" type="button" (click)="dataOpen = !dataOpen">
-          <span class="text-section">Data & Backup</span>
+      <section class=\"section-block arcane-card\" [@staggerFadeUp]=\"animationKey\">
+        <button class=\"section-toggle glass-btn glass-btn--ghost\" type=\"button\" (click)=\"dataOpen = !dataOpen\">
+          <span class=\"text-section\">Data & Backup</span>
           <mat-icon>{{ dataOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
         </button>
-        <mat-card-content class="card-body" *ngIf="dataOpen">
-          <div class="section-helper text-muted">Offline-first. Export a backup anytime.</div>
-          <div class="data-actions">
-            <button class="btn btn-outline btn-sm" type="button" (click)="exportJson()">Export backup (JSON)</button>
-            <button class="btn btn-outline btn-sm" type="button" (click)="triggerImportJson(importInput)">Restore backup (JSON)</button>
-            <button class="btn btn-outline btn-sm" type="button" (click)="exportCsv()">Export as CSV</button>
-            <button class="btn btn-outline btn-sm" type="button" (click)="exportXlsx()" [disabled]="exportingXlsx">
+        <div class=\"section-body\" *ngIf=\"dataOpen\">
+          <div class=\"section-helper text-muted\">Offline-first. Export a backup anytime.</div>
+          <div class=\"data-actions\">
+            <button class=\"btn btn-outline btn-sm glass-btn glass-btn--ghost\" type=\"button\" (click)=\"exportJson()\">Export backup (JSON)</button>
+            <button class=\"btn btn-outline btn-sm glass-btn glass-btn--ghost\" type=\"button\" (click)=\"triggerImportJson(importInput)\">Restore backup (JSON)</button>
+            <!-- <button class=\"btn btn-outline btn-sm glass-btn glass-btn--ghost\" type=\"button\" (click)=\"exportCsv()\">Export as CSV</button>
+            <button class=\"btn btn-outline btn-sm glass-btn glass-btn--ghost\" type=\"button\" (click)=\"exportXlsx()\" [disabled]=\"exportingXlsx\">
               {{ exportingXlsx ? 'Exporting...' : 'Export as Excel' }}
-            </button>
+            </button> -->
           </div>
           <input
             #importInput
-            type="file"
+            type=\"file\"
             hidden
-            class="visually-hidden"
-            accept=".json,application/json"
-            (change)="onImportJson($event)">
-        </mat-card-content>
-      </mat-card>
+            class=\"visually-hidden\"
+            accept=\".json,application/json\"
+            (change)=\"onImportJson($event)\">
+        </div>
+      </section>
 
-      <mat-card class="aesthetic-card profile-section" [@staggerFadeUp]="animationKey">
-        <button class="section-toggle" type="button" (click)="personalizationOpen = !personalizationOpen">
-          <span class="text-section">Personalization</span>
+      <section class=\"section-block arcane-card\" [@staggerFadeUp]=\"animationKey\">
+        <button class=\"section-toggle glass-btn glass-btn--ghost\" type=\"button\" (click)=\"personalizationOpen = !personalizationOpen\">
+          <span class=\"text-section\">Personalization</span>
           <mat-icon>{{ personalizationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
         </button>
-        <mat-card-content class="card-body" *ngIf="personalizationOpen">
-          <div class="section-helper text-muted">Optional. Focus on habits first.</div>
-          <div class="field-grid">
-            <div class="control-group">
-              <mat-form-field appearance="fill" class="appearance-field">
-                <mat-label>Theme</mat-label>
-                <mat-select [value]="themeMode" (selectionChange)="updateThemeMode($event.value)">
-                  <mat-option value="dark">Dark</mat-option>
-                  <mat-option value="light">Light</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
-            <div class="control-group">
-              <div class="compact-label text-label">
+        <div class=\"section-body\" *ngIf=\"personalizationOpen\">
+          <div class=\"section-helper text-muted\">Optional. Focus on habits first.</div>
+          <div class=\"field-grid\">
+            <div class=\"control-group\">
+              <div class=\"compact-label text-label\">
                 Font size: {{ fontSizeLabel }}
               </div>
               <input
-                type="range"
-                min="12"
-                max="18"
-                step="1"
-                class="font-slider"
-                [value]="fontSizePx"
-                (input)="setFontSizeFromRange($event)">
+                type=\"range\"
+                min=\"12\"
+                max=\"18\"
+                step=\"1\"
+                class=\"font-slider\"
+                [value]=\"fontSizePx\"
+                (input)=\"setFontSizeFromRange($event)\">
+            </div>
+            <div class=\"control-group\">
+              <div class=\"compact-label text-label\">Daily reminder</div>
+              <app-toggle [checked]=\"dailyReminderEnabled\" [disabled]=\"notificationsLoading || !remindersNativeSupported\" (checkedChange)=\"toggleNotifications($event)\"></app-toggle>
+            </div>
+            <div class=\"control-group\">
+              <div class=\"compact-label text-label\">Reminder time</div>
+              <input class=\"reminder-time-input\" type=\"time\" [value]=\"dailyReminderTime\" [disabled]=\"notificationsLoading || !dailyReminderEnabled || !remindersNativeSupported\" (change)=\"onDailyReminderTimeChange($event)\">
+            </div>
+            <div class=\"control-group\">
+              <div class=\"compact-label text-label\">Sounds</div>
+              <app-toggle [checked]=\"soundsEnabled\" (checkedChange)=\"toggleSounds($event)\"></app-toggle>
             </div>
           </div>
-
-          <div class="font-family-row">
-            <mat-form-field appearance="fill" class="appearance-field">
+          <div class=\"section-helper text-muted\" *ngIf=\"!remindersNativeSupported\">Reminders work in the installed app.</div>
+          <!-- <div class=\"font-family-row\">
+            <mat-form-field appearance=\"fill\" class=\"appearance-field\">
               <mat-label>Font Family</mat-label>
-              <mat-select [value]="fontFamily" (selectionChange)="updateFontFamily($event.value)">
-                <mat-option value="system">System UI</mat-option>
-                <mat-option value="inter">Inter</mat-option>
-                <mat-option value="roboto">Roboto</mat-option>
-                <mat-option value="poppins">Poppins</mat-option>
-                <mat-option value="montserrat">Montserrat</mat-option>
+              <mat-select [value]=\"fontFamily\" (selectionChange)=\"updateFontFamily($event.value)\">
+                <mat-option value=\"system\">System UI</mat-option>
+                <mat-option value=\"inter\">Inter</mat-option>
+                <mat-option value=\"roboto\">Roboto</mat-option>
+                <mat-option value=\"poppins\">Poppins</mat-option>
+                <mat-option value=\"montserrat\">Montserrat</mat-option>
               </mat-select>
             </mat-form-field>
-          </div>
+          </div> -->
 
-          <div class="accent-row">
-            <div class="text-body">Accent</div>
-            <div class="accent-swatches">
+          <div class=\"accent-row\">
+            <div class=\"text-body\">Accent</div>
+            <div class=\"accent-swatches\">
               <button
-                class="accent-swatch"
-                *ngFor="let preset of accentPresets"
-                [style.background]="preset.color"
-                [class.is-active]="isAccentPresetActive(preset.id)"
-                (click)="setAccentPreset(preset.id)"
-                [attr.aria-label]="preset.name">
-                <span class="swatch-check" *ngIf="isAccentPresetActive(preset.id)">&#x2713;</span>
+                class=\"accent-swatch\"
+                *ngFor=\"let preset of accentPresets\"
+                [style.background]=\"preset.color\"
+                [class.is-active]=\"isAccentPresetActive(preset.id)\"
+                (click)=\"setAccentPreset(preset.id)\"
+                [attr.aria-label]=\"preset.name\">
+                <span class=\"swatch-check\" *ngIf=\"isAccentPresetActive(preset.id)\">&#x2713;</span>
               </button>
             </div>
-            <div class="custom-accent" [class.is-active]="accent.type === 'custom'">
-              <label class="text-label">Custom</label>
-              <input type="color" [value]="customAccent" (input)="setCustomAccent($event)">
+            <div class=\"custom-accent\" [class.is-active]=\"accent.type === 'custom'\">
+              <label class=\"text-label\">Custom</label>
+              <input type=\"color\" [value]=\"customAccent\" (input)=\"setCustomAccent($event)\">
             </div>
           </div>
-        </mat-card-content>
-      </mat-card>
+        </div>
+      </section>
+      <section class="section-block arcane-card" [@staggerFadeUp]="animationKey">
+        <button class="section-toggle glass-btn glass-btn--ghost" type="button" (click)="helpOpen = !helpOpen">
+          <span class="text-section">Help & About</span>
+          <mat-icon>{{ helpOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </button>
+        <div class="section-body" *ngIf="helpOpen">
+          <div class="settings-list">
+            <div class="settings-row">
+              <div class="row-label">Built by</div>
+              <div class="row-value">Giri</div>
+            </div>
+            <div class="settings-row">
+              <div class="row-label">Version</div>
+              <div class="row-value">{{ versionLabel }}</div>
+            </div>
+            <div class="settings-row">
+              <div class="row-label">Privacy</div>
+              <div class="row-value row-wrap">Beta version. Offline-first. No cloud. No tracking.</div>
+            </div>
+          </div>
+          <div class="link-list">
+            <button class="link" type="button" routerLink="/about">About app</button>
+            <button class="link" type="button" routerLink="/terms">Terms</button>
+            <button class="link" type="button" routerLink="/privacy">Privacy</button>
+          </div>
+        </div>
+      </section>
 
-      <mat-card class="aesthetic-card profile-section" [@staggerFadeUp]="animationKey">
-        <div class="section-header text-section">Help & About</div>
-        <mat-card-content class="card-body">
-          <div class="meta-grid">
-            <div class="meta-label">Built by</div>
-            <div class="meta-value">Giri</div>
-            <div class="meta-label">Version</div>
-            <div class="meta-value">{{ appVersion }}</div>
-            <div class="meta-label">Privacy</div>
-            <div class="meta-value meta-privacy">Offline-first. No cloud. No tracking.</div>
-            <div class="meta-label">Links</div>
-            <div class="meta-value">
-              <div class="help-links">
-                <button class="link-button" type="button" (click)="installPwa()" [disabled]="!canInstall">Install app</button>
-                <button class="link-button" type="button" disabled>Terms</button>
-                <button class="link-button" type="button" disabled>Privacy</button>
-              </div>
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
+      <app-shadow-monarch-modal
+        [open]="showImportModal"
+        title="Importing Backup"
+        message="Do you want to replace or merge with current data?"
+        primaryText="Replace"
+        secondaryText="Merge"
+        (primary)="onImportReplace()"
+        (secondary)="onImportMerge()"
+        (close)="closeImportModal()">
+      </app-shadow-monarch-modal>
+
+
     </div>
+
   `,
+
+
   styleUrls: ['./profile.component.sass']
+
 })
+
 export class ProfileComponent implements OnInit, OnDestroy {
+  private static readonly ACHIEVEMENTS_EXPANDED_KEY = 'profile.achievements.expanded';
+
   reduceMotion = false;
+
   animationKey = 0;
+
   exportingXlsx = false;
-  themeMode: ThemeMode = 'dark';
+
   accent: AccentSetting = { type: 'preset', value: 'orange' };
+
   fontSizePx: FontSizePx = 16;
+
   fontFamily: FontFamilyId = 'system';
+  notificationsEnabled = false;
+  notificationsSupported = false;
+  notificationsLoading = false;
+  dailyReminderEnabled = false;
+  dailyReminderTime = '20:30';
+  remindersNativeSupported = false;
+  soundsEnabled = true;
+
   customAccent = '#f27a2a';
-  appVersion = '0.1.0';
+
+  readonly versionLabel = `${environment.appVersion} (Build ${environment.buildNumber})`;
+
   canInstall = false;
+
   displayName = 'Guest';
+
   profile: ProfileSettings = {};
+
   userProfile: UserProfile | null = null;
+
   personaLabel = '';
+
   goalLabel = '';
+
   whyStatement = '';
+
   levelStats: LevelProgress = getLevelProgress(0);
+  achievementBadges: AchievementBadgeDef[] = STARTER_BADGES;
+  private unlockedBadgeIds = new Set<string>();
+  achievementsOpen = false;
+
   dataOpen = false;
+
   personalizationOpen = false;
+  helpOpen = false;
+  showImportModal = false;
+  private pendingBackupRaw: string | null = null;
+  private pendingBackup: any | null = null;
+
   accentPresets: AccentPreset[] = [
-    { id: 'orange', name: 'Orange', color: '#f27a2a' },
-    { id: 'purple', name: 'Purple', color: '#7b68ee' },
+
+    // { id: 'orange', name: 'Orange', color: '#f27a2a' },
+
     { id: 'green', name: 'Green', color: '#3fb57a' },
+
     { id: 'blue', name: 'Blue', color: '#4a90e2' },
+
     { id: 'pink', name: 'Pink', color: '#ff6b9a' },
+
     { id: 'teal', name: 'Teal', color: '#2fb6b1' },
+
     { id: 'red', name: 'Red', color: '#ef4444' },
+
     { id: 'yellow', name: 'Yellow', color: '#f4b23a' },
-    { id: 'cyan', name: 'Cyan', color: '#22d3ee' },
-    { id: 'violet', name: 'Violet', color: '#8b5cf6' }
+
+    { id: 'purple', name: 'Purple', color: '#8b5cf6' },
+    { id: 'violet', name: 'Violet', color: '#5810fe'}
+
   ];
 
+
+
   private subscription = new Subscription();
+
   private deferredPrompt: BeforeInstallPromptEvent | null = null;
+
   private installListener?: (event: Event) => void;
 
+
+
   constructor(
+
     private dialog: MatDialog,
+
     private snackBar: MatSnackBar,
+
     private backupService: BackupService,
+
     private habitStore: HabitStoreService,
+
     private settingsService: SettingsService,
+
     private themeService: ThemeService,
+
+    private notificationService: NotificationService,
+
+    private cdr: ChangeDetectorRef,
+
     @Inject(PLATFORM_ID) private platformId: Object
+
   ) {}
 
+
+
   ngOnInit(): void {
+
     this.subscription.add(
+
       this.themeService.getReducedMotion().subscribe(reduce => {
+
         this.reduceMotion = reduce;
+
       })
+
     );
+
     this.subscription.add(
+
       this.settingsService.getSettings().subscribe(settings => {
-        this.themeMode = settings.themeMode;
+
         this.accent = settings.accent;
+
         this.fontSizePx = settings.fontSizePx;
+
         this.fontFamily = settings.fontFamily;
+        this.notificationsEnabled = settings.notificationsEnabled;
+
         if (settings.accent.type === 'custom') {
+
           this.customAccent = settings.accent.value;
+
         }
+        this.notificationsSupported = this.notificationService.isSupported();
+      })
+
+    );
+
+    this.subscription.add(
+      this.habitStore.getNotificationSettings$().subscribe(notificationSettings => {
+        this.dailyReminderEnabled = notificationSettings.dailyEnabled;
+        this.dailyReminderTime = notificationSettings.dailyTime;
       })
     );
+
     this.subscription.add(
+
       this.habitStore.getLevelStats().subscribe(levelStats => {
+
         this.levelStats = levelStats;
+
+      })
+
+    );
+
+    this.subscription.add(
+      this.habitStore.getUnlockedBadgeIds().subscribe(ids => {
+        this.unlockedBadgeIds = new Set(ids);
+        this.cdr.markForCheck();
       })
     );
+
     this.subscription.add(
+
       this.habitStore.getProfile().subscribe(profile => {
+
         this.profile = profile;
+        this.soundsEnabled = Boolean(profile.soundsEnabled ?? true);
+
         this.displayName = this.resolveDisplayName(profile, this.userProfile);
+
       })
+
     );
+
     this.subscription.add(
+
       this.habitStore.getUserProfile().subscribe(profile => {
+
         this.userProfile = profile;
+
         this.displayName = this.resolveDisplayName(this.profile, profile);
+
         this.personaLabel = profile?.persona ? String(profile.persona) : '';
+
         this.goalLabel = profile?.primaryGoal ? String(profile.primaryGoal) : '';
+
         this.whyStatement = profile?.whyStatement || profile?.why || '';
+
       })
+
     );
+
+
 
     if (isPlatformBrowser(this.platformId)) {
+      this.achievementsOpen = this.readAchievementsExpanded();
+      this.remindersNativeSupported = this.notificationService.isNativeSchedulingAvailable();
+
       this.installListener = (event: Event) => {
+
         event.preventDefault();
+
         this.deferredPrompt = event as BeforeInstallPromptEvent;
+
         this.canInstall = true;
+
       };
+
       window.addEventListener('beforeinstallprompt', this.installListener);
+
     }
+
   }
+
+
 
   ngOnDestroy(): void {
+
     this.subscription.unsubscribe();
+
     if (this.installListener) {
+
       window.removeEventListener('beforeinstallprompt', this.installListener);
+
     }
+
   }
 
-  updateThemeMode(mode: ThemeMode): void {
-    this.settingsService.updateSettings({ themeMode: mode });
-  }
+
 
   updateFontFamily(fontFamily: FontFamilyId): void {
+
     this.settingsService.updateSettings({ fontFamily });
+
   }
+
+
 
   setAccentPreset(preset: AccentId): void {
+
     this.settingsService.updateSettings({ accent: { type: 'preset', value: preset } });
+
   }
+
+
 
   setCustomAccent(event: Event): void {
+
     const value = (event.target as HTMLInputElement).value;
+
     if (!value) {
+
       return;
+
     }
+
     this.customAccent = value;
+
     this.settingsService.updateSettings({ accent: { type: 'custom', value } });
+
   }
+
+
 
   isAccentPresetActive(preset: AccentId): boolean {
+
     return this.accent.type === 'preset' && this.accent.value === preset;
+
   }
+
+
 
   setFontSizeFromRange(event: Event): void {
+
     const value = Number((event.target as HTMLInputElement).value);
+
     if (!Number.isFinite(value)) {
+
       return;
+
     }
+
     this.settingsService.updateSettings({ fontSizePx: value });
+
   }
+
+
 
   get fontSizeLabel(): string {
+
     return `${this.fontSizePx}px`;
+
   }
+
+
 
   installPwa(): void {
+
     if (!this.deferredPrompt) {
+
       return;
+
     }
+
     void this.deferredPrompt.prompt();
+
     void this.deferredPrompt.userChoice.then(() => {
+
       this.deferredPrompt = null;
+
       this.canInstall = false;
+
     });
+
   }
 
-  openNameDialog(): void {
-    const dialogRef = this.dialog.open<ProfileNameDialogComponent, { displayName: string }, string | null>(
-      ProfileNameDialogComponent,
-      {
-        data: { displayName: this.displayName }
-      }
-    );
+
+
+  openEditProfileDialog(): void {
+    const dialogRef = this.dialog.open<ProfileEditDialogComponent, {
+      displayName: string;
+      persona: string;
+      goal: string;
+      why: string;
+    }, ProfileEditResult | null>(ProfileEditDialogComponent, {
+      data: {
+        displayName: this.displayName,
+        persona: this.personaLabel,
+        goal: this.goalLabel,
+        why: this.whyStatement
+      },
+      panelClass: ['profile-edit-modal']
+    });
+
     dialogRef.afterClosed().subscribe(result => {
-      if (result === null) {
+      if (!result) {
         return;
       }
-      this.habitStore.setProfile({ ...this.profile, displayName: result });
+      const displayName = result.displayName.trim();
+      const persona = result.persona.trim();
+      const goal = result.goal.trim();
+      const why = result.why.trim();
+
+      this.displayName = displayName || this.displayName;
+      this.personaLabel = persona || '';
+      this.goalLabel = goal || '';
+      this.whyStatement = why || '';
+
+      this.profile = { ...this.profile, displayName: displayName || undefined };
+      const baseProfile = this.userProfile ?? { name: 'Guest', createdAt: Date.now() };
+      this.userProfile = {
+        ...baseProfile,
+        name: displayName || baseProfile.name || 'Guest',
+        persona: persona || undefined,
+        primaryGoal: goal || undefined,
+        whyStatement: why || undefined,
+        why: why || undefined
+      };
+
+      this.habitStore.setProfile(this.profile);
+
+      const existing = this.userProfile;
+      this.habitStore.setUserProfile({
+        name: displayName || existing?.name || 'Guest',
+        persona: persona || undefined,
+        primaryGoal: goal || undefined,
+        whyStatement: why || undefined,
+        why: why || undefined,
+        createdAt: existing?.createdAt ?? Date.now()
+      });
+      this.cdr.detectChanges();
     });
   }
 
-  exportJson(): void {
+
+
+  async exportJson(): Promise<void> {
     try {
-      this.backupService.exportJsonBackup();
-      this.snackBar.open('Export completed', 'Close', { duration: 2000 });
+      const result = await this.backupService.exportBackup();
+      if (result.status === 'success') {
+        const locationSuffix = result.location ? ` (${result.location})` : '';
+        this.snackBar.open(`Backup exported successfully${locationSuffix}`, 'Close', { duration: 3000 });
+        return;
+      }
+      if (result.status === 'cancelled') {
+        this.snackBar.open('Export cancelled', 'Close', { duration: 2000 });
+        return;
+      }
+      console.error('Export failed', result.error);
+      this.snackBar.open('Export failed', 'Close', { duration: 2500 });
     } catch (error) {
       console.error('Export failed', error);
-      this.snackBar.open('Export failed', 'Close', { duration: 2000 });
+      this.snackBar.open('Export failed', 'Close', { duration: 2500 });
     }
   }
+
+
 
   exportCsv(): void {
+
     try {
+
       this.backupService.exportDailyCountsCsv();
+
       this.snackBar.open('Export completed', 'Close', { duration: 2000 });
+
     } catch (error) {
+
       console.error('Export failed', error);
+
       this.snackBar.open('Export failed', 'Close', { duration: 2000 });
+
     }
+
   }
+
+
 
   exportXlsx(): void {
+
     this.exportingXlsx = true;
+
     try {
+
       this.backupService.exportXlsx();
+
       this.snackBar.open('Export completed', 'Close', { duration: 2000 });
+
     } catch (error) {
+
       console.error('Export failed', error);
+
       this.snackBar.open('Export failed', 'Close', { duration: 2000 });
+
     } finally {
+
       this.exportingXlsx = false;
+
     }
+
   }
+
+
 
   triggerImportJson(input: HTMLInputElement): void {
+
     input.click();
+
   }
 
-  onImportJson(event: Event): void {
+
+
+  async onImportJson(event: Event): Promise<void> {
     const target = event.target as HTMLInputElement;
-    const file = target.files && target.files[0];
+    const file = target.files?.[0];
     if (!file) {
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const raw = String(reader.result || '');
-        const parsed = JSON.parse(raw);
-        const validation = this.validateBackup(parsed);
-        if (!validation.valid) {
-          this.snackBar.open(validation.message, 'Close', { duration: 2500 });
-          return;
-        }
-
-        const dialogRef = this.dialog.open<ImportConfirmDialogComponent, ImportConfirmDialogData, 'replace' | 'merge' | undefined>(
-          ImportConfirmDialogComponent,
-          {
-            data: {
-              title: 'Import backup?',
-              message: 'This will replace your current data or merge it with the backup.'
-            }
-          }
-        );
-
-        dialogRef.afterClosed().subscribe(result => {
-          if (!result) {
-            return;
-          }
-          this.habitStore.restoreFromBackup(parsed, result);
-          if (parsed.appSettings?.theme === 'dark' || parsed.appSettings?.theme === 'light') {
-            this.settingsService.updateSettings({ themeMode: parsed.appSettings.theme });
-          }
-          if (Array.isArray(parsed.habits) && parsed.habits.length === 0) {
-            this.snackBar.open('Import completed (no habits found)', 'Close', { duration: 2500 });
-          } else {
-            this.snackBar.open(result === 'merge' ? 'Import completed (merged)' : 'Import completed', 'Close', { duration: 2000 });
-          }
-        });
-      } catch (error) {
-        console.error('Import failed', error);
-        this.snackBar.open('Invalid JSON file', 'Close', { duration: 2500 });
+    try {
+      const isJsonType = file.type === 'application/json';
+      const isJsonName = file.name.toLowerCase().endsWith('.json');
+      if (!isJsonType && !isJsonName) {
+        this.snackBar.open('Invalid backup file', 'Close', { duration: 2500 });
+        return;
       }
-    };
-    reader.onerror = () => {
-      this.snackBar.open('Failed to read file', 'Close', { duration: 2500 });
-    };
-    reader.readAsText(file);
-    target.value = '';
+
+      console.log('Backup import: file selected', file.name, file.size);
+      const raw = await file.text();
+      console.log('Backup import: file read success', raw.slice(0, 100));
+
+      const parsed = JSON.parse(raw);
+      console.log('Backup import: parsed OK', Object.keys(parsed || {}));
+
+      const normalized = this.unwrapBackupPayload(parsed);
+      const validation = this.validateBackup(normalized);
+      if (!validation.valid) {
+        this.snackBar.open('Invalid backup file', 'Close', { duration: 2500 });
+        return;
+      }
+
+      this.pendingBackupRaw = raw;
+      this.pendingBackup = normalized;
+      this.showImportModal = true;
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('Backup import: parse failed', error);
+      this.snackBar.open('Invalid backup file', 'Close', { duration: 2500 });
+    } finally {
+      target.value = '';
+    }
   }
 
+
+
   private validateBackup(data: any): { valid: boolean; message: string } {
-    if (!data || typeof data !== 'object') {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
       return { valid: false, message: 'Invalid backup file' };
     }
-    if (data.schemaVersion !== 1) {
-      return { valid: false, message: 'Unsupported schema version' };
-    }
-    if (!data.exportedAt || typeof data.exportedAt !== 'string') {
-      return { valid: false, message: 'Missing exportedAt' };
-    }
-    if (!Array.isArray(data.habits)) {
-      return { valid: false, message: 'Missing habits list' };
-    }
-    if (!data.checks || typeof data.checks !== 'object') {
-      return { valid: false, message: 'Missing checks data' };
+    const hasTopLevelKeys =
+      Array.isArray(data.habits) ||
+      typeof data.checks === 'object' ||
+      typeof data.completions === 'object' ||
+      typeof data.skips === 'object';
+    if (!hasTopLevelKeys) {
+      return { valid: false, message: 'Missing backup fields' };
     }
     return { valid: true, message: 'OK' };
   }
 
-  private resolveDisplayName(profile: ProfileSettings, userProfile: UserProfile | null): string {
-    return profile.displayName?.trim() || userProfile?.name?.trim() || 'Guest';
+  private unwrapBackupPayload(data: any): any {
+    if (data && typeof data === 'object' && !Array.isArray(data) && data.data && typeof data.data === 'object') {
+      return data.data;
+    }
+    return data;
   }
+
+  closeImportModal(): void {
+    this.showImportModal = false;
+    this.pendingBackup = null;
+    this.pendingBackupRaw = null;
+  }
+
+  onImportReplace(): void {
+    this.applyImport('replace');
+  }
+
+  onImportMerge(): void {
+    this.applyImport('merge');
+  }
+
+  private applyImport(mode: 'replace' | 'merge'): void {
+    if (!this.pendingBackup) {
+      this.showImportModal = false;
+      return;
+    }
+    const backup = this.pendingBackup;
+    const snapshot = this.habitStore.getSnapshotForBackup();
+    const rollback = {
+      schemaVersion: 1,
+      exportedAt: new Date().toISOString(),
+      habits: snapshot.habits,
+      checks: snapshot.completions,
+      skips: snapshot.skips,
+      onboardingCompleted: snapshot.onboardingCompleted,
+      userProfile: snapshot.userProfile ?? undefined,
+      profile: snapshot.profile,
+      appSettings: {
+        selectedYear: snapshot.selectedMonthYear?.year,
+        selectedMonthIndex: snapshot.selectedMonthYear?.month
+      }
+    };
+    try {
+      console.log('Backup import: apply started', mode);
+      this.habitStore.restoreFromBackup(backup, mode);
+      console.log('Backup import: apply success');
+      this.showImportModal = false;
+      this.pendingBackup = null;
+      this.pendingBackupRaw = null;
+      this.snackBar.open(mode === 'merge' ? 'Import completed (merged)' : 'Import completed', 'Close', { duration: 2200 });
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('Backup import: apply failed', error);
+      try {
+        this.habitStore.restoreFromBackup(rollback, 'replace');
+      } catch (rollbackError) {
+        console.error('Backup import: rollback failed', rollbackError);
+      }
+      this.showImportModal = false;
+      this.pendingBackup = null;
+      this.pendingBackupRaw = null;
+      this.snackBar.open('Import failed', 'Close', { duration: 2500 });
+    }
+  }
+
+
+
+  async toggleNotifications(enabled: boolean): Promise<void> {
+    if (this.notificationsLoading) {
+      return;
+    }
+    this.remindersNativeSupported = this.notificationService.isNativeSchedulingAvailable();
+    if (!this.remindersNativeSupported) {
+      this.dailyReminderEnabled = false;
+      this.habitStore.updateNotificationSettings({ dailyEnabled: false });
+      this.snackBar.open('Reminders work in the installed app.', 'Close', { duration: 2200 });
+      return;
+    }
+
+    this.notificationsLoading = true;
+    if (enabled) {
+      const permission = await this.notificationService.requestPermissionIfNeeded();
+      if (permission !== 'granted') {
+        await this.notificationService.setEnabled(false);
+        this.dailyReminderEnabled = false;
+        this.snackBar.open('Permission denied. Enable notifications in device settings.', 'Close', { duration: 3000 });
+      } else {
+        await this.notificationService.setEnabled(true);
+        await this.notificationService.syncFromStore();
+        this.dailyReminderEnabled = true;
+        this.snackBar.open('Daily reminder enabled', 'Close', { duration: 2000 });
+      }
+    } else {
+      await this.notificationService.disableAll();
+      this.dailyReminderEnabled = false;
+      this.snackBar.open('Daily reminder off', 'Close', { duration: 1500 });
+    }
+    this.notificationsLoading = false;
+    this.cdr.markForCheck();
+  }
+
+  async onDailyReminderTimeChange(event: Event): Promise<void> {
+    const value = (event.target as HTMLInputElement).value || '20:30';
+    this.dailyReminderTime = value;
+    this.habitStore.updateNotificationSettings({ dailyTime: value });
+    if (this.dailyReminderEnabled && this.remindersNativeSupported) {
+      await this.notificationService.syncFromStore();
+      this.snackBar.open('Reminder time updated', 'Close', { duration: 1800 });
+    }
+    this.cdr.markForCheck();
+  }
+
+  get initials(): string {
+    const name = (this.displayName || 'Player').trim();
+    if (!name) {
+      return 'P';
+    }
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) {
+      return parts[0].slice(0, 1).toUpperCase();
+    }
+    const first = parts[0].slice(0, 1);
+    const last = parts[parts.length - 1].slice(0, 1);
+    return `${first}${last}`.toUpperCase();
+  }
+
+  get profileSubtitle(): string {
+    return this.personaLabel || this.goalLabel || this.whyStatement || 'Build consistency';
+  }
+
+  toggleSounds(enabled: boolean): void {
+    this.soundsEnabled = enabled;
+    this.habitStore.updateProfileSettings({ soundsEnabled: enabled });
+    this.snackBar.open(enabled ? 'Sounds on' : 'Sounds off', undefined, { duration: 1500 });
+    this.cdr.markForCheck();
+  }
+
+  isBadgeUnlocked(id: string): boolean {
+    return this.unlockedBadgeIds.has(id);
+  }
+
+  toggleAchievementsOpen(): void {
+    this.achievementsOpen = !this.achievementsOpen;
+    this.persistAchievementsExpanded(this.achievementsOpen);
+    this.cdr.markForCheck();
+  }
+
+  private readAchievementsExpanded(): boolean {
+    if (!isPlatformBrowser(this.platformId)) {
+      return false;
+    }
+    try {
+      return window.localStorage.getItem(ProfileComponent.ACHIEVEMENTS_EXPANDED_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  private persistAchievementsExpanded(expanded: boolean): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    try {
+      window.localStorage.setItem(ProfileComponent.ACHIEVEMENTS_EXPANDED_KEY, expanded ? '1' : '0');
+    } catch {
+      // ignore storage failures
+    }
+  }
+
+  private resolveDisplayName(profile: ProfileSettings, userProfile: UserProfile | null): string {
+
+    return profile.displayName?.trim() || userProfile?.name?.trim() || 'Guest';
+
+  }
+
 }
 
+
+
 // Manual test checklist:
+
 // - Display name persists after refresh.
+
 // - Export/restore still works.
+
 // - Data & Backup and Personalization sections collapse/expand.
+
 // - No overflow behind bottom nav on small screens.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

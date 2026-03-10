@@ -4,13 +4,33 @@ import { onboardingGuard } from './guards/onboarding.guard';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'today',
+    redirectTo: 'splash',
     pathMatch: 'full'
+  },
+  {
+    path: 'splash',
+    loadComponent: () => import('./pages/splash/splash.component').then(m => m.SplashComponent),
+    data: { animation: 'splash' }
+  },
+  {
+    path: 'getting-started',
+    loadComponent: () => import('./pages/onboarding/onboarding.component').then(m => m.OnboardingComponent),
+    data: { animation: 'onboarding' }
   },
   {
     path: 'onboarding',
     loadComponent: () => import('./pages/onboarding/onboarding.component').then(m => m.OnboardingComponent),
     data: { animation: 'onboarding' }
+  },
+  {
+    path: 'system-loading',
+    loadComponent: () => import('./pages/onboarding-loading-screen/onboarding-loading-screen.component').then(m => m.OnboardingLoadingScreenComponent),
+    data: { animation: 'onboarding' }
+  },
+  {
+    path: 'home',
+    redirectTo: 'today',
+    pathMatch: 'full'
   },
   {
     path: 'today',
@@ -31,6 +51,12 @@ export const routes: Routes = [
     canMatch: [onboardingGuard]
   },
   {
+    path: 'quests',
+    loadComponent: () => import('./pages/quests/quests.component').then(m => m.QuestsComponent),
+    data: { animation: 'quests' },
+    canMatch: [onboardingGuard]
+  },
+  {
     path: 'profile',
     loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent),
     data: { animation: 'profile' },
@@ -43,7 +69,19 @@ export const routes: Routes = [
     canMatch: [onboardingGuard]
   },
   {
+    path: 'terms',
+    loadComponent: () => import('./pages/terms/terms.component').then(m => m.TermsComponent),
+    data: { animation: 'terms' },
+    canMatch: [onboardingGuard]
+  },
+  {
+    path: 'privacy',
+    loadComponent: () => import('./pages/privacy/privacy.component').then(m => m.PrivacyComponent),
+    data: { animation: 'privacy' },
+    canMatch: [onboardingGuard]
+  },
+  {
     path: '**',
-    redirectTo: 'today'
+    redirectTo: 'splash'
   }
 ];

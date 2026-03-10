@@ -1,40 +1,43 @@
-<mat-toolbar class="sticky-toolbar app-toolbar">
-  <div class="toolbar-container">
-    <span class="brand">{{ pageTitle }}</span>
-    <nav class="toolbar-nav" aria-label="Primary">
-      <a class="nav-link" routerLink="/today" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Today</a>
-      <a class="nav-link" routerLink="/overview" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Overview</a>
-      <a class="nav-link" routerLink="/habits" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Habits</a>
-      <a class="nav-link" routerLink="/profile" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Profile</a>
-    </nav>
-    <span class="spacer"></span>
-    <button class="btn btn-outline btn-sm date-trigger" [matMenuTriggerFor]="dateMenu" aria-label="Select month and year">
-      <mat-icon>event</mat-icon>
-      <span>{{ months[selectedMonth]?.label }} {{ selectedYear }}</span>
-      <mat-icon class="chevron">expand_more</mat-icon>
-    </button>
-    <mat-menu #dateMenu="matMenu" class="date-menu-panel">
-      <div class="date-menu-content" (click)="$event.stopPropagation()">
-        <mat-form-field appearance="fill" class="date-field">
-          <mat-select [(ngModel)]="selectedYear" (selectionChange)="onYearChange()">
-            <mat-option *ngFor="let year of years" [value]="year">{{ year }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="fill" class="date-field">
-          <mat-select [(ngModel)]="selectedMonth" (selectionChange)="onMonthChange()">
-            <mat-option *ngFor="let month of months" [value]="month.value">{{ month.label }}</mat-option>
-          </mat-select>
-        </mat-form-field>
+<div class="app-shell">
+  <header class="app-header" *ngIf="showChrome">
+    <mat-toolbar class="sticky-toolbar app-toolbar">
+      <div class="toolbar-container">
+        <span class="brand">{{ pageTitle }}</span>
+        <nav class="toolbar-nav" aria-label="Primary">
+          <a class="nav-link" routerLink="/today" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Today</a>
+          <a class="nav-link" routerLink="/overview" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Overview</a>
+          <a class="nav-link" routerLink="/habits" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Habits</a>
+          <a class="nav-link" routerLink="/profile" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Profile</a>
+        </nav>
+        <span class="spacer"></span>
+        <button class="btn btn-outline btn-sm date-trigger" [matMenuTriggerFor]="dateMenu" aria-label="Select month and year">
+          <mat-icon>event</mat-icon>
+          <span>{{ months[selectedMonth]?.label }} {{ selectedYear }}</span>
+          <mat-icon class="chevron">expand_more</mat-icon>
+        </button>
+        <mat-menu #dateMenu="matMenu" class="date-menu-panel">
+          <div class="date-menu-content" (click)="$event.stopPropagation()">
+            <mat-form-field appearance="fill" class="date-field">
+              <mat-select [(ngModel)]="selectedYear" (selectionChange)="onYearChange()">
+                <mat-option *ngFor="let year of years" [value]="year">{{ year }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="fill" class="date-field">
+              <mat-select [(ngModel)]="selectedMonth" (selectionChange)="onMonthChange()">
+                <mat-option *ngFor="let month of months" [value]="month.value">{{ month.label }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </mat-menu>
       </div>
-    </mat-menu>
-    <button class="btn btn-icon theme-toggle" (click)="toggleTheme()" [attr.aria-label]="currentTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
-      <mat-icon>{{ currentTheme === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
-    </button>
-  </div>
-</mat-toolbar>
+    </mat-toolbar>
+  </header>
 
-<main class="main-container" [@routeAnimations]="prepareRoute(outlet)" [@.disabled]="reduceMotion">
-  <router-outlet #outlet="outlet"></router-outlet>
-</main>
+  <main class="app-content" [@routeAnimations]="prepareRoute(outlet)" [@.disabled]="reduceMotion">
+    <router-outlet #outlet="outlet"></router-outlet>
+  </main>
 
-<app-bottom-nav></app-bottom-nav>
+  <nav class="bottom-nav-shell" *ngIf="showChrome">
+    <app-bottom-nav></app-bottom-nav>
+  </nav>
+</div>

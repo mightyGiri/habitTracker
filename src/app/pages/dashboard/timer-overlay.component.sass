@@ -1,0 +1,38 @@
+.timer-overlay
+  position: fixed
+  inset: 0
+  z-index: 1400
+  background: color-mix(in oklab, var(--theme-surface) 80%, transparent)
+  display: flex
+  align-items: center
+  justify-content: center
+  padding: 24px
+
+.timer-overlay-card
+  width: min(420px, 92vw)
+  border-radius: var(--radius-lg)
+  background: var(--theme-surface-2)
+  border: 1px solid var(--theme-border)
+  padding: 24px
+  box-shadow: var(--shadow-soft)
+  display: flex
+  flex-direction: column
+  gap: 16px
+  text-align: center
+
+.timer-overlay-title
+  font-size: 1.1rem
+  font-weight: 700
+  color: var(--theme-text)
+
+.timer-overlay-time
+  font-size: 2.6rem
+  font-weight: 800
+  letter-spacing: 0.03em
+  color: var(--theme-text)
+
+.timer-overlay-actions
+  display: flex
+  gap: 8px
+  justify-content: center
+  flex-wrap: wrap

@@ -1,0 +1,20 @@
+<section class="level-xp-banner arcane-card" [class.compact]="compact" aria-label="Level and XP">
+  <div class="banner-top">
+    <div class="banner-label">Level Progress</div>
+    <div class="banner-level"><span class="glass-pill">Lv {{ level }}</span></div>
+  </div>
+
+  <div class="banner-main">
+    <div class="banner-xp">{{ totalXP }} XP</div>
+    <div class="banner-sub">{{ nextLevelText }}</div>
+  </div>
+
+  <div class="banner-progress" aria-hidden="true">
+    <div class="banner-progress-fill" [style.width.%]="progressWidth"></div>
+  </div>
+
+  <div class="banner-meta" *ngIf="xpNeededForNext > 0">
+    {{ xpIntoLevel }}/{{ xpNeededForNext }} XP in current level
+  </div>
+</section>
+

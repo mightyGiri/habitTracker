@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { openDB, IDBPDatabase } from 'idb';
-import { HabitCompletion, Habit, MonthKey, HabitSkips, UserProfile, ProfileSettings } from '../models/habit.model';
+import { HabitCompletion, Habit, MonthKey, HabitSkips, UserProfile, ProfileSettings, TimerStateMap } from '../models/habit.model';
 import { AppTheme } from './theme.service';
 
 const DB_NAME = 'habit-tracker-db';
@@ -14,11 +14,14 @@ export type PersistedState = {
   habits: Habit[];
   completions: HabitCompletion;
   skips?: HabitSkips;
+  timerStates?: TimerStateMap;
   selectedMonthYear: MonthKey;
   onboardingCompleted?: boolean;
   userProfile?: UserProfile;
   profile?: ProfileSettings;
   defaultsSeeded?: boolean;
+  /** Accumulated XP from claimed quest rewards — kept separate from habit XP. */
+  questBonusXP?: number;
   settings?: {
     theme?: AppTheme;
   };
@@ -89,6 +92,7 @@ export class StorageService {
           habits: parsed.habits as Habit[],
           completions: parsed.completions as HabitCompletion,
           skips: (parsed.skips as HabitSkips) || {},
+          timerStates: (parsed.timerStates as TimerStateMap) || {},
           selectedMonthYear: parsed.selectedMonthYear as MonthKey,
           onboardingCompleted: typeof parsed.onboardingCompleted === 'boolean' ? parsed.onboardingCompleted : undefined,
           userProfile: (parsed.userProfile as UserProfile) || undefined,

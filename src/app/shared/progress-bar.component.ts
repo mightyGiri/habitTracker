@@ -6,11 +6,11 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="app-progress" [style.height.px]="height" role="progressbar"
+    <div class="app-progress arcane-progress" [style.height.px]="height" role="progressbar"
          [attr.aria-valuenow]="percent" aria-valuemin="0" aria-valuemax="100">
-      <span class="app-progress__track"></span>
+      <span class="app-progress__track arcane-progress__track"></span>
       <span
-        class="app-progress__fill"
+        class="app-progress__fill arcane-progress__bar"
         [style.width.%]="percent">
       </span>
       <span class="app-progress__label" *ngIf="showLabel">{{ percent }}%</span>

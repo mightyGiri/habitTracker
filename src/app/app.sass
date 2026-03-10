@@ -1,7 +1,36 @@
 :host
   display: flex
   flex-direction: column
+  height: 100%
+  overflow: hidden
+  background: transparent
+
+.app-shell
   height: 100vh
+  height: 100dvh
+  display: flex
+  flex-direction: column
+  overflow: hidden
+  position: relative
+  background: radial-gradient(circle at 10% 0%, color-mix(in oklab, var(--theme-accent) 12%, transparent), transparent 46%), radial-gradient(circle at 92% 8%, color-mix(in oklab, #22d3ee 6%, transparent), transparent 42%), linear-gradient(180deg, var(--theme-bg), var(--theme-bg-2))
+
+  &::before
+    content: ''
+    position: absolute
+    inset: 0
+    pointer-events: none
+    background: radial-gradient(circle at 50% 120%, rgba(0, 0, 0, 0.45), transparent 58%), linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent 24%)
+    z-index: 0
+
+  > *
+    position: relative
+    z-index: 1
+
+.app-header
+  flex: 0 0 auto
+  position: sticky
+  top: 0
+  z-index: 100
 
 mat-toolbar
   padding: 0
@@ -139,11 +168,39 @@ mat-toolbar
   .app-toolbar
     display: none
 
-.main-container
-  flex: 1
-  overflow: auto
+  .app-header
+    display: none
+
+.app-content
+  flex: 1 1 auto
+  overflow-y: auto
   overflow-x: hidden
   color: var(--theme-text)
+  min-height: 0
+  -webkit-overflow-scrolling: touch
+  overscroll-behavior: contain
+  padding-bottom: 0
+
+.bottom-nav-shell
+  flex: 0 0 auto
+  position: sticky
+  bottom: 0
+  z-index: 100
+  --bottom-nav-height: var(--tabbar-height)
+  padding-bottom: var(--safe-bottom)
+  background: linear-gradient(180deg, transparent, rgba(7, 10, 18, 0.24) 28%, rgba(7, 10, 18, 0.48))
+  border-top: 1px solid color-mix(in oklab, var(--theme-border) 32%, transparent)
+
+@media (max-width: 768px)
+  .app-content
+    padding-bottom: calc(var(--bottom-nav-height, var(--tabbar-height)) + 10px)
+
+  .bottom-nav-shell
+    position: fixed
+    left: 0
+    right: 0
+    bottom: 0
+    flex: 0 0 auto
   .mat-mdc-form-field
     margin-bottom: 0
 
@@ -152,4 +209,39 @@ mat-toolbar
 
   .mat-mdc-select-value
     padding-right: 8px
+
+.permission-prompt-overlay
+  position: fixed
+  inset: 0
+  z-index: 3000
+  background: rgba(0, 0, 0, 0.58)
+  display: grid
+  place-items: center
+  padding: 20px
+
+.permission-prompt-card
+  width: min(420px, 100%)
+  border-radius: 16px
+  border: 1px solid color-mix(in oklab, var(--theme-border) 45%, transparent)
+  background: linear-gradient(180deg, rgba(12, 16, 28, 0.96), rgba(10, 14, 24, 0.94))
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35)
+  padding: 16px
+  color: var(--theme-text)
+  display: grid
+  gap: 10px
+
+.permission-prompt-title
+  font-weight: 700
+  font-size: 1rem
+
+.permission-prompt-body
+  color: color-mix(in oklab, var(--theme-text) 78%, var(--system-highlight))
+  font-size: 0.9rem
+  line-height: 1.4
+
+.permission-prompt-actions
+  display: flex
+  justify-content: flex-end
+  gap: 8px
+  padding-top: 4px
 

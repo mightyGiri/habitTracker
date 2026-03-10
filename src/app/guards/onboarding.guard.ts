@@ -13,7 +13,7 @@ export const onboardingGuard: CanMatchFn = () => {
       if (habitStore.onboardingCompletedSync()) {
         return true;
       }
-      return router.createUrlTree(['/onboarding']);
+      return router.createUrlTree(['/getting-started']);
     })
   );
 };
