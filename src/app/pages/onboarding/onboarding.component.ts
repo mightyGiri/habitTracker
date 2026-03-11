@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { filter, Subscription, take } from 'rxjs';
@@ -289,7 +289,8 @@ export class OnboardingComponent implements OnInit, OnDestroy {
     private router: Router,
     private route: ActivatedRoute,
     private habitStore: HabitStoreService,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -422,6 +423,7 @@ export class OnboardingComponent implements OnInit, OnDestroy {
     if (this.completionTimer) clearInterval(this.completionTimer);
     this.completionTimer = setInterval(() => {
       this.completionPercent = Math.min(100, this.completionPercent + 2);
+      this.cdr.detectChanges();
       if (this.completionPercent >= 100) {
         clearInterval(this.completionTimer!);
         this.completionTimer = null;

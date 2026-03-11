@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc --noEmit --project tsconfig.app.json)"
+      "Bash(npx tsc --noEmit --project tsconfig.app.json)",
+      "Bash(grep -n \"saveToStorage\\\\|getReady\\\\|ready$\\\\|isReady\\\\b\\\\|provideExperimentalZonelessChangeDetection\\\\|provideZoneChangeDetection\\\\|bootstrapApplication\\\\|ChangeDetectionStrategy\" \"c:/Users/vicky/Mock Projects/habitTracker/src/app/services/habit-store.service.ts\")"
     ]
   }
 }

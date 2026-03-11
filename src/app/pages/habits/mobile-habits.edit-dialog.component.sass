@@ -1,2 +1,168 @@
 mat-dialog-content
   min-width: 240px
+
+// ── Create-mode shared ─────────────────────────────────────────────────────
+
+.field-block
+  margin-bottom: 16px
+
+.field-label
+  display: block
+  font-size: 0.65rem
+  font-weight: 700
+  letter-spacing: 0.08em
+  color: var(--text-2, rgba(255,255,255,0.45))
+  margin-bottom: 6px
+
+.field-input
+  width: 100%
+  padding: 10px 12px
+  border-radius: 10px
+  border: 1px solid rgba(255,255,255,0.12)
+  background: rgba(255,255,255,0.05)
+  color: var(--text-1, #fff)
+  font-size: 0.95rem
+  outline: none
+  box-sizing: border-box
+  &:focus
+    border-color: rgba(61,127,255,0.5)
+    background: rgba(61,127,255,0.06)
+
+// ── Domain chips ───────────────────────────────────────────────────────────
+
+.domain-chips
+  display: flex
+  flex-wrap: wrap
+  gap: 6px
+
+.domain-chip
+  display: flex
+  align-items: center
+  gap: 4px
+  padding: 6px 10px
+  border-radius: 20px
+  border: 1px solid rgba(255,255,255,0.1)
+  background: rgba(255,255,255,0.04)
+  color: var(--text-2, rgba(255,255,255,0.5))
+  font-size: 0.72rem
+  font-weight: 600
+  cursor: pointer
+  transition: all 150ms ease
+  &.selected
+    border-color: var(--chip-color)
+    background: var(--chip-glow)
+    color: var(--chip-color)
+    box-shadow: 0 0 10px var(--chip-glow)
+
+// ── Icon grid ─────────────────────────────────────────────────────────────
+
+.icon-grid
+  display: grid
+  grid-template-columns: repeat(7, 1fr)
+  gap: 4px
+
+.icon-btn
+  aspect-ratio: 1
+  border-radius: 8px
+  border: 1px solid transparent
+  background: rgba(255,255,255,0.04)
+  font-size: 1.1rem
+  cursor: pointer
+  transition: all 150ms ease
+  &.selected
+    border-color: rgba(61,127,255,0.5)
+    background: rgba(61,127,255,0.12)
+    box-shadow: 0 0 8px rgba(61,127,255,0.3)
+
+// ── Frequency toggle ──────────────────────────────────────────────────────
+
+.freq-toggle
+  display: flex
+  gap: 6px
+
+.freq-btn
+  flex: 1
+  padding: 10px
+  border-radius: 10px
+  border: 1px solid rgba(255,255,255,0.1)
+  background: rgba(255,255,255,0.04)
+  color: var(--text-2, rgba(255,255,255,0.5))
+  font-size: 0.82rem
+  font-weight: 600
+  cursor: pointer
+  transition: all 150ms ease
+  &.active
+    border-color: rgba(61,127,255,0.5)
+    background: rgba(61,127,255,0.12)
+    color: var(--accent, #3d7fff)
+    box-shadow: 0 0 12px rgba(61,127,255,0.2)
+
+.weekly-target
+  display: flex
+  align-items: center
+  gap: 12px
+  justify-content: center
+  margin-top: 10px
+  padding: 10px
+  background: rgba(61,127,255,0.05)
+  border-radius: 10px
+  border: 1px solid rgba(61,127,255,0.12)
+
+.qty-btn
+  width: 32px
+  height: 32px
+  border-radius: 50%
+  border: 1px solid rgba(61,127,255,0.3)
+  background: rgba(61,127,255,0.1)
+  color: var(--accent, #3d7fff)
+  font-size: 1.2rem
+  cursor: pointer
+  display: flex
+  align-items: center
+  justify-content: center
+
+.qty-val
+  font-family: monospace
+  font-size: 0.85rem
+  color: var(--text-1, #fff)
+  min-width: 100px
+  text-align: center
+
+// ── Difficulty chips ──────────────────────────────────────────────────────
+
+.difficulty-chips
+  display: flex
+  gap: 8px
+
+.diff-chip
+  flex: 1
+  padding: 10px 6px
+  border-radius: 10px
+  border: 1px solid rgba(255,255,255,0.08)
+  background: rgba(255,255,255,0.03)
+  cursor: pointer
+  display: flex
+  flex-direction: column
+  align-items: center
+  gap: 3px
+  font-size: 0.78rem
+  font-weight: 600
+  color: var(--text-2, rgba(255,255,255,0.5))
+  transition: all 150ms ease
+  &.easy.active
+    border-color: rgba(0,229,160,0.5)
+    background: rgba(0,229,160,0.08)
+    color: #00e5a0
+  &.medium.active
+    border-color: rgba(255,215,0,0.5)
+    background: rgba(255,215,0,0.08)
+    color: #ffd700
+  &.hard.active
+    border-color: rgba(255,51,85,0.5)
+    background: rgba(255,51,85,0.08)
+    color: #ff3355
+
+.xp-badge
+  font-size: 0.62rem
+  font-family: monospace
+  opacity: 0.7
