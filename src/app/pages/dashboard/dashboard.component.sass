@@ -1,133 +1,235 @@
+// ── Solo Leveling System Player Status Window ────────────────────────────────
+
 .today-header
-  display: flex
-  align-items: center
-  justify-content: space-between
-  margin-bottom: var(--space-2)
-  padding-top: env(safe-area-inset-top, 32px)
-  padding-bottom: 14px
-  padding-left: 14px
-  padding-right: 14px
-  gap: var(--space-2)
   position: relative
-  border: 1px solid color-mix(in oklab, var(--system-border) 75%, transparent)
-  background: linear-gradient(145deg, rgba(8, 12, 22, 0.78), rgba(10, 16, 30, 0.62))
-  box-shadow: 0 0 22px color-mix(in oklab, var(--system-glow) 28%, transparent), var(--system-shadow-deep), inset 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 0 18px rgba(0, 0, 0, 0.45)
-  backdrop-filter: blur(12px)
-  -webkit-backdrop-filter: blur(12px)
+  display: flex
+  flex-direction: column
+  gap: 10px
+  margin-bottom: var(--space-2)
+  padding: 16px 16px 18px
+  border-radius: var(--radius-md)
+  // Double-border system window effect
+  border: 1px solid rgba(61, 127, 255, 0.45)
+  outline: 1px solid rgba(61, 127, 255, 0.12)
+  outline-offset: 3px
+  background: linear-gradient(160deg, rgba(4, 6, 18, 0.97) 0%, rgba(6, 9, 26, 0.94) 100%)
+  box-shadow: 0 0 40px rgba(61, 127, 255, 0.18), 0 0 80px rgba(61, 127, 255, 0.06), inset 0 0 30px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.04)
+  backdrop-filter: blur(16px)
+  -webkit-backdrop-filter: blur(16px)
   overflow: hidden
 
+  // Top-edge blue glow line
+  &::before
+    content: ''
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    height: 2px
+    background: linear-gradient(90deg, transparent 0%, rgba(0, 229, 255, 0.8) 20%, rgba(61, 127, 255, 1) 50%, rgba(0, 229, 255, 0.8) 80%, transparent 100%)
+    box-shadow: 0 0 16px rgba(61, 127, 255, 0.8), 0 0 32px rgba(61, 127, 255, 0.4)
+    pointer-events: none
+    z-index: 2
+
+  // Bottom-edge subtle line
   &::after
     content: ''
     position: absolute
-    inset: 0
-    background: radial-gradient(circle at 20% 20%, rgba(6, 8, 14, 0.2), transparent 55%), linear-gradient(180deg, rgba(0, 0, 0, 0.25), transparent 60%)
+    bottom: 0
+    left: 0
+    right: 0
+    height: 1px
+    background: linear-gradient(90deg, transparent, rgba(61, 127, 255, 0.3), transparent)
     pointer-events: none
-    z-index: 0
-
-  > *
-    position: relative
-    z-index: 1
+    z-index: 2
 
   &.perfect-day
-    outline: 1px solid rgba(255, 215, 0, 0.55)
-    outline-offset: 3px
-    border-radius: var(--radius-md)
-    background: linear-gradient(135deg, rgba(255, 215, 0, 0.08), transparent)
-    box-shadow: 0 0 30px rgba(255, 215, 0, 0.25), var(--system-shadow-deep)
+    border-color: rgba(255, 215, 0, 0.55)
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.22), 0 0 80px rgba(255, 215, 0, 0.08), inset 0 0 30px rgba(0, 0, 0, 0.5)
     animation: perfectPulse 2.5s ease-in-out infinite
 
-  h1
-    margin: 0
+    &::before
+      background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.9), rgba(255, 180, 0, 1), rgba(255, 215, 0, 0.9), transparent)
+      box-shadow: 0 0 16px rgba(255, 215, 0, 0.8)
 
-  .title-link
-    display: inline-flex
-    align-items: center
-    gap: 10px
-    padding: 0
-    border: none
-    background: transparent
-    color: inherit
-    cursor: pointer
+// Scanlines overlay (Solo Leveling holographic effect)
+.today-header__scanlines
+  position: absolute
+  inset: 0
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(61, 127, 255, 0.018) 3px, rgba(61, 127, 255, 0.018) 4px)
+  pointer-events: none
+  z-index: 1
 
-  .title-name
-    font-size: 1.25rem
-    font-weight: 800
-    line-height: 1.1
-    color: #f2f6ff
-    text-shadow: 0 0 10px rgba(140, 170, 255, 0.25), 0 0 18px rgba(140, 170, 255, 0.12)
+// Top bar: SYSTEM label + date
+.today-header__top-bar
+  display: flex
+  align-items: center
+  justify-content: space-between
+  position: relative
+  z-index: 2
 
-  .today-date
-    margin-top: 2px
-    opacity: 0.95
-    color: #e8efff
-    text-shadow: 0 0 8px rgba(120, 150, 255, 0.2)
+.today-header__sys-label
+  font-size: 0.62rem
+  font-weight: 800
+  letter-spacing: 0.32em
+  text-transform: uppercase
+  color: #00e5ff
+  text-shadow: 0 0 12px rgba(0, 229, 255, 0.8), 0 0 24px rgba(0, 229, 255, 0.4)
+  font-family: "Consolas", "SFMono-Regular", monospace
 
-.today-subtitle
-  font-style: italic
-  margin-top: 4px
-  opacity: 0.92
-  color: #e2eaff
-  text-shadow: 0 0 8px rgba(120, 150, 255, 0.18)
+.today-header__date-label
+  font-size: 0.72rem
+  font-weight: 600
+  letter-spacing: 0.06em
+  color: rgba(140, 180, 255, 0.7)
+  font-family: "Consolas", "SFMono-Regular", monospace
 
-.quote-line
-  opacity: 0.92
+// Name + Level row
+.today-header__name-row
+  display: flex
+  align-items: center
+  justify-content: space-between
+  gap: 12px
+  position: relative
+  z-index: 2
 
-.today-status
-  margin-top: 6px
+.title-link
+  display: inline-flex
+  align-items: center
+  gap: 10px
+  padding: 0
+  border: none
+  background: transparent
+  color: inherit
+  cursor: pointer
 
-.next-level-block
-  margin-top: 8px
-  display: grid
-  gap: 4px
-  max-width: 320px
-  color: #e8efff
-  text-shadow: 0 0 8px rgba(120, 150, 255, 0.16)
-
-  &.level-up-glow
-    animation: levelUpGlow 2s ease
-    box-shadow: 0 0 20px var(--theme-glow)
-    border-radius: var(--radius-md)
+.title-name
+  font-size: 1.85rem
+  font-weight: 900
+  line-height: 1
+  color: #ffffff
+  text-shadow: 0 0 20px rgba(61, 127, 255, 0.6), 0 0 40px rgba(61, 127, 255, 0.3), 0 0 60px rgba(0, 229, 255, 0.15)
+  letter-spacing: 0.01em
 
 .level-badge
   display: inline-flex
-  align-items: center
-  padding: 4px 10px
-  border-radius: 999px
-  border: 1px solid color-mix(in oklab, var(--system-border) 80%, transparent)
-  background: rgba(8, 12, 22, 0.75)
-  color: #ffffff
-  font-size: 1.1rem
-  font-weight: 700
-  box-shadow: 0 0 16px var(--system-glow-soft), inset 0 0 0 1px rgba(255, 255, 255, 0.08)
+  align-items: baseline
+  gap: 2px
+  padding: 6px 14px 6px 10px
+  border-radius: 8px
+  border: 1px solid rgba(61, 127, 255, 0.55)
+  background: linear-gradient(135deg, rgba(10, 18, 50, 0.95), rgba(8, 14, 40, 0.98))
+  box-shadow: 0 0 20px rgba(61, 127, 255, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.06)
+  flex-shrink: 0
 
   &.lv-celebrate
-    box-shadow: 0 0 18px var(--theme-glow)
     animation: levelUpGlow 2s ease
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.5)
+    border-color: rgba(255, 215, 0, 0.55)
 
-.level-xp
-  font-size: 0.85rem
+.level-badge__lv
+  font-size: 0.58rem
+  font-weight: 800
+  letter-spacing: 0.12em
+  color: rgba(0, 229, 255, 0.8)
+  font-family: "Consolas", "SFMono-Regular", monospace
+  text-transform: uppercase
+  line-height: 1
 
-.level-next
-  font-size: 0.8rem
+.level-badge__num
+  font-size: 1.4rem
+  font-weight: 900
+  color: #ffffff
+  text-shadow: 0 0 14px rgba(61, 127, 255, 0.9), 0 0 28px rgba(61, 127, 255, 0.5)
+  letter-spacing: -0.01em
+  line-height: 1
 
-.level-progress
-  max-width: 200px
+// Motivation quote
+.today-header__motivation
+  font-size: 0.78rem
+  font-style: italic
+  color: rgba(140, 180, 255, 0.65)
+  letter-spacing: 0.02em
+  position: relative
+  z-index: 2
+  line-height: 1.4
+
+// XP / EXP bar
+.today-header__xp-block
+  display: flex
+  flex-direction: column
+  gap: 6px
+  position: relative
+  z-index: 2
+
+  &.level-up-glow .today-header__xp-track
+    box-shadow: 0 0 20px rgba(61, 127, 255, 0.6)
+
+.today-header__xp-label
+  display: flex
+  align-items: center
+  justify-content: space-between
+
+.today-header__xp-title
+  font-size: 0.6rem
+  font-weight: 800
+  letter-spacing: 0.2em
+  color: rgba(0, 229, 255, 0.7)
+  font-family: "Consolas", "SFMono-Regular", monospace
+  text-transform: uppercase
+
+.today-header__xp-next
+  font-size: 0.65rem
+  font-weight: 600
+  color: rgba(140, 180, 255, 0.65)
+  font-family: "Consolas", "SFMono-Regular", monospace
+
+  &.glow-white
+    color: #00e5ff
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.7)
+
+.today-header__xp-track
+  position: relative
+  width: 100%
+  height: 8px
   border-radius: 999px
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08)
+  background: rgba(255, 255, 255, 0.06)
+  border: 1px solid rgba(61, 127, 255, 0.2)
+  overflow: hidden
 
-  &.progress-near
-    box-shadow: 0 0 12px color-mix(in oklab, var(--theme-success) 45%, transparent)
-    border-radius: 999px
+.today-header__xp-fill
+  position: absolute
+  top: 0
+  left: 0
+  height: 100%
+  border-radius: 999px
+  background: linear-gradient(90deg, #1a4fff, #00aaff, #00e5ff)
+  transition: width 600ms cubic-bezier(0.4, 0, 0.2, 1)
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.5)
 
-.level-progress-text
-  font-size: 0.75rem
+  &.xp-near-max
+    background: linear-gradient(90deg, #3d7fff, #00e5ff, #ffffff)
+    box-shadow: 0 0 14px rgba(0, 229, 255, 0.8)
 
+.today-header__xp-glow
+  position: absolute
+  top: 0
+  left: 0
+  height: 100%
+  border-radius: 999px
+  background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.3))
+  pointer-events: none
+  transition: width 600ms cubic-bezier(0.4, 0, 0.2, 1)
+
+// Status badges
 .status-row
-  margin-top: 10px
+  margin-top: 2px
   display: flex
   flex-wrap: wrap
   align-items: center
   gap: 8px
+  position: relative
+  z-index: 2
 
 .glow-white
   color: #ffffff
@@ -179,9 +281,6 @@
   font-weight: 700
   color: #00e5ff
   text-shadow: 0 0 10px rgba(0, 229, 255, 0.5)
-
-.status-row
-  margin-top: 8px
 
 .date-carousel
   display: flex
@@ -257,21 +356,55 @@
     box-shadow: 0 0 12px var(--theme-glow)
     transform: translateY(-1px)
 
-.today-list-card
-  margin-bottom: var(--space-3)
+// ── Today List Section (replaces mat-card) ───────────────────────────────────
+
+.today-list-section
   position: relative
-  border: 1px solid color-mix(in oklab, var(--system-border) 55%, transparent)
-  box-shadow: var(--system-shadow-deep), inset 0 0 18px rgba(0, 0, 0, 0.35)
+  margin-bottom: var(--space-3)
+  border-radius: var(--radius-md)
+  border: 1px solid rgba(61, 127, 255, 0.18)
+  background: linear-gradient(160deg, rgba(6, 9, 26, 0.97), rgba(4, 6, 18, 0.98))
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.03)
+  overflow: hidden
+
+  &::before
+    content: ''
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    height: 1px
+    background: linear-gradient(90deg, transparent, rgba(61, 127, 255, 0.4), rgba(0, 229, 255, 0.2), transparent)
+    pointer-events: none
 
   &.perfect-day
-    border-color: var(--theme-accent)
-    box-shadow: 0 0 34px var(--theme-glow)
-    background: linear-gradient(135deg, color-mix(in oklab, var(--system-glow) 20%, transparent), var(--theme-surface-2))
+    border-color: rgba(255, 215, 0, 0.35)
+    box-shadow: 0 0 34px rgba(255, 215, 0, 0.14), 0 4px 24px rgba(0, 0, 0, 0.4)
     animation: perfectPulse 2.5s ease-in-out infinite
+
+    &::before
+      background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.6), transparent)
 
   &.finish-moment
     animation: finishMoment 0.7s ease
-    box-shadow: 0 0 22px var(--theme-glow)
+    box-shadow: 0 0 22px rgba(61, 127, 255, 0.3)
+
+.today-list-header
+  display: flex
+  align-items: center
+  padding: 12px 18px 10px
+  border-bottom: 1px solid rgba(61, 127, 255, 0.1)
+
+.today-list-title
+  font-size: 0.65rem
+  font-weight: 800
+  letter-spacing: 0.22em
+  text-transform: uppercase
+  color: rgba(0, 229, 255, 0.65)
+  font-family: "Consolas", "SFMono-Regular", monospace
+
+.today-list-content
+  padding: 12px 14px 16px
 
 .confetti-layer
   position: absolute
@@ -292,40 +425,127 @@
   animation-timing-function: ease-out
   animation-fill-mode: forwards
 
+// ── Today Hero Panel (Solo Leveling mission board) ────────────────────────────
+
 .today-hero
+  position: relative
   display: flex
   align-items: center
   justify-content: space-between
   gap: var(--space-3)
-  padding: 10px 12px
+  padding: 18px 20px
   margin-bottom: var(--space-2)
   border-radius: var(--radius-md)
-  border: 1px solid var(--theme-border)
-  background: var(--theme-surface-2)
-  color: var(--theme-text)
+  border: 1px solid rgba(61, 127, 255, 0.28)
+  background: linear-gradient(160deg, rgba(6, 10, 28, 0.96), rgba(4, 6, 18, 0.98))
+  color: var(--text-1)
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 40px rgba(61, 127, 255, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.04)
+  overflow: hidden
+
+  &::before
+    content: ''
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    height: 2px
+    background: linear-gradient(90deg, transparent, rgba(61, 127, 255, 0.8), rgba(0, 229, 255, 0.6), transparent)
+    box-shadow: 0 0 12px rgba(61, 127, 255, 0.5)
+    pointer-events: none
+
+  &::after
+    content: ''
+    position: absolute
+    bottom: 0
+    left: 0
+    right: 0
+    height: 1px
+    background: linear-gradient(90deg, transparent, rgba(61, 127, 255, 0.2), transparent)
+    pointer-events: none
 
   &.perfect-day
-    box-shadow: 0 0 26px var(--theme-glow)
-    background: linear-gradient(135deg, var(--theme-accent-soft), var(--theme-surface-2))
+    border-color: rgba(255, 215, 0, 0.45)
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.18), 0 4px 24px rgba(0, 0, 0, 0.5)
+    background: linear-gradient(160deg, rgba(40, 30, 0, 0.4), rgba(6, 10, 28, 0.96))
 
-.hero-text
+    &::before
+      background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.9), rgba(255, 180, 0, 1), transparent)
+      box-shadow: 0 0 14px rgba(255, 215, 0, 0.6)
+
+.today-hero__left
   display: flex
   flex-direction: column
-  gap: 4px
+  gap: 5px
   flex: 1
 
-.hero-title
-  font-size: 1.1rem
-  font-weight: 700
+.today-hero__mission-label
+  font-size: 0.6rem
+  font-weight: 800
+  letter-spacing: 0.3em
+  text-transform: uppercase
+  color: rgba(0, 229, 255, 0.6)
+  font-family: "Consolas", "SFMono-Regular", monospace
 
-.hero-subtitle
-  font-size: 0.95rem
-  color: var(--theme-text)
+.today-hero__title
+  font-size: 1.6rem
+  font-weight: 900
+  color: #ffffff
+  letter-spacing: 0.04em
+  text-shadow: 0 0 20px rgba(61, 127, 255, 0.5), 0 0 40px rgba(0, 229, 255, 0.2)
+  line-height: 1
+
+.today-hero__status
+  font-size: 1rem
+  font-weight: 600
+  color: #00e5ff
+  text-shadow: 0 0 12px rgba(0, 229, 255, 0.5)
+
+.today-hero__chain
+  margin-top: 2px
+  font-size: 0.8rem
+  color: rgba(140, 180, 255, 0.55)
+
+.today-hero__counter
+  display: flex
+  align-items: baseline
+  gap: 2px
+  padding: 10px 16px
+  border-radius: 12px
+  border: 1px solid rgba(61, 127, 255, 0.3)
+  background: linear-gradient(135deg, rgba(10, 18, 50, 0.9), rgba(6, 12, 36, 0.95))
+  box-shadow: 0 0 20px rgba(61, 127, 255, 0.2), inset 0 0 0 1px rgba(255,255,255,0.04)
+  flex-shrink: 0
+
+  &.perfect-day
+    border-color: rgba(255, 215, 0, 0.45)
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.2)
+
+.today-hero__counter-done
+  font-size: 2rem
+  font-weight: 900
+  color: #00e5ff
+  text-shadow: 0 0 16px rgba(0, 229, 255, 0.7), 0 0 32px rgba(0, 229, 255, 0.35)
+  line-height: 1
+
+  .perfect-day &
+    color: #ffd700
+    text-shadow: 0 0 16px rgba(255, 215, 0, 0.7)
+
+.today-hero__counter-sep
+  font-size: 1rem
+  font-weight: 700
+  color: rgba(140, 180, 255, 0.4)
+  margin: 0 1px
+
+.today-hero__counter-total
+  font-size: 1rem
+  font-weight: 700
+  color: rgba(140, 180, 255, 0.6)
 
 .finish-message
   margin-top: 4px
   font-size: 0.85rem
-  color: var(--theme-text)
+  color: rgba(200, 220, 255, 0.8)
 
 .hero-micro
   font-size: 0.8rem
@@ -497,18 +717,51 @@
     left: 60%
     animation-delay: 1.8s
 
+// ── Today Cue (System Notification) ──────────────────────────────────────────
+
 .today-cue
   margin-bottom: var(--space-2)
-  padding: 10px 12px
+  display: flex
+  align-items: center
+  gap: 14px
+  padding: 14px 18px
   border-radius: var(--radius-md)
-  border: 1px solid var(--theme-border)
-  background: var(--theme-surface)
+  border: 1px solid rgba(0, 229, 255, 0.22)
+  border-left: 3px solid rgba(0, 229, 255, 0.7)
+  background: linear-gradient(160deg, rgba(0, 40, 80, 0.55), rgba(0, 20, 50, 0.6))
+  box-shadow: -3px 0 18px rgba(0, 229, 255, 0.1), 0 2px 12px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255,255,255,0.03)
+  position: relative
+  overflow: hidden
+
+  &::before
+    content: ''
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    height: 1px
+    background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.5), transparent)
+    pointer-events: none
+
+.today-cue__icon
+  font-size: 1.4rem
+  line-height: 1
+  flex-shrink: 0
+
+.today-cue__content
+  display: flex
+  flex-direction: column
+  gap: 2px
 
 .cue-title
-  font-weight: 600
+  font-weight: 700
+  font-size: 0.95rem
+  color: rgba(200, 220, 255, 0.95)
+  letter-spacing: 0.01em
 
 .cue-sub
-  font-size: 0.85rem
+  font-size: 0.82rem
+  color: rgba(140, 180, 255, 0.65)
 
 
 
@@ -541,11 +794,19 @@
 
 .today-list
   display: grid
-  gap: 12px
+  gap: 10px
 
   &.perfect-day .today-item
-    border-color: color-mix(in oklab, var(--theme-success) 35%, var(--theme-border))
-    box-shadow: 0 0 12px color-mix(in oklab, var(--theme-success) 18%, transparent)
+    border-color: rgba(255, 215, 0, 0.4)
+    background: linear-gradient(160deg, rgba(60, 45, 0, 0.45), rgba(40, 30, 0, 0.5))
+    box-shadow: 0 0 16px rgba(255, 215, 0, 0.16)
+
+    .today-item-name
+      color: rgba(255, 235, 160, 0.95)
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.25)
+
+    .today-item-percent
+      color: #ffd700
 
 .today-item
   width: 100%
@@ -553,55 +814,72 @@
   align-items: center
   justify-content: space-between
   gap: 16px
-  min-height: 56px
+  min-height: 58px
   padding: 12px 14px
   border-radius: var(--radius-md)
-  border: 1px solid rgba(61, 127, 255, 0.15)
-  background: color-mix(in oklab, var(--system-surface-2) 72%, transparent)
+  border: 1px solid rgba(61, 127, 255, 0.22)
+  background: linear-gradient(160deg, rgba(8, 12, 32, 0.7), rgba(5, 8, 22, 0.75))
   color: var(--theme-text)
   text-align: left
   cursor: pointer
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease
 
   @supports (backdrop-filter: blur(8px))
-    background: rgba(10, 14, 26, 0.55)
+    background: rgba(10, 14, 30, 0.65)
     backdrop-filter: blur(8px)
 
   &:hover
-    border-color: var(--system-border)
-    box-shadow: 0 0 18px var(--system-glow-soft), inset 0 0 0 1px color-mix(in oklab, white 8%, transparent)
+    border-color: rgba(61, 127, 255, 0.45)
+    box-shadow: 0 0 22px rgba(61, 127, 255, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.06)
     transform: translateY(-1px)
 
   &:focus-visible
     outline: 2px solid var(--theme-accent)
     outline-offset: 2px
 
+  // ── Checked / completed state ────────────────────────────────────────────
   &.is-completed
-    border-color: rgba(0, 229, 255, 0.4)
-    background: rgba(0, 229, 255, 0.05)
-    box-shadow: 0 0 16px rgba(0, 229, 255, 0.15)
+    border-color: rgba(0, 220, 100, 0.5)
+    background: linear-gradient(160deg, rgba(0, 60, 30, 0.5), rgba(0, 40, 20, 0.55))
+    box-shadow: 0 0 20px rgba(0, 220, 100, 0.18), inset 0 0 0 1px rgba(0, 220, 100, 0.08)
+
+    @supports (backdrop-filter: blur(8px))
+      background: rgba(0, 55, 28, 0.55)
+
+    .today-item-name
+      color: rgba(160, 255, 200, 0.9)
+      text-shadow: 0 0 10px rgba(0, 220, 100, 0.3)
+
+    .today-item-percent
+      color: #00dc64
+
+    &:hover
+      border-color: rgba(0, 220, 100, 0.7)
+      box-shadow: 0 0 28px rgba(0, 220, 100, 0.28)
 
   &.is-done
-    border-color: rgba(0, 229, 255, 0.4)
-    box-shadow: 0 0 16px rgba(0, 229, 255, 0.15)
+    border-color: rgba(0, 220, 100, 0.5)
+    box-shadow: 0 0 20px rgba(0, 220, 100, 0.18)
 
   &.done-pop
     animation: doneRowPop 0.75s ease
 
   &.is-skipped
-    border-color: var(--theme-border)
-    background: var(--theme-input-bg)
+    border-color: rgba(255, 255, 255, 0.08)
+    background: rgba(255, 255, 255, 0.02)
     color: var(--theme-text-muted)
     box-shadow: none
+    opacity: 0.65
 
     &:hover
-      border-color: var(--theme-border)
+      border-color: rgba(255, 255, 255, 0.12)
       box-shadow: none
       transform: none
+      opacity: 0.75
 
   &.is-next
-    border-color: var(--system-border)
-    box-shadow: 0 0 16px var(--system-glow-soft)
+    border-color: rgba(0, 229, 255, 0.45)
+    box-shadow: 0 0 18px rgba(0, 229, 255, 0.18)
 
   &.reward-pulse
     animation: rewardPulse 0.6s ease
@@ -643,15 +921,24 @@
 .habit-xp-chip
   display: inline-flex
   align-items: center
-  margin-top: 6px
+  margin-top: 5px
   width: fit-content
-  padding: 2px 8px
+  padding: 2px 9px
   border-radius: 999px
-  border: 1px solid rgba(61, 127, 255, 0.28)
-  background: rgba(61, 127, 255, 0.1)
+  border: 1px solid rgba(0, 229, 255, 0.3)
+  background: rgba(0, 80, 120, 0.35)
   color: #00e5ff
   font-weight: 700
-  letter-spacing: 0.02em
+  font-size: 0.72rem
+  letter-spacing: 0.04em
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.5)
+
+  // Dim the XP chip when completed — already earned
+  .is-completed &
+    border-color: rgba(0, 220, 100, 0.3)
+    background: rgba(0, 60, 30, 0.35)
+    color: #00dc64
+    text-shadow: 0 0 8px rgba(0, 220, 100, 0.4)
 
 .identity-line
   margin-top: var(--space-2)
@@ -711,6 +998,8 @@
 
 .streak-card
   margin-bottom: var(--space-3)
+  border: 1px solid rgba(61, 127, 255, 0.18) !important
+  background: linear-gradient(160deg, rgba(8, 12, 32, 0.9), rgba(6, 8, 24, 0.95)) !important
 
 .streak-row
   display: flex
@@ -718,10 +1007,71 @@
   gap: 6px
 
 .streak-value
-  font-size: 1.4rem
-  font-weight: 700
+  font-size: 1.6rem
+  font-weight: 800
   color: #00e5ff
-  text-shadow: 0 0 10px rgba(0, 229, 255, 0.5)
+  text-shadow: 0 0 16px rgba(0, 229, 255, 0.6), 0 0 32px rgba(0, 229, 255, 0.3)
+  letter-spacing: 0.02em
+
+// ── Insights Section (replaces mat-card) ─────────────────────────────────────
+
+.insights-section
+  position: relative
+  margin-bottom: var(--space-3)
+  border-radius: var(--radius-md)
+  border: 1px solid rgba(61, 127, 255, 0.16)
+  background: linear-gradient(160deg, rgba(6, 9, 26, 0.96), rgba(4, 6, 18, 0.98))
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.02)
+  overflow: hidden
+
+  &::before
+    content: ''
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    height: 1px
+    background: linear-gradient(90deg, transparent, rgba(61, 127, 255, 0.35), transparent)
+    pointer-events: none
+
+// ── Chart cards inside insights ───────────────────────────────────────────────
+
+.sys-chart-card
+  border-radius: 14px
+  border: 1px solid rgba(61, 127, 255, 0.15)
+  background: linear-gradient(160deg, rgba(8, 12, 32, 0.8), rgba(5, 8, 20, 0.85))
+  overflow: hidden
+  min-height: 240px
+  position: relative
+
+  &::before
+    content: ''
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    height: 1px
+    background: linear-gradient(90deg, transparent, rgba(61, 127, 255, 0.3), transparent)
+    pointer-events: none
+
+.sys-chart-card__header
+  display: flex
+  align-items: center
+  padding: 10px 14px 8px
+  font-size: 0.62rem
+  font-weight: 800
+  letter-spacing: 0.2em
+  text-transform: uppercase
+  color: rgba(0, 229, 255, 0.6)
+  font-family: "Consolas", "SFMono-Regular", monospace
+  border-bottom: 1px solid rgba(61, 127, 255, 0.08)
+
+.sys-chart-card__body
+  padding: 12px 14px 14px
+  display: flex
+  flex-direction: column
+  align-items: center
+  justify-content: center
 
 .insights-card
   margin-bottom: var(--space-3)
@@ -824,11 +1174,15 @@
   display: inline-flex
   align-items: center
   justify-content: center
-  padding: 6px 12px
+  padding: 6px 14px
   border-radius: 999px
-  border: 1px solid var(--theme-border)
-  background: var(--theme-surface-2)
-  color: var(--theme-text)
+  border: 1px solid rgba(61, 127, 255, 0.24)
+  background: rgba(61, 127, 255, 0.1)
+  color: rgba(200, 220, 255, 0.9)
+  font-weight: 700
+  letter-spacing: 0.06em
+  text-transform: uppercase
+  font-size: 0.75rem
 
 .insights-body
   display: block
@@ -847,13 +1201,14 @@
   align-items: center
   justify-content: space-between
   gap: 12px
-  padding: 10px 12px
-  background: var(--theme-surface-2)
-  border: 1px solid var(--theme-border)
+  padding: 10px 14px
+  background: linear-gradient(160deg, rgba(8, 12, 32, 0.95), rgba(6, 8, 24, 0.98))
+  border: 1px solid rgba(61, 127, 255, 0.18)
   border-radius: var(--radius-sm)
-  color: var(--theme-text)
+  color: var(--text-2)
   margin-top: var(--space-2)
   z-index: 5
+  backdrop-filter: blur(12px)
 
   .jump-top
     min-height: 36px
@@ -888,22 +1243,30 @@
   padding: 0
   margin: 0
   display: grid
-  gap: 12px
+  gap: 8px
+  width: 100%
 
   li
     display: flex
     justify-content: space-between
     align-items: center
-    padding: 8px 12px
-    border-radius: var(--radius-sm)
-    background: var(--theme-surface-2)
-    border: 1px solid var(--theme-border)
-    color: var(--theme-text)
-    font-size: var(--text-body)
+    padding: 10px 14px
+    border-radius: 12px
+    background: linear-gradient(160deg, rgba(8, 12, 32, 0.7), rgba(5, 8, 20, 0.75))
+    border: 1px solid rgba(61, 127, 255, 0.16)
+    color: rgba(200, 220, 255, 0.88)
+    font-size: 0.88rem
+    font-weight: 500
+    transition: border-color 140ms ease
+
+    &:hover
+      border-color: rgba(61, 127, 255, 0.3)
 
   .habit-percent
-    color: var(--theme-accent)
+    color: #00e5ff
     font-weight: 700
+    font-size: 0.9rem
+    text-shadow: 0 0 8px rgba(0, 229, 255, 0.4)
 
 .habits-empty
   color: var(--theme-text-muted)
@@ -939,9 +1302,8 @@
     max-height: 220px
     width: 100% !important
 
-  .today-header
-    flex-direction: column
-    align-items: flex-start
+  .title-name
+    font-size: 1.55rem
 
 :host ::ng-deep .bottom-nav.arcane-tabbar
   border: 1px solid color-mix(in oklab, var(--system-border) 55%, transparent)
@@ -1185,14 +1547,16 @@
   display: flex
   align-items: center
   gap: 8px
-  padding: 7px 12px 5px
-  margin-bottom: 6px
+  padding: 9px 14px 8px
+  margin-bottom: 8px
   border-radius: 10px
-  background: color-mix(in oklab, var(--domain-color, #3d7fff) 6%, transparent)
+  background: color-mix(in oklab, var(--domain-color, #3d7fff) 10%, rgba(6, 10, 28, 0.85))
+  border: 1px solid color-mix(in oklab, var(--domain-color, #3d7fff) 28%, transparent)
   border-left: 3px solid var(--domain-color, #3d7fff)
+  box-shadow: -3px 0 14px color-mix(in oklab, var(--domain-color, #3d7fff) 18%, transparent), inset 0 0 0 1px rgba(255,255,255,0.03)
 
 .domain-emoji
-  font-size: 1rem
+  font-size: 1.1rem
   line-height: 1
 
 .domain-label
@@ -1201,6 +1565,7 @@
   letter-spacing: 0.1em
   text-transform: uppercase
   color: var(--domain-color, #3d7fff)
+  text-shadow: 0 0 8px color-mix(in oklab, var(--domain-color, #3d7fff) 50%, transparent)
   flex: 1
 
 .domain-progress-mini
@@ -1232,3 +1597,240 @@
   display: flex
   flex-direction: column
   gap: 6px
+
+// ── Insights Header ──────────────────────────────────────────────────────────
+
+.insights-header-left
+  display: flex
+  flex-direction: column
+  gap: 2px
+
+.insights-sys-label
+  font-size: 0.6rem
+  font-weight: 800
+  letter-spacing: 0.3em
+  text-transform: uppercase
+  color: rgba(0, 229, 255, 0.65)
+  font-family: "Consolas", "SFMono-Regular", monospace
+
+// ── KPI Stat Tiles ───────────────────────────────────────────────────────────
+
+.stat-tiles
+  display: grid
+  grid-template-columns: repeat(4, 1fr)
+  gap: 10px
+  padding: 14px 16px 10px
+
+  @media (max-width: 480px)
+    grid-template-columns: repeat(2, 1fr)
+
+.stat-tile
+  position: relative
+  display: flex
+  flex-direction: column
+  align-items: center
+  gap: 4px
+  padding: 14px 10px 12px
+  border-radius: 14px
+  border: 1px solid rgba(61, 127, 255, 0.18)
+  background: linear-gradient(160deg, rgba(8, 12, 32, 0.92), rgba(5, 8, 20, 0.96))
+  text-align: center
+  overflow: hidden
+
+  &::before
+    content: ''
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    height: 1px
+    pointer-events: none
+
+.stat-tile__icon
+  font-size: 1.2rem
+  line-height: 1
+
+.stat-tile__value
+  font-size: 1.55rem
+  font-weight: 900
+  line-height: 1
+  color: #ffffff
+  letter-spacing: -0.01em
+
+.stat-tile__label
+  font-size: 0.58rem
+  font-weight: 700
+  letter-spacing: 0.12em
+  text-transform: uppercase
+  color: rgba(120, 160, 220, 0.6)
+  font-family: "Consolas", "SFMono-Regular", monospace
+
+.stat-tile--streak
+  border-color: rgba(255, 100, 0, 0.25)
+
+  &::before
+    background: linear-gradient(90deg, transparent, rgba(255, 100, 0, 0.55), transparent)
+
+  .stat-tile__value
+    color: #ff8c42
+    text-shadow: 0 0 18px rgba(255, 100, 0, 0.5)
+
+.stat-tile--perfect
+  border-color: rgba(255, 215, 0, 0.25)
+
+  &::before
+    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.55), transparent)
+
+  .stat-tile__value
+    color: #ffd700
+    text-shadow: 0 0 18px rgba(255, 215, 0, 0.45)
+
+.stat-tile--monthly
+  border-color: rgba(0, 229, 160, 0.25)
+
+  &::before
+    background: linear-gradient(90deg, transparent, rgba(0, 229, 160, 0.55), transparent)
+
+  .stat-tile__value
+    color: #00e5a0
+    text-shadow: 0 0 18px rgba(0, 229, 160, 0.45)
+
+.stat-tile--xp
+  border-color: rgba(0, 229, 255, 0.25)
+
+  &::before
+    background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.55), transparent)
+
+  .stat-tile__value
+    color: #00e5ff
+    text-shadow: 0 0 18px rgba(0, 229, 255, 0.45)
+
+// ── Chart colour dots ────────────────────────────────────────────────────────
+
+.chart-dot
+  display: inline-block
+  width: 7px
+  height: 7px
+  border-radius: 50%
+  margin-right: 6px
+  flex-shrink: 0
+
+.chart-dot--cyan
+  background: #00e5ff
+  box-shadow: 0 0 6px rgba(0, 229, 255, 0.7)
+
+.chart-dot--blue
+  background: #3d7fff
+  box-shadow: 0 0 6px rgba(61, 127, 255, 0.7)
+
+.chart-dot--purple
+  background: #7b5fff
+  box-shadow: 0 0 6px rgba(123, 95, 255, 0.7)
+
+.chart-dot--gold
+  background: #ffd700
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.6)
+
+// ── Insight layout rows ──────────────────────────────────────────────────────
+
+.insight-charts-row
+  display: grid
+  grid-template-columns: repeat(2, 1fr)
+  gap: 10px
+  padding: 0 16px 10px
+
+  @media (max-width: 580px)
+    grid-template-columns: 1fr
+
+.insight-bottom-row
+  display: grid
+  grid-template-columns: repeat(2, 1fr)
+  gap: 10px
+  padding: 0 16px 16px
+
+  @media (max-width: 580px)
+    grid-template-columns: 1fr
+
+.insight-full-width
+  grid-column: 1 / -1
+
+// ── Top Habits Leaderboard ───────────────────────────────────────────────────
+
+.sys-chart-card__body--list
+  padding: 10px 12px 14px
+
+.leaderboard-list
+  list-style: none
+  padding: 0
+  margin: 0
+  display: flex
+  flex-direction: column
+  gap: 6px
+  width: 100%
+
+.leaderboard-item
+  display: flex
+  align-items: center
+  gap: 8px
+  padding: 8px 10px
+  border-radius: 10px
+  border: 1px solid rgba(61, 127, 255, 0.11)
+  background: linear-gradient(160deg, rgba(8, 12, 32, 0.6), rgba(5, 8, 20, 0.65))
+  font-size: 0.85rem
+  transition: border-color 140ms ease
+
+  &:hover
+    border-color: rgba(61, 127, 255, 0.26)
+
+  &.leaderboard-item--gold
+    border-color: rgba(255, 215, 0, 0.22)
+    background: linear-gradient(160deg, rgba(40, 30, 0, 0.32), rgba(8, 12, 32, 0.6))
+
+  &.leaderboard-item--silver
+    border-color: rgba(192, 192, 192, 0.18)
+
+  &.leaderboard-item--bronze
+    border-color: rgba(205, 127, 50, 0.18)
+
+.leaderboard-rank
+  font-size: 0.88rem
+  min-width: 26px
+  text-align: center
+  flex-shrink: 0
+
+.leaderboard-name
+  flex: 1
+  font-weight: 500
+  color: rgba(200, 220, 255, 0.88)
+  white-space: nowrap
+  overflow: hidden
+  text-overflow: ellipsis
+
+.leaderboard-right
+  display: flex
+  align-items: center
+  gap: 8px
+  flex-shrink: 0
+
+.leaderboard-bar-track
+  width: 56px
+  height: 4px
+  background: rgba(255, 255, 255, 0.07)
+  border-radius: 2px
+  overflow: hidden
+
+  @media (max-width: 360px)
+    display: none
+
+.leaderboard-bar-fill
+  height: 100%
+  border-radius: 2px
+  transition: width 300ms ease
+
+.leaderboard-pct
+  font-size: 0.78rem
+  font-weight: 700
+  color: rgba(150, 190, 255, 0.75)
+  min-width: 32px
+  text-align: right
+  font-family: "Consolas", "SFMono-Regular", monospace

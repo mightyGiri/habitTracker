@@ -83,217 +83,207 @@ type BeforeInstallPromptEvent = Event & {
   
   template: `
     <div class=\"page-container profile-page\" [@.disabled]=\"reduceMotion\">
-      <h1 class=\"page-title\">Profile</h1>
-      <div class=\"profile-header arcane-card\" [@staggerFadeUp]=\"animationKey\">
-        <div class=\"avatar-circle\">{{ initials }}</div>
-        <div class=\"profile-meta\">
-          <div class=\"profile-name\">{{ displayName }}</div>
-          <div class=\"profile-subtitle\">{{ profileSubtitle }}</div>
+
+      <!-- Quest-style page header -->
+      <header class=\"profile-page-header\">
+        <div class=\"profile-page-header__title-row\">
+          <div class=\"profile-page-header__icon-wrap\">
+            <mat-icon>person</mat-icon>
+          </div>
+          <div>
+            <h1 class=\"profile-page-header__title\">Profile</h1>
+            <p class=\"profile-page-header__subtitle\">Your identity &amp; progress</p>
+          </div>
         </div>
-        <button class=\"edit-pill glass-btn glass-btn--ghost\" type=\"button\" (click)=\"openEditProfileDialog()\">Edit</button>
+        <div class=\"profile-page-header__chips\">
+          <div class=\"profile-stat-chip\">
+            <mat-icon>bolt</mat-icon>
+            <span>Lv {{ levelStats.level }}</span>
+          </div>
+          <div class=\"profile-stat-chip profile-stat-chip--xp\">
+            <mat-icon>star</mat-icon>
+            <span>{{ levelStats.totalXp }} XP</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Identity card -->
+      <div class=\"profile-identity-card\" [@staggerFadeUp]=\"animationKey\">
+        <div class=\"profile-identity__avatar\">{{ initials }}</div>
+        <div class=\"profile-identity__info\">
+          <div class=\"profile-identity__name\">{{ displayName }}</div>
+          <div class=\"profile-identity__sub\">{{ profileSubtitle }}</div>
+          <div class=\"profile-identity__stats\" *ngIf=\"personaLabel || goalLabel\">
+            <span class=\"profile-tag\" *ngIf=\"personaLabel\">{{ personaLabel }}</span>
+            <span class=\"profile-tag profile-tag--goal\" *ngIf=\"goalLabel\">{{ goalLabel }}</span>
+          </div>
+        </div>
+        <button class=\"profile-edit-btn\" type=\"button\" (click)=\"openEditProfileDialog()\">
+          <mat-icon>edit</mat-icon>
+          Edit
+        </button>
       </div>
 
-      <section class=\"settings-section arcane-card\" [@staggerFadeUp]=\"animationKey\">
-        <div class=\"settings-list\">
-          <div class=\"settings-row\">
-            <div class=\"row-label\">Level</div>
-            <div class=\"row-value\"><span class=\"glass-pill\">Lv {{ levelStats.level }}</span></div>
+      <!-- Why statement -->
+      <div class=\"profile-why-card\" *ngIf=\"whyStatement\" [@staggerFadeUp]=\"animationKey\">
+        <div class=\"profile-why-card__label\">WHY I DO THIS</div>
+        <div class=\"profile-why-card__text\">{{ whyStatement }}</div>
+      </div>
+
+      <!-- ── Achievements ─────────────────────────────────────────────────── -->
+      <div class=\"pf-section\" [@staggerFadeUp]=\"animationKey\">
+        <button class=\"pf-section__toggle\" type=\"button\" [attr.aria-expanded]=\"achievementsOpen\" (click)=\"toggleAchievementsOpen()\">
+          <div class=\"pf-section__icon-wrap\"><mat-icon>emoji_events</mat-icon></div>
+          <div class=\"pf-section__title-group\">
+            <span class=\"pf-section__title\">Achievements</span>
+            <span class=\"pf-section__sub\">Unlock by showing up consistently</span>
           </div>
-          <div class=\"settings-row\">
-            <div class=\"row-label\">Total XP</div>
-            <div class=\"row-value\">{{ levelStats.totalXp }}</div>
-          </div>
-          <div class=\"settings-row\" *ngIf=\"personaLabel\">
-            <div class=\"row-label\">Persona</div>
-            <div class=\"row-value\">{{ personaLabel }}</div>
-          </div>
-          <div class=\"settings-row\" *ngIf=\"goalLabel\">
-            <div class=\"row-label\">Goal</div>
-            <div class=\"row-value\">{{ goalLabel }}</div>
-          </div>
-          <div class=\"settings-row\" *ngIf=\"whyStatement\">
-            <div class=\"row-label\">Why</div>
-            <div class=\"row-value row-wrap\">{{ whyStatement }}</div>
+          <mat-icon class=\"pf-section__chevron\" [class.is-open]=\"achievementsOpen\">expand_more</mat-icon>
+        </button>
+        <div class=\"pf-section__body\" [class.is-open]=\"achievementsOpen\">
+          <div class=\"badge-grid\">
+            <button class=\"badge-tile\" type=\"button\" *ngFor=\"let badge of achievementBadges\"
+              [class.is-locked]=\"!isBadgeUnlocked(badge.id)\"
+              (click)=\"openBadgeDetail(badge)\">
+              <div class=\"badge-icon\"><mat-icon>{{ isBadgeUnlocked(badge.id) ? badge.icon : 'lock' }}</mat-icon></div>
+              <div class=\"badge-title\">{{ isBadgeUnlocked(badge.id) ? badge.title : '???' }}</div>
+            </button>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section class=\"section-block arcane-card\" [@staggerFadeUp]=\"animationKey\">
-        <button
-          class=\"section-toggle achievements-toggle glass-btn glass-btn--ghost\"
-          type=\"button\"
-          [attr.aria-expanded]=\"achievementsOpen\"
-          aria-controls=\"achievements-panel\"
-          (click)=\"toggleAchievementsOpen()\">
-          <span class=\"text-section\">Achievements</span>
-          <mat-icon class=\"chevron\" [class.is-open]=\"achievementsOpen\">expand_more</mat-icon>
-        </button>
-        <div
-          id=\"achievements-panel\"
-          class=\"achievements-panel\"
-          [class.is-open]=\"achievementsOpen\"
-          [attr.aria-hidden]=\"!achievementsOpen\">
-          <div class=\"section-body achievements-body\">
-            <div class=\"section-helper text-muted\">Unlock badges by showing up consistently.</div>
-            <div class=\"badge-grid\">
-              <div class=\"badge-tile\" *ngFor=\"let badge of achievementBadges\" [class.is-locked]=\"!isBadgeUnlocked(badge.id)\">
-                <div class=\"badge-icon\">
-                  <mat-icon>{{ isBadgeUnlocked(badge.id) ? badge.icon : 'help_outline' }}</mat-icon>
-                </div>
-                <div class=\"badge-title\">{{ isBadgeUnlocked(badge.id) ? badge.title : '?' }}</div>
-              </div>
-            </div>
+      <!-- ── Data & Backup ──────────────────────────────────────────────── -->
+      <div class=\"pf-section\" [@staggerFadeUp]=\"animationKey\">
+        <button class=\"pf-section__toggle\" type=\"button\" (click)=\"dataOpen = !dataOpen\">
+          <div class=\"pf-section__icon-wrap pf-section__icon-wrap--green\"><mat-icon>save</mat-icon></div>
+          <div class=\"pf-section__title-group\">
+            <span class=\"pf-section__title\">Data &amp; Backup</span>
+            <span class=\"pf-section__sub\">Offline-first — export anytime</span>
           </div>
-        </div>
-      </section>
-
-      <section class=\"section-block arcane-card\" [@staggerFadeUp]=\"animationKey\">
-        <button class=\"section-toggle glass-btn glass-btn--ghost\" type=\"button\" (click)=\"dataOpen = !dataOpen\">
-          <span class=\"text-section\">Data & Backup</span>
-          <mat-icon>{{ dataOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+          <mat-icon class=\"pf-section__chevron\" [class.is-open]=\"dataOpen\">expand_more</mat-icon>
         </button>
-        <div class=\"section-body\" *ngIf=\"dataOpen\">
-          <div class=\"section-helper text-muted\">Offline-first. Export a backup anytime.</div>
-          <div class=\"data-actions\">
-            <button class=\"btn btn-outline btn-sm glass-btn glass-btn--ghost\" type=\"button\" (click)=\"exportJson()\">Export backup (JSON)</button>
-            <button class=\"btn btn-outline btn-sm glass-btn glass-btn--ghost\" type=\"button\" (click)=\"triggerImportJson(importInput)\">Restore backup (JSON)</button>
-            <!-- <button class=\"btn btn-outline btn-sm glass-btn glass-btn--ghost\" type=\"button\" (click)=\"exportCsv()\">Export as CSV</button>
-            <button class=\"btn btn-outline btn-sm glass-btn glass-btn--ghost\" type=\"button\" (click)=\"exportXlsx()\" [disabled]=\"exportingXlsx\">
-              {{ exportingXlsx ? 'Exporting...' : 'Export as Excel' }}
-            </button> -->
-          </div>
-          <input
-            #importInput
-            type=\"file\"
-            hidden
-            class=\"visually-hidden\"
-            accept=\".json,application/json\"
-            (change)=\"onImportJson($event)\">
-        </div>
-      </section>
-
-      <section class=\"section-block arcane-card\" [@staggerFadeUp]=\"animationKey\">
-        <button class=\"section-toggle glass-btn glass-btn--ghost\" type=\"button\" (click)=\"personalizationOpen = !personalizationOpen\">
-          <span class=\"text-section\">Personalization</span>
-          <mat-icon>{{ personalizationOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
-        </button>
-        <div class=\"section-body\" *ngIf=\"personalizationOpen\">
-          <div class=\"section-helper text-muted\">Optional. Focus on habits first.</div>
-          <div class=\"field-grid\">
-            <div class=\"control-group\">
-              <div class=\"compact-label text-label\">
-                Font size: {{ fontSizeLabel }}
-              </div>
-              <input
-                type=\"range\"
-                min=\"12\"
-                max=\"18\"
-                step=\"1\"
-                class=\"font-slider\"
-                [value]=\"fontSizePx\"
-                (input)=\"setFontSizeFromRange($event)\">
-            </div>
-            <div class=\"control-group\">
-              <div class=\"compact-label text-label\">Daily reminder</div>
-              <app-toggle [checked]=\"dailyReminderEnabled\" [disabled]=\"notificationsLoading || !remindersNativeSupported\" (checkedChange)=\"toggleNotifications($event)\"></app-toggle>
-            </div>
-            <div class=\"control-group\">
-              <div class=\"compact-label text-label\">Reminder time</div>
-              <input class=\"reminder-time-input\" type=\"time\" [value]=\"dailyReminderTime\" [disabled]=\"notificationsLoading || !dailyReminderEnabled || !remindersNativeSupported\" (change)=\"onDailyReminderTimeChange($event)\">
-            </div>
-            <div class=\"control-group\">
-              <div class=\"compact-label text-label\">Sounds</div>
-              <app-toggle [checked]=\"soundsEnabled\" (checkedChange)=\"toggleSounds($event)\"></app-toggle>
-            </div>
-          </div>
-          <div class=\"section-helper text-muted\" *ngIf=\"!remindersNativeSupported\">Reminders work in the installed app.</div>
-          <!-- <div class=\"font-family-row\">
-            <mat-form-field appearance=\"fill\" class=\"appearance-field\">
-              <mat-label>Font Family</mat-label>
-              <mat-select [value]=\"fontFamily\" (selectionChange)=\"updateFontFamily($event.value)\">
-                <mat-option value=\"system\">System UI</mat-option>
-                <mat-option value=\"inter\">Inter</mat-option>
-                <mat-option value=\"roboto\">Roboto</mat-option>
-                <mat-option value=\"poppins\">Poppins</mat-option>
-                <mat-option value=\"montserrat\">Montserrat</mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div> -->
-
-          <div class=\"theme-section\">
-            <div class=\"compact-label text-label\">Theme</div>
-            <div class=\"theme-picker\">
-              <button class=\"theme-btn\" type=\"button\"
-                      [class.active]=\"currentTheme === 'system'\"
-                      (click)=\"setTheme('system')\">
-                <span class=\"theme-preview system-preview\"></span>
-                <span class=\"theme-name\">System</span>
-                <span class=\"theme-desc\">Solo Leveling</span>
+        <div class=\"pf-section__body\" [class.is-open]=\"dataOpen\">
+          <div class=\"pf-section__inner\">
+            <div class=\"pf-action-grid\">
+              <button class=\"pf-action-btn\" type=\"button\" (click)=\"exportJson()\">
+                <mat-icon>download</mat-icon>Export backup
               </button>
-              <button class=\"theme-btn\" type=\"button\"
-                      [class.active]=\"currentTheme === 'professional'\"
-                      (click)=\"setTheme('professional')\">
-                <span class=\"theme-preview professional-preview\"></span>
-                <span class=\"theme-name\">Pro</span>
-                <span class=\"theme-desc\">Clean dark</span>
-              </button>
-              <button class=\"theme-btn\" type=\"button\"
-                      [class.active]=\"currentTheme === 'minimal'\"
-                      (click)=\"setTheme('minimal')\">
-                <span class=\"theme-preview minimal-preview\"></span>
-                <span class=\"theme-name\">Minimal</span>
-                <span class=\"theme-desc\">Monochrome</span>
+              <button class=\"pf-action-btn\" type=\"button\" (click)=\"triggerImportJson(importInput)\">
+                <mat-icon>upload</mat-icon>Restore backup
               </button>
             </div>
           </div>
+          <input #importInput type=\"file\" hidden class=\"visually-hidden\" accept=\".json,application/json\" (change)=\"onImportJson($event)\">
+        </div>
+      </div>
 
-          <div class=\"accent-row\">
-            <div class=\"text-body\">Accent</div>
-            <div class=\"accent-swatches\">
-              <button
-                class=\"accent-swatch\"
-                *ngFor=\"let preset of accentPresets\"
-                [style.background]=\"preset.color\"
-                [class.is-active]=\"isAccentPresetActive(preset.id)\"
-                (click)=\"setAccentPreset(preset.id)\"
-                [attr.aria-label]=\"preset.name\">
-                <span class=\"swatch-check\" *ngIf=\"isAccentPresetActive(preset.id)\">&#x2713;</span>
-              </button>
-            </div>
-            <div class=\"custom-accent\" [class.is-active]=\"accent.type === 'custom'\">
-              <label class=\"text-label\">Custom</label>
-              <input type=\"color\" [value]=\"customAccent\" (input)=\"setCustomAccent($event)\">
-            </div>
+      <!-- ── Personalization ────────────────────────────────────────────── -->
+      <div class=\"pf-section\" [@staggerFadeUp]=\"animationKey\">
+        <button class=\"pf-section__toggle\" type=\"button\" (click)=\"personalizationOpen = !personalizationOpen\">
+          <div class=\"pf-section__icon-wrap pf-section__icon-wrap--purple\"><mat-icon>tune</mat-icon></div>
+          <div class=\"pf-section__title-group\">
+            <span class=\"pf-section__title\">Personalization</span>
+            <span class=\"pf-section__sub\">Theme, fonts &amp; reminders</span>
           </div>
-        </div>
-      </section>
-      <section class="section-block arcane-card" [@staggerFadeUp]="animationKey">
-        <button class="section-toggle glass-btn glass-btn--ghost" type="button" (click)="helpOpen = !helpOpen">
-          <span class="text-section">Help & About</span>
-          <mat-icon>{{ helpOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+          <mat-icon class=\"pf-section__chevron\" [class.is-open]=\"personalizationOpen\">expand_more</mat-icon>
         </button>
-        <div class="section-body" *ngIf="helpOpen">
-          <div class="settings-list">
-            <div class="settings-row">
-              <div class="row-label">Built by</div>
-              <div class="row-value">Giri</div>
-            </div>
-            <div class="settings-row">
-              <div class="row-label">Version</div>
-              <div class="row-value">{{ versionLabel }}</div>
-            </div>
-            <div class="settings-row">
-              <div class="row-label">Privacy</div>
-              <div class="row-value row-wrap">Beta version. Offline-first. No cloud. No tracking.</div>
-            </div>
+        <div class=\"pf-section__body\" [class.is-open]=\"personalizationOpen\">
+          <div class=\"pf-section__inner\">
+          <div class=\"pf-control-group\">
+            <div class=\"pf-control-label\">Font size: {{ fontSizeLabel }}</div>
+            <input type=\"range\" min=\"12\" max=\"18\" step=\"1\" class=\"font-slider\" [value]=\"fontSizePx\" (input)=\"setFontSizeFromRange($event)\">
           </div>
-          <div class="link-list">
-            <button class="link" type="button" routerLink="/about">About app</button>
-            <button class="link" type="button" routerLink="/terms">Terms</button>
-            <button class="link" type="button" routerLink="/privacy">Privacy</button>
+          <div class=\"pf-control-row\">
+            <div class=\"pf-control-label\">Daily reminder</div>
+            <app-toggle [checked]=\"dailyReminderEnabled\" [disabled]=\"notificationsLoading || !remindersNativeSupported\" (checkedChange)=\"toggleNotifications($event)\"></app-toggle>
+          </div>
+          <div class=\"pf-control-row\" *ngIf=\"dailyReminderEnabled && remindersNativeSupported\">
+            <div class=\"pf-control-label\">Reminder time</div>
+            <input class=\"reminder-time-input\" type=\"time\" [value]=\"dailyReminderTime\" [disabled]=\"notificationsLoading\" (change)=\"onDailyReminderTimeChange($event)\">
+          </div>
+          <div class=\"pf-control-row\">
+            <div class=\"pf-control-label\">Sounds</div>
+            <app-toggle [checked]=\"soundsEnabled\" (checkedChange)=\"toggleSounds($event)\"></app-toggle>
+          </div>
+          <div class=\"pf-section-divider\"></div>
+          <div class=\"pf-control-label pf-control-label--section\">Theme</div>
+          <div class=\"theme-picker\">
+            <button class=\"theme-btn\" type=\"button\" [class.active]=\"currentTheme === 'system'\" (click)=\"setTheme('system')\">
+              <span class=\"theme-preview system-preview\"></span>
+              <span class=\"theme-name\">System</span><span class=\"theme-desc\">Solo Leveling</span>
+            </button>
+            <button class=\"theme-btn\" type=\"button\" [class.active]=\"currentTheme === 'professional'\" (click)=\"setTheme('professional')\">
+              <span class=\"theme-preview professional-preview\"></span>
+              <span class=\"theme-name\">Pro</span><span class=\"theme-desc\">Clean dark</span>
+            </button>
+            <button class=\"theme-btn\" type=\"button\" [class.active]=\"currentTheme === 'minimal'\" (click)=\"setTheme('minimal')\">
+              <span class=\"theme-preview minimal-preview\"></span>
+              <span class=\"theme-name\">Minimal</span><span class=\"theme-desc\">Monochrome</span>
+            </button>
+          </div>
+          <div class=\"pf-section-divider\"></div>
+          <div class=\"pf-control-label pf-control-label--section\">Accent color</div>
+          <div class=\"accent-swatches\">
+            <button class=\"accent-swatch\" *ngFor=\"let preset of accentPresets\"
+              [style.background]=\"preset.color\" [class.is-active]=\"isAccentPresetActive(preset.id)\"
+              (click)=\"setAccentPreset(preset.id)\" [attr.aria-label]=\"preset.name\">
+              <span class=\"swatch-check\" *ngIf=\"isAccentPresetActive(preset.id)\">&#x2713;</span>
+            </button>
+          </div>
+          <div class=\"custom-accent\" [class.is-active]=\"accent.type === 'custom'\">
+            <label class=\"pf-control-label\">Custom color</label>
+            <input type=\"color\" [value]=\"customAccent\" (input)=\"setCustomAccent($event)\">
+          </div>
           </div>
         </div>
-      </section>
+      </div>
+
+      <!-- ── Help & About ────────────────────────────────────────────────── -->
+      <div class=\"pf-section\" [@staggerFadeUp]=\"animationKey\">
+        <button class=\"pf-section__toggle\" type=\"button\" (click)=\"helpOpen = !helpOpen\">
+          <div class=\"pf-section__icon-wrap pf-section__icon-wrap--muted\"><mat-icon>info</mat-icon></div>
+          <div class=\"pf-section__title-group\">
+            <span class=\"pf-section__title\">Help &amp; About</span>
+            <span class=\"pf-section__sub\">{{ versionLabel }}</span>
+          </div>
+          <mat-icon class=\"pf-section__chevron\" [class.is-open]=\"helpOpen\">expand_more</mat-icon>
+        </button>
+        <div class=\"pf-section__body\" [class.is-open]=\"helpOpen\">
+          <div class=\"pf-section__inner\">
+          <div class=\"pf-info-rows\">
+            <div class=\"pf-info-row\">
+              <span class=\"pf-info-label\">Built by</span>
+              <span class=\"pf-info-value\">Giri</span>
+            </div>
+            <div class=\"pf-info-row\">
+              <span class=\"pf-info-label\">Version</span>
+              <span class=\"pf-info-value\">{{ versionLabel }}</span>
+            </div>
+            <div class=\"pf-info-row\">
+              <span class=\"pf-info-label\">Privacy</span>
+              <span class=\"pf-info-value\">Offline-first. No cloud. No tracking.</span>
+            </div>
+          </div>
+          <div class=\"pf-nav-links\">
+            <a class=\"pf-nav-link\" [routerLink]=\"'/about'\">
+              <mat-icon class=\"pf-nav-link__icon\">info</mat-icon>
+              <span class=\"pf-nav-link__label\">About App</span>
+              <mat-icon class=\"pf-nav-link__arrow\">chevron_right</mat-icon>
+            </a>
+            <a class=\"pf-nav-link\" [routerLink]=\"'/terms'\">
+              <mat-icon class=\"pf-nav-link__icon\">description</mat-icon>
+              <span class=\"pf-nav-link__label\">Terms of Service</span>
+              <mat-icon class=\"pf-nav-link__arrow\">chevron_right</mat-icon>
+            </a>
+            <a class=\"pf-nav-link\" [routerLink]=\"'/privacy'\">
+              <mat-icon class=\"pf-nav-link__icon\">security</mat-icon>
+              <span class=\"pf-nav-link__label\">Privacy Policy</span>
+              <mat-icon class=\"pf-nav-link__arrow\">chevron_right</mat-icon>
+            </a>
+          </div>
+          </div>
+        </div>
+      </div>
 
       <app-shadow-monarch-modal
         [open]="showImportModal"
@@ -307,6 +297,40 @@ type BeforeInstallPromptEvent = Event & {
       </app-shadow-monarch-modal>
 
 
+    </div>
+
+    <!-- ── Badge Detail Overlay ─────────────────────────────────────────── -->
+    <div class=\"badge-detail-overlay\" *ngIf=\"selectedBadge\" (click)=\"closeBadgeDetail()\">
+      <div class=\"badge-detail-card\" [attr.data-tier]=\"getBadgeDetail(selectedBadge.id).tier\" (click)=\"$event.stopPropagation()\">
+        <div class=\"badge-detail__top-bar\" [style.background]=\"getTierColor(selectedBadge.id)\"></div>
+        <button class=\"badge-detail__close\" type=\"button\" (click)=\"closeBadgeDetail()\">
+          <mat-icon>close</mat-icon>
+        </button>
+        <div class=\"badge-detail__rarity\" [attr.data-tier]=\"getBadgeDetail(selectedBadge.id).tier\">
+          {{ getBadgeDetail(selectedBadge.id).rarity }}
+        </div>
+        <div class=\"badge-detail__icon-wrap\" [attr.data-tier]=\"getBadgeDetail(selectedBadge.id).tier\">
+          <mat-icon *ngIf=\"isBadgeUnlocked(selectedBadge.id)\">{{ selectedBadge.icon }}</mat-icon>
+          <mat-icon *ngIf=\"!isBadgeUnlocked(selectedBadge.id)\">lock</mat-icon>
+        </div>
+        <div class=\"badge-detail__title\">{{ isBadgeUnlocked(selectedBadge.id) ? selectedBadge.title : '???' }}</div>
+        <div class=\"badge-detail__status\" [class.is-unlocked]=\"isBadgeUnlocked(selectedBadge.id)\">
+          <mat-icon>{{ isBadgeUnlocked(selectedBadge.id) ? 'verified' : 'lock_open' }}</mat-icon>
+          <span>{{ isBadgeUnlocked(selectedBadge.id) ? 'ACHIEVEMENT UNLOCKED' : 'NOT YET UNLOCKED' }}</span>
+        </div>
+        <div class=\"badge-detail__desc\">
+          {{ isBadgeUnlocked(selectedBadge.id) ? getBadgeDetail(selectedBadge.id).description : 'Complete more habits to unlock this achievement and reveal its secrets.' }}
+        </div>
+        <div class=\"badge-detail__reward\" *ngIf=\"isBadgeUnlocked(selectedBadge.id)\">
+          <div class=\"badge-detail__reward-label\">REWARD</div>
+          <div class=\"badge-detail__reward-value\">{{ getBadgeDetail(selectedBadge.id).reward }}</div>
+        </div>
+        <div class=\"badge-detail__quote\">{{ getBadgeDetail(selectedBadge.id).flavorText }}</div>
+        <div class=\"badge-detail__footer\">
+          <div class=\"badge-detail__player-name\">{{ displayName }}</div>
+          <div class=\"badge-detail__date\">{{ today }}</div>
+        </div>
+      </div>
     </div>
 
   `,
@@ -360,6 +384,21 @@ export class ProfileComponent implements OnInit, OnDestroy {
   achievementBadges: AchievementBadgeDef[] = STARTER_BADGES;
   private unlockedBadgeIds = new Set<string>();
   achievementsOpen = false;
+  selectedBadge: AchievementBadgeDef | null = null;
+  readonly today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  private readonly badgeDetails: Record<string, { description: string; reward: string; flavorText: string; tier: 'bronze' | 'silver' | 'gold' | 'legendary'; rarity: string }> = {
+    first_habit_completed: { description: 'You completed your very first habit. Every legend in history started exactly where you did — with one small act of will.', reward: '50 XP Awakening Bonus', flavorText: '"The moment you begin, you separate yourself from the crowd."', tier: 'bronze', rarity: 'Common' },
+    first_perfect_day: { description: 'Every habit completed. One full day of zero compromise. You experienced what true discipline feels like.', reward: 'Perfect Day Seal + 100 XP', flavorText: '"One perfect day proves you are capable of infinite more."', tier: 'silver', rarity: 'Uncommon' },
+    perfect_days_3: { description: 'Three days of perfect execution. A habit needs 3 days of proof to begin taking root. You are building the foundation.', reward: 'Discipline Crest + 200 XP', flavorText: '"Three days of perfection. Your character is being forged in fire."', tier: 'silver', rarity: 'Uncommon' },
+    perfect_days_7: { description: 'A full week of flawless performance. Seven sunrises. Seven victories. You did not break once.', reward: 'Shadow Warrior Emblem + 500 XP', flavorText: '"Seven days without surrender. You are no longer who you were."', tier: 'gold', rarity: 'Rare' },
+    total_completed_10: { description: 'Ten habit completions in the books. Your history of wins is growing. The system is tracking your power.', reward: 'Rising Hunter Crest + 75 XP', flavorText: '"10 victories recorded. The leaderboard is watching you."', tier: 'bronze', rarity: 'Common' },
+    total_completed_50: { description: 'Fifty completions. Half a century of deliberate actions. You have proven that the first win was not luck.', reward: 'Iron Resolve Sigil + 250 XP', flavorText: '"50 reps. 50 times you chose growth over comfort."', tier: 'silver', rarity: 'Uncommon' },
+    total_completed_100: { description: 'One hundred habits completed. You have entered the tier of the truly dedicated. Most people never reach this number.', reward: 'Centurion Crown + 1000 XP', flavorText: '"100. You did not just try — you persisted beyond what most are willing to endure."', tier: 'gold', rarity: 'Rare' },
+    first_level_up: { description: 'You leveled up for the first time. The power within you is awakening. The system acknowledges your growth.', reward: 'Awakening Crystal + Level Bonus', flavorText: '"Level 2. The ascension has begun. There is no ceiling for those who refuse to stop."', tier: 'bronze', rarity: 'Common' },
+    level_5_reached: { description: 'Level 5 achieved. You are no longer a newcomer. Your rank is established. The hunt intensifies from here.', reward: "Hunter's Mark Insignia + Rank Bonus", flavorText: '"Level 5. You have crossed the line between beginners and believers."', tier: 'silver', rarity: 'Uncommon' },
+    level_10_reached: { description: "Level 10. The highest tier of dedication. You have earned the Shadow Monarch's recognition. You are feared by inertia itself.", reward: 'Shadow Monarch Insignia + Legendary Bonus', flavorText: '"Level 10. Not many reach here. You are among the few who refused to be ordinary."', tier: 'legendary', rarity: 'Legendary' }
+  };
 
   dataOpen = false;
 
@@ -976,6 +1015,32 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   isBadgeUnlocked(id: string): boolean {
     return this.unlockedBadgeIds.has(id);
+  }
+
+  openBadgeDetail(badge: AchievementBadgeDef): void {
+    this.selectedBadge = badge;
+    this.cdr.markForCheck();
+  }
+
+  closeBadgeDetail(): void {
+    this.selectedBadge = null;
+    this.cdr.markForCheck();
+  }
+
+  getBadgeDetail(id: string) {
+    return this.badgeDetails[id] ?? {
+      description: 'A special achievement awaits.',
+      reward: 'Secret Reward',
+      flavorText: '"The unknown holds the greatest power."',
+      tier: 'bronze' as const,
+      rarity: 'Common'
+    };
+  }
+
+  getTierColor(id: string): string {
+    const tier = this.getBadgeDetail(id).tier;
+    const colors: Record<string, string> = { bronze: '#cd7f32', silver: '#c0c0c0', gold: '#ffd700', legendary: '#a259ff' };
+    return colors[tier] ?? '#ffd700';
   }
 
   toggleAchievementsOpen(): void {

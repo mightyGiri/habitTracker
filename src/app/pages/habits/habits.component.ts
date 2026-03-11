@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, TitleCasePipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
@@ -73,7 +73,7 @@ import { staggerFadeUp, noopAnimation } from '../../shared/list-animations';
         </div>
 
         <!-- Habits list -->
-        <div class="habits-list" *ngIf="habits.length > 0" [@staggerFadeUp]="habits.length">
+        <div class="habits-list" *ngIf="habits.length > 0">
           <div
             class="habit-card"
             *ngFor="let habit of habits; let i = index; trackBy: trackByHabitId"
@@ -113,7 +113,7 @@ import { staggerFadeUp, noopAnimation } from '../../shared/list-animations';
                     ? (habit.weeklyTarget || 3) + 'x / week'
                     : 'Daily' }}
               </span>
-              <span class="habit-info-item" *ngIf="habit.minimumVersion">
+              <span class="habit-info-item" *ngIf="habit.minimumVersion && habit.minimumVersion !== '1.0.0'">
                 <mat-icon>flag</mat-icon>
                 {{ habit.minimumVersion }}
               </span>
@@ -187,16 +187,22 @@ export class HabitsComponent implements OnInit, OnDestroy {
 
   constructor(
     private habitStore: HabitStoreService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.ready$ = this.habitStore.getReady();
     this.subscription.add(
       this.habitStore.getHabits().subscribe(habits => {
-        this.habits = [...habits].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
-        this.activeCount = habits.filter(h => h.isActive).length;
-        this.inactiveCount = habits.filter(h => !h.isActive).length;
+        // Run inside Angular's zone to handle async sources (backup restore via FileReader, etc.)
+        this.ngZone.run(() => {
+          this.habits = [...habits].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+          this.activeCount = habits.filter(h => h.isActive).length;
+          this.inactiveCount = habits.filter(h => !h.isActive).length;
+          this.cdr.markForCheck();
+        });
       })
     );
   }
@@ -239,20 +245,40 @@ export class HabitsComponent implements OnInit, OnDestroy {
   // ── Dialog actions ────────────────────────────────────────────────────────
 
   openCreateDialog(): void {
-    this.dialog.open<HabitEditDialogComponent, HabitEditDialogData>(HabitEditDialogComponent, {
+    const ref = this.dialog.open<HabitEditDialogComponent, HabitEditDialogData>(HabitEditDialogComponent, {
       data: { mode: 'create', title: 'New Habit' },
       width: '420px',
       maxWidth: '95vw',
       panelClass: 'habit-dialog'
     });
+    // Force change detection after dialog closes to catch any store updates
+    ref.afterClosed().subscribe(() => {
+      this.ngZone.run(() => {
+        const latest = this.habitStore.getHabitsSync();
+        this.habits = [...latest].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+        this.activeCount = latest.filter(h => h.isActive).length;
+        this.inactiveCount = latest.filter(h => !h.isActive).length;
+        this.cdr.detectChanges();
+      });
+    });
   }
 
   openEditDialog(habit: Habit): void {
-    this.dialog.open<HabitEditDialogComponent, HabitEditDialogData>(HabitEditDialogComponent, {
+    const ref = this.dialog.open<HabitEditDialogComponent, HabitEditDialogData>(HabitEditDialogComponent, {
       data: { mode: 'edit', title: 'Edit Habit', habit },
       width: '420px',
       maxWidth: '95vw',
       panelClass: 'habit-dialog'
+    });
+    // Force change detection after dialog closes to catch any store updates
+    ref.afterClosed().subscribe(() => {
+      this.ngZone.run(() => {
+        const latest = this.habitStore.getHabitsSync();
+        this.habits = [...latest].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+        this.activeCount = latest.filter(h => h.isActive).length;
+        this.inactiveCount = latest.filter(h => !h.isActive).length;
+        this.cdr.detectChanges();
+      });
     });
   }
 
@@ -280,6 +306,13 @@ export class HabitsComponent implements OnInit, OnDestroy {
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         this.habitStore.deleteHabit(habit.id);
+        this.ngZone.run(() => {
+          const latest = this.habitStore.getHabitsSync();
+          this.habits = [...latest].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+          this.activeCount = latest.filter(h => h.isActive).length;
+          this.inactiveCount = latest.filter(h => !h.isActive).length;
+          this.cdr.detectChanges();
+        });
       }
     });
   }

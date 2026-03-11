@@ -1,55 +1,385 @@
-.page-title
-  margin-bottom: var(--space-3)
+// ── Overview page ─────────────────────────────────────────────────────────────
 
-.overview-hero
+.overview-page
+  display: flex
+  flex-direction: column
+  gap: 14px
+  padding-bottom: calc(var(--tabbar-height, 72px) + 28px)
+
+// ── Player Hero Card ──────────────────────────────────────────────────────────
+
+.player-hero
+  display: flex
+  align-items: center
+  gap: 12px
   padding: 16px
-  margin-bottom: var(--space-3)
-  display: flex
-  flex-direction: column
-  gap: 12px
-  border: 1px solid color-mix(in oklab, var(--system-border) 60%, transparent)
-  box-shadow: var(--system-shadow-deep), inset 0 0 16px rgba(0, 0, 0, 0.35)
-
-.hero-grid
-  display: grid
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr))
-  gap: 12px
-
-.hero-block
-  display: flex
-  flex-direction: column
-  gap: 6px
-  padding: 10px 12px
   border-radius: var(--radius-md)
-  background: transparent
-  border: 1px solid color-mix(in oklab, var(--system-border) 35%, transparent)
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, white 6%, transparent)
+  background: linear-gradient(135deg, rgba(8,12,35,0.98), rgba(5,8,22,1))
+  border: 1px solid rgba(61,127,255,0.22)
+  box-shadow: 0 0 30px rgba(61,127,255,0.08), inset 0 1px 0 rgba(255,255,255,0.05)
+  position: relative
+  overflow: hidden
 
-.hero-action
-  gap: 8px
+  &::before
+    content: ''
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    height: 1px
+    background: linear-gradient(90deg, transparent, rgba(0,229,255,0.6), rgba(61,127,255,0.4), transparent)
 
-.hero-label
-  font-size: 0.75rem
-  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
-  letter-spacing: 0.12em
-  text-transform: uppercase
-  font-family: "Consolas", "SFMono-Regular", monospace
+.player-hero__rank-badge
+  flex-shrink: 0
+  width: 46px
+  height: 46px
+  border-radius: 10px
+  display: flex
+  align-items: center
+  justify-content: center
+  font-size: 1.3rem
+  font-weight: 900
+  font-family: "Consolas", monospace
+  letter-spacing: -0.02em
+  border: 2px solid
 
-.hero-value
+  &[data-rank="S"]
+    background: linear-gradient(135deg, rgba(255,50,50,0.15), rgba(200,0,0,0.08))
+    border-color: #ff3355
+    color: #ff3355
+    box-shadow: 0 0 18px rgba(255,51,85,0.4)
+
+  &[data-rank="A"]
+    background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(200,160,0,0.08))
+    border-color: #ffd700
+    color: #ffd700
+    box-shadow: 0 0 18px rgba(255,215,0,0.4)
+
+  &[data-rank="B"]
+    background: linear-gradient(135deg, rgba(123,95,255,0.15), rgba(80,50,200,0.08))
+    border-color: #7b5fff
+    color: #7b5fff
+    box-shadow: 0 0 18px rgba(123,95,255,0.35)
+
+  &[data-rank="C"]
+    background: linear-gradient(135deg, rgba(61,127,255,0.15), rgba(0,100,200,0.08))
+    border-color: #3d7fff
+    color: #3d7fff
+    box-shadow: 0 0 14px rgba(61,127,255,0.3)
+
+  &[data-rank="D"]
+    background: linear-gradient(135deg, rgba(74,222,128,0.12), rgba(0,150,80,0.06))
+    border-color: #4ade80
+    color: #4ade80
+
+  &[data-rank="E"]
+    background: rgba(100,120,160,0.08)
+    border-color: rgba(100,120,160,0.4)
+    color: rgba(100,120,160,0.8)
+
+.player-hero__info
+  flex: 1
+  min-width: 0
+
+.player-hero__name
   font-size: 1rem
-  font-weight: 600
-  color: #00e5ff
-  text-shadow: 0 0 8px rgba(0, 229, 255, 0.4)
+  font-weight: 800
+  color: rgba(200,220,255,0.95)
+  line-height: 1.1
+  overflow: hidden
+  text-overflow: ellipsis
+  white-space: nowrap
 
-.details-button
+.player-hero__title
+  font-size: 0.7rem
+  font-weight: 600
+  letter-spacing: 0.1em
+  text-transform: uppercase
+  color: var(--system-cyan)
+  margin-top: 3px
+  font-family: "Consolas", monospace
+
+.player-hero__chips
+  display: flex
+  flex-direction: column
+  gap: 5px
+
+.hero-chip
+  display: inline-flex
+  align-items: center
+  gap: 5px
+  font-size: 0.7rem
+  font-weight: 700
+  padding: 3px 9px
+  border-radius: 99px
+  border: 1px solid
+  white-space: nowrap
+
+  &--fire
+    border-color: rgba(255,120,0,0.4)
+    color: #ff7c00
+    background: rgba(255,120,0,0.1)
+
+  &--bolt
+    border-color: rgba(250,204,21,0.4)
+    color: #facc15
+    background: rgba(250,204,21,0.1)
+
+  &--perfect
+    border-color: rgba(0,229,255,0.4)
+    color: var(--system-cyan)
+    background: rgba(0,229,255,0.08)
+
+.hero-chip__icon
+  font-size: 0.8rem
+
+// ── Mana Bar ──────────────────────────────────────────────────────────────────
+
+.mana-bar-section
+  display: flex
+  flex-direction: column
+  gap: 4px
+  padding: 12px 14px
+  border-radius: var(--radius-sm)
+  background: rgba(5,8,22,0.8)
+  border: 1px solid rgba(61,127,255,0.14)
+
+.mana-bar-labels
+  display: flex
+  justify-content: space-between
+  align-items: center
+
+.mana-bar-label
+  font-size: 0.62rem
+  font-weight: 700
+  letter-spacing: 0.16em
+  text-transform: uppercase
+  color: var(--system-cyan)
+  font-family: "Consolas", monospace
+
+.mana-bar-xp
+  font-size: 0.7rem
+  font-weight: 600
+  color: rgba(150,190,255,0.8)
+  font-family: "Consolas", monospace
+
+.mana-bar-track
+  position: relative
+  height: 10px
+  border-radius: 99px
+  background: rgba(10,14,40,0.9)
+  border: 1px solid rgba(61,127,255,0.18)
+  overflow: hidden
+
+.mana-bar-fill
+  height: 100%
+  background: linear-gradient(90deg, #1a3fff, #3d7fff 40%, #00e5ff 80%, #7b5fff)
+  border-radius: inherit
+  transition: width 800ms cubic-bezier(0.4, 0, 0.2, 1)
+  box-shadow: 0 0 12px rgba(0,229,255,0.5)
+  position: relative
+
+  &::after
+    content: ''
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    height: 40%
+    background: rgba(255,255,255,0.25)
+    border-radius: inherit
+
+.mana-bar-shine
+  position: absolute
+  top: 0
+  left: 0
+  right: 0
+  height: 4px
+  background: rgba(255,255,255,0.12)
+  border-radius: inherit
+  pointer-events: none
+
+.mana-bar-sub
+  font-size: 0.62rem
+  color: rgba(80,120,180,0.6)
+  text-align: right
+  font-family: "Consolas", monospace
+
+// ── Stat Crystals ─────────────────────────────────────────────────────────────
+
+.stat-crystals
+  display: grid
+  grid-template-columns: 1fr 1fr
+  gap: 10px
+
+.crystal
+  position: relative
+  display: flex
+  flex-direction: column
+  gap: 5px
+  padding: 14px 12px
+  border-radius: var(--radius-md)
+  background: linear-gradient(150deg, rgba(8,12,35,0.95), rgba(5,8,22,0.98))
+  border: 1px solid rgba(61,127,255,0.15)
+  overflow: hidden
+  transition: border-color 160ms ease, box-shadow 160ms ease
+
+  &::before
+    content: ''
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    height: 1px
+    pointer-events: none
+
+  &--streak
+    border-color: rgba(255,120,0,0.2)
+    &::before
+      background: linear-gradient(90deg, transparent, rgba(255,120,0,0.6), transparent)
+    .crystal__value
+      color: #ff7c00
+      text-shadow: 0 0 16px rgba(255,120,0,0.5)
+
+  &--level
+    border-color: rgba(250,204,21,0.22)
+    &::before
+      background: linear-gradient(90deg, transparent, rgba(250,204,21,0.5), transparent)
+    .crystal__value
+      color: #facc15
+      text-shadow: 0 0 16px rgba(250,204,21,0.5)
+
+  &--perfect
+    border-color: rgba(0,229,255,0.18)
+    &::before
+      background: linear-gradient(90deg, transparent, rgba(0,229,255,0.5), transparent)
+    .crystal__value
+      color: var(--system-cyan)
+      text-shadow: 0 0 16px rgba(0,229,255,0.5)
+
+  &--action
+    border-color: rgba(74,222,128,0.18)
+    &::before
+      background: linear-gradient(90deg, transparent, rgba(74,222,128,0.4), transparent)
+
+.crystal__glow
+  position: absolute
+  bottom: -20px
+  left: 50%
+  transform: translateX(-50%)
+  width: 60%
+  height: 40px
+  border-radius: 50%
+  pointer-events: none
+  .crystal--streak &
+    background: radial-gradient(ellipse, rgba(255,120,0,0.12) 0%, transparent 70%)
+  .crystal--level &
+    background: radial-gradient(ellipse, rgba(250,204,21,0.1) 0%, transparent 70%)
+  .crystal--perfect &
+    background: radial-gradient(ellipse, rgba(0,229,255,0.1) 0%, transparent 70%)
+  .crystal--action &
+    background: radial-gradient(ellipse, rgba(74,222,128,0.1) 0%, transparent 70%)
+
+.crystal__label
+  font-size: 0.58rem
+  font-weight: 700
+  letter-spacing: 0.16em
+  text-transform: uppercase
+  color: var(--muted-2)
+  font-family: "Consolas", monospace
+
+.crystal__value
+  font-size: 1.55rem
+  font-weight: 900
+  color: #00e5ff
+  line-height: 1
+  letter-spacing: -0.01em
+
+.crystal__denom
+  font-size: 0.9rem
+  font-weight: 600
+  color: var(--muted)
+  margin-left: 1px
+
+.crystal__sub
+  font-size: 0.68rem
+  color: var(--muted-2)
+
+.crystal__value-sm
+  font-size: 0.78rem
+  font-weight: 600
+  color: rgba(180,210,255,0.85)
+  line-height: 1.4
+  flex: 1
+
+// ── ARISE button ─────────────────────────────────────────────────────────────
+
+.btn-arise
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  padding: 8px 16px
+  border-radius: 99px
+  border: 1px solid rgba(61,127,255,0.5)
+  background: linear-gradient(135deg, rgba(61,127,255,0.2), rgba(0,229,255,0.1))
+  color: var(--system-cyan)
+  font-size: 0.7rem
+  font-weight: 800
+  letter-spacing: 0.18em
+  cursor: pointer
+  transition: all 160ms ease
+  text-transform: uppercase
+
+  &:hover:not(:disabled)
+    background: linear-gradient(135deg, rgba(61,127,255,0.35), rgba(0,229,255,0.2))
+    box-shadow: 0 0 20px rgba(0,229,255,0.3)
+    border-color: var(--system-cyan)
+
+  &:disabled
+    opacity: 0.4
+    cursor: default
+
+// ── Toggle Button ─────────────────────────────────────────────────────────────
+
+.overview-toggle-btn
+  display: flex
+  align-items: center
+  justify-content: center
+  gap: 10px
   width: 100%
-  box-shadow: 0 0 14px var(--system-glow-soft)
+  padding: 9px 16px
+  border-radius: var(--radius-sm)
+  border: 1px solid rgba(61,127,255,0.14)
+  background: rgba(6,8,24,0.6)
+  color: var(--muted)
+  cursor: pointer
+  transition: all 160ms ease
+
+  &:hover
+    background: rgba(61,127,255,0.08)
+    border-color: rgba(61,127,255,0.25)
+    color: var(--text)
+
+.toggle-btn__line
+  flex: 1
+  height: 1px
+  background: linear-gradient(90deg, transparent, rgba(61,127,255,0.2), transparent)
+
+.toggle-btn__text
+  font-size: 0.65rem
+  font-weight: 700
+  letter-spacing: 0.16em
+  font-family: "Consolas", monospace
+  white-space: nowrap
+
+// ── Details section ───────────────────────────────────────────────────────────
 
 .details-section
-  display: grid
-  gap: var(--space-3)
-  max-height: 2000px
-  transition: max-height 180ms ease, opacity 180ms ease
+  display: flex
+  flex-direction: column
+  gap: 14px
+  max-height: 3000px
+  transition: max-height 220ms ease, opacity 200ms ease
 
   &.is-collapsed
     max-height: 0
@@ -57,478 +387,48 @@
     opacity: 0
     pointer-events: none
 
-.empty-state
-  padding: 16px
-
-  .empty-title
-    font-size: 1rem
-    font-weight: 600
-    margin-bottom: 6px
-
-.calendar-card
-  .card-body
-    padding: var(--space-3)
-
-.calendar-grid
-  display: grid
-  grid-template-columns: repeat(7, minmax(0, 1fr))
-  gap: 10px
-
-.calendar-weekday
-  font-size: 0.7rem
-  text-transform: uppercase
-  letter-spacing: 0.12em
-  color: rgba(61, 127, 255, 0.8)
-  text-align: center
-  font-family: "Consolas", "SFMono-Regular", monospace
-
-.calendar-cell
-  position: relative
-  min-height: 60px
-  padding: 8px
-  border-radius: 12px
-  border: 1px solid color-mix(in oklab, var(--system-border) 45%, transparent)
-  background: rgba(10, 14, 26, 0.45)
-  color: var(--theme-text)
-  display: flex
-  flex-direction: column
-  justify-content: space-between
-  text-align: left
-  cursor: pointer
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease
-
-  &:hover
-    transform: translateY(-1px)
-    box-shadow: 0 0 16px var(--system-glow-soft)
-
-  &.is-empty
-    background: transparent
-    border-color: transparent
-    cursor: default
-
-  &.is-selected
-    box-shadow: 0 0 0 2px var(--system-border), 0 0 16px var(--system-glow-soft)
-
-  &.is-perfect,
-  &.perfect-day
-    background: rgba(255, 215, 0, 0.2)
-    border-color: rgba(255, 215, 0, 0.5)
-    animation: perfectPulse 2.5s ease-in-out infinite
-
-  &.is-zero
-    background: var(--theme-surface)
-
-  &.is-low
-    background: var(--accent-10)
-
-  &.is-mid
-    background: var(--accent-20)
-
-  &.is-high
-    background: var(--accent-28)
-
-.cell-date
-  font-size: 0.85rem
-  font-weight: 600
-  display: inline-flex
-  align-items: center
-  gap: 6px
-
-.today-dot
-  width: 6px
-  height: 6px
-  border-radius: 50%
-  background: var(--theme-accent)
-  box-shadow: 0 0 6px var(--theme-glow)
-
-.cell-metric
-  align-self: flex-end
-  font-size: 0.7rem
-  font-weight: 600
-  color: var(--theme-text)
-
-.summary-card
-  .card-body
-    padding: var(--space-3)
-
-.weekly-header-row
-  display: flex
-  align-items: center
-  justify-content: space-between
-  gap: 10px
-  flex-wrap: wrap
-
-.weekly-header-copy
-  display: flex
-  flex-direction: column
-  gap: 2px
-
-.week-selector
-  display: flex
-  flex-wrap: wrap
-  gap: 8px
-  margin-bottom: 10px
-
-.week-selector-btn
-  min-width: 52px
-  min-height: 34px
-  padding: 0 12px
-  border-radius: 999px
-  border: 1px solid color-mix(in oklab, var(--system-border) 35%, transparent)
-  background: rgba(10, 14, 26, 0.35)
-  color: var(--theme-text)
-  font-weight: 700
-
-  &.is-selected
-    border-color: color-mix(in oklab, var(--theme-accent) 55%, transparent)
-    box-shadow: 0 0 0 1px color-mix(in oklab, var(--theme-accent) 14%, transparent) inset, 0 0 14px color-mix(in oklab, var(--theme-accent) 16%, transparent)
-
-.weekly-share-btn
-  display: inline-flex
-  flex-direction: column
-  align-items: flex-start
-  justify-content: center
-  gap: 1px
-  min-height: 40px
-  line-height: 1.1
-
-  small
-    font-size: 0.68rem
-    letter-spacing: 0.02em
-    color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
-
-.selected-date-card
-  .card-body
-    padding: var(--space-3)
-
-.selected-date-columns
-  display: grid
-  grid-template-columns: repeat(2, minmax(0, 1fr))
-  gap: 12px
-
-.selected-date-group
-  border: 1px solid color-mix(in oklab, var(--system-border) 35%, transparent)
-  border-radius: var(--radius-md)
-  padding: 10px 12px
-  background: color-mix(in oklab, var(--theme-surface) 85%, transparent)
-
-.selected-date-title
-  margin: 0 0 8px
-  font-size: 0.85rem
-  font-weight: 700
-  color: var(--theme-text)
-
-.selected-date-list
-  margin: 0
-  padding-left: 18px
-  display: grid
-  gap: 6px
-  color: var(--theme-text)
-
-.selected-date-empty
-  margin: 0
-
-.weekly-row
-  display: grid
-  grid-template-columns: 60px 90px 1fr 52px 70px
-  align-items: center
-  gap: 10px
-  padding: 8px 0
-  border-bottom: 1px solid color-mix(in oklab, var(--system-border) 35%, transparent)
-  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
-
-  &:last-child
-    border-bottom: none
-
-.weekly-row-button
-  width: 100%
-  text-align: left
-  background: transparent
-  border-left: none
-  border-right: none
-  border-top: none
-  cursor: pointer
-
-  &.is-selected
-    background: color-mix(in oklab, var(--theme-accent) 8%, transparent)
-    border-radius: 10px
-    border-bottom-color: color-mix(in oklab, var(--theme-accent) 20%, transparent)
-
-.weekly-header
-  text-transform: uppercase
-  font-size: 0.7rem
-  letter-spacing: 0.12em
-  color: rgba(61, 127, 255, 0.8)
-  font-family: "Consolas", "SFMono-Regular", monospace
-
-.week-label
-  font-weight: 700
-  color: var(--theme-text)
-
-.week-metric,
-.week-percent,
-.week-perfect
-  font-weight: 600
-  color: #00e5ff
-  text-shadow: 0 0 8px rgba(0, 229, 255, 0.4)
-
-.week-bar
-  position: relative
-  height: 8px
-  border-radius: 999px
-  background: rgba(10, 14, 26, 0.45)
-  border: 1px solid color-mix(in oklab, var(--system-border) 45%, transparent)
-  overflow: hidden
-
-.week-bar-fill
-  height: 100%
-  background: linear-gradient(90deg, #3d7fff, #00e5ff)
-
-@keyframes perfectPulse
-  0%, 100%
-    box-shadow: 0 0 10px var(--accent-20)
-  50%
-    box-shadow: 0 0 18px var(--accent-45)
-
-.reduce-motion
-  .perfect-day
-    animation: none
-
-@media (max-width: 1024px)
-  .hero-grid
-    grid-template-columns: repeat(2, minmax(0, 1fr))
-
-@media (max-width: 720px)
-  .calendar-grid
-    gap: 8px
-
-  .calendar-cell
-    min-height: 48px
-    padding: 6px
-
-  .hero-grid
-    grid-template-columns: 1fr
-
-@media (max-width: 640px)
-  .weekly-share-btn
-    width: 100%
-    align-items: center
-
-  .calendar-grid
-    gap: 6px
-
-  .selected-date-columns
-    grid-template-columns: 1fr
-
-  .weekly-row
-    grid-template-columns: 1fr 1fr
-    grid-auto-rows: minmax(0, auto)
-    row-gap: 6px
-    font-size: 0.8rem
-
-  .week-bar
-    grid-column: 1 / -1
-
-.weekly-report-export-host
-  position: fixed
-  left: -10000px
-  top: 0
-  width: 900px
-  height: 1600px
-  pointer-events: none
-  z-index: -1
-  background: #00000f
-
-.weekly-report-export-root
-  width: 900px
-  height: 1600px
-  background: linear-gradient(180deg, #080820, #050510)
-  color: #fff
-  padding: 36px
-  border-radius: 22px
-  overflow: hidden
-  box-sizing: border-box
-
-.weekly-report-export-mode *
-  backdrop-filter: none !important
-  -webkit-backdrop-filter: none !important
-  filter: none !important
-  box-shadow: none !important
-  text-shadow: none !important
-
-.weekly-report-capture-card
-  border-radius: 18px
-  background: linear-gradient(180deg, #080820, #060618)
-  border: 1px solid rgba(255, 255, 255, 0.08)
-  color: #fff
-  padding: 18px
-  display: grid
-  gap: 12px
-  height: 100%
-  box-sizing: border-box
-
-.weekly-report-capture-header
-  display: flex
-  align-items: baseline
-  justify-content: space-between
-  gap: 10px
-  padding-bottom: 10px
-  border-bottom: 1px solid rgba(255,255,255,0.06)
-
-.weekly-report-capture-user
-  font-size: 1.15rem
-  font-weight: 700
-  overflow: hidden
-  text-overflow: ellipsis
-  white-space: nowrap
-
-.weekly-report-capture-meta
-  font-size: 0.92rem
-  font-weight: 700
-  color: rgba(255,255,255,0.82)
-  white-space: nowrap
-
-.weekly-report-capture-title
-  font-size: 0.9rem
-  letter-spacing: 0.14em
-  font-weight: 800
-  color: rgba(255,255,255,0.82)
-
-.weekly-report-capture-range
-  margin-top: -6px
-  font-size: 1.35rem
-  font-weight: 800
-
-.weekly-report-capture-stats
-  display: grid
-  grid-template-columns: 1fr 1fr
-  gap: 10px
-
-.weekly-report-capture-stat
-  border-radius: 14px
-  background: rgba(255,255,255,0.03)
-  border: 1px solid rgba(255,255,255,0.05)
-  padding: 10px
-  display: grid
-  gap: 4px
-
-.weekly-report-capture-stat-label
-  font-size: 0.8rem
-  letter-spacing: 0.08em
-  text-transform: uppercase
-  color: rgba(255,255,255,0.62)
-  font-weight: 700
-
-.weekly-report-capture-stat-value
-  font-size: 1.15rem
-  font-weight: 800
-  color: #00e5ff
-  text-shadow: 0 0 8px rgba(0, 229, 255, 0.4)
-
-.weekly-report-capture-stat-sub
-  font-size: 0.8rem
-  color: rgba(255,255,255,0.8)
-
-.weekly-report-capture-section
-  font-size: 0.86rem
-  letter-spacing: 0.12em
-  text-transform: uppercase
-  color: rgba(61, 127, 255, 0.8)
-  font-weight: 700
-  font-family: "Consolas", "SFMono-Regular", monospace
-
-.weekly-report-capture-empty
-  color: rgba(255,255,255,0.8)
-  font-size: 1rem
-
-.weekly-report-capture-habits
-  display: grid
-  gap: 8px
-  align-content: start
-
-.weekly-report-capture-habit
-  border-radius: 12px
-  background: rgba(255,255,255,0.02)
-  border: 1px solid rgba(255,255,255,0.04)
-  padding: 8px 10px
-  display: grid
-  gap: 8px
-
-.weekly-report-capture-habit-head
-  display: grid
-  grid-template-columns: 1fr auto
-  gap: 10px
-  align-items: center
-
-.weekly-report-capture-habit-name
-  font-size: 0.98rem
-  font-weight: 600
-  overflow: hidden
-  text-overflow: ellipsis
-  white-space: nowrap
-
-.weekly-report-capture-habit-metric
-  font-size: 0.92rem
-  color: rgba(255,255,255,0.8)
-  font-weight: 700
-
-.weekly-report-capture-habit-bar
-  width: 100%
-  height: 8px
-  border-radius: 999px
-  background: rgba(255,255,255,0.07)
-  overflow: hidden
-
-.weekly-report-capture-habit-fill
-  height: 100%
-  border-radius: inherit
-  background: linear-gradient(90deg, var(--theme-accent, #4c8dff), rgba(94, 234, 212, 0.9))
-
-.weekly-report-capture-level
-  border-top: 1px solid rgba(255,255,255,0.06)
-  padding-top: 10px
-  display: grid
-  gap: 4px
-
-.weekly-report-capture-level-line
-  font-size: 1rem
-  font-weight: 700
-
-.weekly-report-capture-level-sub
-  font-size: 0.9rem
-  color: rgba(255,255,255,0.76)
-
-.weekly-report-capture-footer
-  margin-top: auto
-  border-top: 1px solid rgba(255,255,255,0.06)
-  padding-top: 10px
-  font-size: 0.92rem
-  color: rgba(255,255,255,0.88)
-  font-weight: 700
-
-// ── Domain XP Cards ───────────────────────────────────────────────────────────
-
-.domain-xp-section
-  margin: 4px 0 16px
+// ── Section kicker ────────────────────────────────────────────────────────────
 
 .section-kicker
-  font-family: "Consolas", "SFMono-Regular", monospace
-  font-size: 0.68rem
+  display: flex
+  align-items: center
+  gap: 8px
+  font-size: 0.62rem
+  font-weight: 700
+  letter-spacing: 0.2em
+  text-transform: uppercase
+  color: rgba(61,127,255,0.7)
+  font-family: "Consolas", monospace
+  margin-bottom: 12px
+
+.section-kicker__line
+  flex: 1
+  height: 1px
+  background: linear-gradient(90deg, transparent, rgba(61,127,255,0.25), transparent)
+
+.section-kicker-inline
+  font-size: 0.62rem
+  font-weight: 700
   letter-spacing: 0.18em
   text-transform: uppercase
   color: rgba(61,127,255,0.7)
-  margin-bottom: 12px
+  font-family: "Consolas", monospace
 
-.domain-xp-grid
+// ── Domain Mastery ────────────────────────────────────────────────────────────
+
+.domain-mastery-section
+  margin: 0
+
+.domain-cards
   display: flex
   flex-direction: column
-  gap: 10px
+  gap: 8px
 
-.domain-xp-card
+.domain-card
   background: linear-gradient(135deg, rgba(8,12,35,0.95), rgba(5,8,22,0.98))
-  border: 1px solid rgba(61,127,255,0.12)
+  border: 1px solid rgba(61,127,255,0.1)
   border-radius: 14px
-  padding: 14px 16px
+  padding: 12px 14px
   position: relative
   overflow: hidden
   transition: border-color 160ms ease, box-shadow 160ms ease
@@ -544,128 +444,1296 @@
     pointer-events: none
 
   &:hover
-    border-color: color-mix(in oklab, var(--d-color, #3d7fff) 30%, transparent)
-    box-shadow: 0 0 20px var(--d-glow, rgba(61,127,255,0.2))
+    border-color: color-mix(in oklab, var(--d-color, #3d7fff) 28%, transparent)
+    box-shadow: 0 0 18px var(--d-glow, rgba(61,127,255,0.15))
 
-.dxp-top
+.domain-card__header
   display: flex
   align-items: center
   gap: 10px
-  margin-bottom: 10px
+  margin-bottom: 8px
 
-.dxp-emoji
-  font-size: 1.4rem
-  width: 32px
+.domain-card__emoji
+  font-size: 1.3rem
   flex-shrink: 0
+  width: 28px
 
-.dxp-info
+.domain-card__info
   flex: 1
 
-.dxp-label
+.domain-card__name
   font-size: 0.8rem
   font-weight: 600
   color: rgba(200,220,255,0.9)
+  line-height: 1.2
 
-.dxp-level
-  font-size: 0.7rem
-  font-family: "Consolas", "SFMono-Regular", monospace
+.domain-card__rank-row
+  display: flex
+  align-items: center
+  gap: 6px
+  margin-top: 2px
+
+.domain-card__lv
+  font-size: 0.62rem
+  font-family: "Consolas", monospace
   color: var(--d-color, #3d7fff)
-  letter-spacing: 0.08em
+  letter-spacing: 0.06em
 
-.dxp-xp-total
-  font-family: "Consolas", "SFMono-Regular", monospace
-  font-size: 0.75rem
-  color: rgba(150,190,255,0.6)
+.domain-card__rank-badge
+  font-size: 0.55rem
+  font-weight: 800
+  padding: 1px 5px
+  border-radius: 4px
+  border: 1px solid
+  font-family: "Consolas", monospace
 
-.dxp-bar-track
-  height: 4px
-  background: rgba(255,255,255,0.06)
-  border-radius: 2px
+  &[data-rank="S"]
+    border-color: rgba(255,51,85,0.5)
+    color: #ff3355
+    background: rgba(255,51,85,0.1)
+  &[data-rank="A"]
+    border-color: rgba(255,215,0,0.5)
+    color: #ffd700
+    background: rgba(255,215,0,0.1)
+  &[data-rank="B"]
+    border-color: rgba(123,95,255,0.5)
+    color: #7b5fff
+    background: rgba(123,95,255,0.1)
+  &[data-rank="C"]
+    border-color: rgba(61,127,255,0.5)
+    color: #3d7fff
+    background: rgba(61,127,255,0.1)
+  &[data-rank="D"]
+    border-color: rgba(74,222,128,0.4)
+    color: #4ade80
+    background: rgba(74,222,128,0.08)
+  &[data-rank="E"]
+    border-color: rgba(100,120,160,0.3)
+    color: rgba(100,120,160,0.7)
+    background: transparent
+
+.domain-card__xp
+  font-family: "Consolas", monospace
+  font-size: 0.72rem
+  color: rgba(120,160,210,0.6)
+
+.domain-card__bar-track
+  height: 5px
+  background: rgba(255,255,255,0.05)
+  border-radius: 3px
   overflow: hidden
-  margin-bottom: 6px
+  margin-bottom: 5px
 
-.dxp-bar-fill
+.domain-card__bar-fill
   height: 100%
   background: var(--d-color, #3d7fff)
-  border-radius: 2px
-  transition: width 600ms ease
+  border-radius: 3px
+  transition: width 700ms ease
   box-shadow: 0 0 8px var(--d-color, #3d7fff)
 
-.dxp-progress-label
-  font-size: 0.68rem
-  font-family: "Consolas", "SFMono-Regular", monospace
+.domain-card__progress
+  font-size: 0.62rem
+  font-family: "Consolas", monospace
+  color: rgba(80,110,160,0.5)
+
+// ── Calendar ──────────────────────────────────────────────────────────────────
+
+.arcane-card
+  background: linear-gradient(150deg, rgba(8,12,35,0.95), rgba(5,8,22,0.98))
+  border: 1px solid rgba(61,127,255,0.14)
+  border-radius: var(--radius-md)
+  padding: 14px
+  position: relative
+  overflow: hidden
+
+  &::before
+    content: ''
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    height: 1px
+    background: linear-gradient(90deg, transparent, rgba(61,127,255,0.35), rgba(0,229,255,0.2), transparent)
+    pointer-events: none
+
+.cal-section
+  display: flex
+  flex-direction: column
+  gap: 10px
+
+.cal-nav
+  display: flex
+  align-items: center
+  gap: 10px
+
+.cal-nav__arrow
+  flex-shrink: 0
+  width: 32px
+  height: 32px
+  border-radius: 8px
+  border: 1px solid rgba(61,127,255,0.2)
+  background: rgba(61,127,255,0.06)
+  color: rgba(150,190,255,0.7)
+  font-size: 1.1rem
+  cursor: pointer
+  transition: all 140ms ease
+  display: flex
+  align-items: center
+  justify-content: center
+
+  &:hover:not(:disabled)
+    background: rgba(61,127,255,0.15)
+    border-color: rgba(61,127,255,0.4)
+    color: var(--text)
+
+  &:disabled
+    opacity: 0.25
+    cursor: default
+
+.cal-nav__center
+  flex: 1
+  text-align: center
+
+.cal-nav__month
+  font-size: 0.88rem
+  font-weight: 700
+  color: rgba(200,220,255,0.9)
+  letter-spacing: 0.02em
+
+.cal-nav__stats
+  font-size: 0.6rem
+  color: var(--muted-2)
+  font-family: "Consolas", monospace
+  margin-top: 2px
+
+.cal-year-nav
+  display: flex
+  align-items: center
+  justify-content: center
+  gap: 12px
+
+.cal-year-btn
+  font-size: 0.62rem
+  font-family: "Consolas", monospace
+  font-weight: 600
+  padding: 3px 10px
+  border-radius: 6px
+  border: 1px solid rgba(61,127,255,0.15)
+  background: transparent
   color: rgba(100,140,200,0.5)
-  letter-spacing: 0.04em
+  cursor: pointer
+  transition: all 140ms ease
 
-// ── Heatmap Calendar ──────────────────────────────────────────────────────────
+  &:hover:not(:disabled)
+    color: rgba(150,190,255,0.8)
+    border-color: rgba(61,127,255,0.3)
+    background: rgba(61,127,255,0.06)
 
-.heatmap-section
-  margin: 4px 0
+  &:disabled
+    opacity: 0.2
+    cursor: default
 
-.heatmap-dow-labels
+.cal-year-current
+  font-size: 0.7rem
+  font-weight: 700
+  font-family: "Consolas", monospace
+  color: rgba(150,190,255,0.6)
+
+.cal-dow-labels
   display: grid
   grid-template-columns: repeat(7, 1fr)
-  gap: 3px
-  margin-bottom: 4px
+  gap: 2px
 
   span
     text-align: center
-    font-size: 0.62rem
-    font-family: "Consolas", "SFMono-Regular", monospace
-    color: rgba(100,140,200,0.45)
-    letter-spacing: 0.08em
+    font-size: 0.6rem
+    font-family: "Consolas", monospace
+    font-weight: 600
+    color: rgba(80,110,180,0.5)
+    letter-spacing: 0.06em
+    padding: 2px 0
 
-.heatmap-grid
+.cal-grid
   display: grid
   grid-template-columns: repeat(7, 1fr)
   gap: 3px
 
-.heatmap-cell
+.cal-cell
+  position: relative
   aspect-ratio: 1
-  border-radius: 4px
-  background: rgba(61,127,255, calc(0.06 + var(--intensity, 0) * 0.55))
-  border: 1px solid rgba(61,127,255, calc(0.06 + var(--intensity, 0) * 0.28))
+  border-radius: 5px
+  background: rgba(61,127,255, calc(0.05 + var(--intensity, 0) * 0.52))
+  border: 1px solid rgba(61,127,255, calc(0.06 + var(--intensity, 0) * 0.24))
   cursor: pointer
   transition: transform 100ms ease, box-shadow 100ms ease
-  position: relative
+  display: flex
+  flex-direction: column
+  align-items: flex-start
+  justify-content: flex-start
+  padding: 2px 3px
+  overflow: hidden
 
   &--empty
-    background: rgba(255,255,255,0.02)
-    border-color: transparent
+    background: rgba(255,255,255,0.02) !important
+    border-color: transparent !important
     cursor: default
     pointer-events: none
 
   &--perfect
-    background: rgba(255,215,0,0.3)
-    border-color: rgba(255,215,0,0.5)
-    box-shadow: 0 0 8px rgba(255,215,0,0.25)
+    background: rgba(255,215,0,0.22) !important
+    border-color: rgba(255,215,0,0.45) !important
+    box-shadow: 0 0 8px rgba(255,215,0,0.2)
+    animation: perfectPulse 2.5s ease-in-out infinite
 
   &--today
-    box-shadow: 0 0 0 2px rgba(61,127,255,0.8)
+    box-shadow: 0 0 0 2px rgba(0,229,255,0.8), 0 0 10px rgba(0,229,255,0.25)
 
   &--selected
-    box-shadow: 0 0 0 2px #3d7fff, 0 0 12px rgba(61,127,255,0.4)
+    box-shadow: 0 0 0 2px #3d7fff, 0 0 14px rgba(61,127,255,0.35)
 
-  &:hover:not(.heatmap-cell--empty)
-    transform: scale(1.2)
+  &:hover:not(.cal-cell--empty)
+    transform: scale(1.18)
     z-index: 2
-    box-shadow: 0 0 10px rgba(61,127,255,0.35)
+    box-shadow: 0 0 10px rgba(61,127,255,0.3)
 
-.heatmap-legend
+.cal-cell__day
+  font-size: 0.52rem
+  font-weight: 600
+  font-family: "Consolas", monospace
+  color: rgba(150,190,255,0.55)
+  line-height: 1
+  .cal-cell--perfect &
+    color: rgba(255,215,0,0.75)
+  .cal-cell--today &
+    color: rgba(0,229,255,0.9)
+
+.cal-cell__dot
+  position: absolute
+  bottom: 2px
+  right: 2px
+  font-size: 0.4rem
+  color: rgba(255,215,0,0.8)
+  line-height: 1
+
+.cal-legend
   display: flex
   align-items: center
   gap: 4px
-  margin-top: 10px
   justify-content: flex-end
+  flex-wrap: wrap
 
-.legend-cell
-  width: 12px
-  height: 12px
+.cal-legend__label
+  font-size: 0.58rem
+  color: rgba(80,110,160,0.5)
+  font-family: "Consolas", monospace
+
+.cal-legend__cell
+  width: 11px
+  height: 11px
   border-radius: 2px
-  background: rgba(61,127,255, calc(0.06 + var(--intensity, 0) * 0.55))
-  border: 1px solid rgba(61,127,255, calc(0.06 + var(--intensity, 0) * 0.28))
+  background: rgba(61,127,255, calc(0.05 + var(--intensity, 0) * 0.52))
+  border: 1px solid rgba(61,127,255, calc(0.06 + var(--intensity, 0) * 0.24))
 
-.legend-label
+  &--perfect
+    background: rgba(255,215,0,0.3)
+    border-color: rgba(255,215,0,0.5)
+
+// ── Mission Report (Victories / Defeats) ──────────────────────────────────────
+
+.mission-report
+  display: flex
+  flex-direction: column
+  gap: 12px
+
+.mission-report__header
+  display: flex
+  justify-content: space-between
+  align-items: center
+  gap: 8px
+
+.mission-report__date
+  font-size: 0.8rem
+  font-weight: 700
+  color: rgba(200,220,255,0.9)
+
+.mission-report__summary
+  font-size: 0.65rem
+  font-family: "Consolas", monospace
+  color: var(--muted-2)
+
+.mission-columns
+  display: grid
+  grid-template-columns: 1fr 1fr
+  gap: 10px
+
+.mission-group
+  border-radius: var(--radius-sm)
+  padding: 10px 10px 8px
+  display: flex
+  flex-direction: column
+  gap: 6px
+
+  &--won
+    background: rgba(74,222,128,0.05)
+    border: 1px solid rgba(74,222,128,0.2)
+
+  &--lost
+    background: rgba(255,51,85,0.05)
+    border: 1px solid rgba(255,51,85,0.18)
+
+.mission-group__title
+  display: flex
+  align-items: center
+  gap: 5px
+  font-size: 0.6rem
+  font-weight: 800
+  letter-spacing: 0.14em
+  text-transform: uppercase
+  font-family: "Consolas", monospace
+
+  .mission-group--won &
+    color: #4ade80
+
+  .mission-group--lost &
+    color: #ff3355
+
+.mission-group__icon
+  font-size: 0.85rem
+
+.mission-group__count
+  margin-left: auto
+  font-size: 0.75rem
+  font-weight: 800
+
+  .mission-group--won &
+    color: #4ade80
+  .mission-group--lost &
+    color: #ff3355
+
+.mission-empty
+  font-size: 0.65rem
+  color: var(--muted-2)
+  font-style: italic
+  padding: 4px 0
+
+.mission-item
+  display: flex
+  align-items: flex-start
+  gap: 6px
+  font-size: 0.72rem
+  padding: 4px 6px
+  border-radius: 6px
+  line-height: 1.3
+
+  &--won
+    background: rgba(74,222,128,0.06)
+    color: rgba(180,240,200,0.85)
+
+  &--lost
+    background: rgba(255,51,85,0.06)
+    color: rgba(255,180,190,0.8)
+
+.mission-item__check
+  font-size: 0.7rem
+  font-weight: 800
+  color: #4ade80
+  flex-shrink: 0
+  margin-top: 1px
+
+.mission-item__x
+  font-size: 0.7rem
+  font-weight: 800
+  color: #ff3355
+  flex-shrink: 0
+  margin-top: 1px
+
+.mission-item__name
+  flex: 1
+  overflow: hidden
+  text-overflow: ellipsis
+
+// ── Manaa Weekly Section ──────────────────────────────────────────────────────
+
+.manaa-section
+  display: flex
+  flex-direction: column
+  gap: 12px
+
+.manaa-section__header
+  display: flex
+  align-items: flex-start
+  justify-content: space-between
+  gap: 10px
+  flex-wrap: wrap
+
+.manaa-section__title-col
+  display: flex
+  flex-direction: column
+  gap: 3px
+
+.manaa-section__range
   font-size: 0.62rem
-  color: rgba(100,140,200,0.45)
-  font-family: "Consolas", "SFMono-Regular", monospace
+  color: var(--muted-2)
+  font-family: "Consolas", monospace
+
+.manaa-week-tabs
+  display: flex
+  flex-wrap: wrap
+  gap: 5px
+
+.manaa-week-tab
+  font-size: 0.65rem
+  font-weight: 700
+  font-family: "Consolas", monospace
+  padding: 4px 10px
+  border-radius: 99px
+  border: 1px solid rgba(61,127,255,0.2)
+  background: transparent
+  color: rgba(100,140,200,0.6)
+  cursor: pointer
+  transition: all 140ms ease
+
+  &.is-active
+    border-color: rgba(0,229,255,0.5)
+    color: var(--system-cyan)
+    background: rgba(0,229,255,0.08)
+    box-shadow: 0 0 10px rgba(0,229,255,0.15)
+
+  &:hover:not(.is-active)
+    border-color: rgba(61,127,255,0.35)
+    color: rgba(150,190,255,0.8)
+
+.manaa-rows
+  display: flex
+  flex-direction: column
+  gap: 6px
+
+.manaa-row
+  padding: 8px 10px
+  border-radius: var(--radius-sm)
+  background: rgba(6,8,24,0.5)
+  border: 1px solid rgba(61,127,255,0.08)
+  cursor: pointer
+  transition: all 140ms ease
+
+  &.is-selected
+    border-color: rgba(61,127,255,0.3)
+    background: rgba(61,127,255,0.07)
+
+  &:hover:not(.is-selected)
+    border-color: rgba(61,127,255,0.18)
+    background: rgba(61,127,255,0.04)
+
+.manaa-row__meta
+  display: flex
+  align-items: center
+  gap: 8px
+  margin-bottom: 6px
+
+.manaa-row__label
+  font-size: 0.7rem
+  font-weight: 800
+  font-family: "Consolas", monospace
+  color: rgba(200,220,255,0.9)
+  min-width: 26px
+
+.manaa-row__fraction
+  font-size: 0.68rem
+  font-weight: 600
+  font-family: "Consolas", monospace
+  color: var(--system-cyan)
+
+.manaa-row__perfect
+  font-size: 0.68rem
+  margin-left: auto
+
+.manaa-row__pct
+  font-size: 0.72rem
+  font-weight: 700
+  font-family: "Consolas", monospace
+  color: rgba(120,160,220,0.7)
+
+  &--high
+    color: #4ade80
+    text-shadow: 0 0 8px rgba(74,222,128,0.4)
+
+.manaa-row__bar-track
+  height: 8px
+  border-radius: 99px
+  background: rgba(10,14,40,0.8)
+  border: 1px solid rgba(61,127,255,0.1)
+  overflow: hidden
+  position: relative
+
+.manaa-row__bar-fill
+  height: 100%
+  background: linear-gradient(90deg, #1a3fff, #3d7fff 50%, #00e5ff)
+  border-radius: inherit
+  transition: width 700ms cubic-bezier(0.4, 0, 0.2, 1)
+  box-shadow: 0 0 8px rgba(0,229,255,0.35)
+
+  &--full
+    background: linear-gradient(90deg, #ffd700, #ffaa00, #ff7c00)
+    box-shadow: 0 0 10px rgba(255,215,0,0.4)
+
+  &--high
+    background: linear-gradient(90deg, #3d7fff, #00e5ff, #4ade80)
+
+  &--low
+    background: linear-gradient(90deg, #1a2a80, #3d5fff)
+    box-shadow: none
+
+// ── Share Strip ───────────────────────────────────────────────────────────────
+
+.share-strip
+  display: grid
+  grid-template-columns: repeat(3, 1fr)
+  gap: 8px
+
+.share-btn
+  display: flex
+  flex-direction: column
+  align-items: center
+  justify-content: center
+  gap: 4px
+  padding: 10px 6px
+  border-radius: var(--radius-sm)
+  border: 1px solid rgba(61,127,255,0.18)
+  background: rgba(6,8,24,0.7)
+  cursor: pointer
+  transition: all 160ms ease
+
+  &:hover:not(:disabled)
+    background: rgba(61,127,255,0.1)
+    border-color: rgba(61,127,255,0.35)
+    transform: translateY(-1px)
+
+  &:disabled
+    opacity: 0.4
+    cursor: default
+
+  &--week
+    &:hover:not(:disabled)
+      border-color: rgba(0,229,255,0.4)
+      box-shadow: 0 0 12px rgba(0,229,255,0.15)
+
+  &--month
+    &:hover:not(:disabled)
+      border-color: rgba(250,204,21,0.4)
+      box-shadow: 0 0 12px rgba(250,204,21,0.15)
+
+  &--overall
+    &:hover:not(:disabled)
+      border-color: rgba(123,95,255,0.4)
+      box-shadow: 0 0 12px rgba(123,95,255,0.15)
+
+.share-btn__icon
+  font-size: 1.2rem
+
+.share-btn__text
+  font-size: 0.58rem
+  font-weight: 700
+  letter-spacing: 0.12em
+  color: rgba(150,190,255,0.7)
+  font-family: "Consolas", monospace
+
+// ── Empty / Loading states ─────────────────────────────────────────────────────
+
+.empty-state-card
+  display: flex
+  flex-direction: column
+  align-items: center
+  gap: 10px
+  padding: 32px 20px
+  text-align: center
+
+.empty-state__icon
+  font-size: 2.5rem
+  filter: grayscale(0.3)
+
+.empty-state__title
+  font-size: 1rem
+  font-weight: 700
+  color: rgba(200,220,255,0.9)
+
+.empty-state__sub
+  font-size: 0.8rem
+  color: var(--muted)
+
+.loading-card
+  display: flex
+  align-items: center
+  justify-content: center
+  gap: 12px
+  padding: 24px
+  color: var(--muted)
+  font-size: 0.85rem
+
+.loading-spinner
+  width: 20px
+  height: 20px
+  border-radius: 50%
+  border: 2px solid rgba(61,127,255,0.2)
+  border-top-color: #3d7fff
+  animation: spin 0.8s linear infinite
+
+@keyframes spin
+  to
+    transform: rotate(360deg)
+
+// ── Shared keyframes ──────────────────────────────────────────────────────────
+
+@keyframes perfectPulse
+  0%, 100%
+    box-shadow: 0 0 8px rgba(255,215,0,0.2)
+  50%
+    box-shadow: 0 0 18px rgba(255,215,0,0.45)
+
+.reduce-motion
+  .cal-cell--perfect
+    animation: none
+
+// ── Report Export Host ────────────────────────────────────────────────────────
+
+.report-export-host
+  position: fixed
+  left: -10000px
+  top: 0
+  width: 900px
+  height: 1600px
+  pointer-events: none
+  z-index: -1
+  background: #00000f
+
+.report-export-root
+  width: 900px
+  height: 1600px
+  background: linear-gradient(180deg, #080820, #050510)
+  color: #fff
+  border-radius: 22px
+  overflow: hidden
+  box-sizing: border-box
+
+.report-export-mode *
+  backdrop-filter: none !important
+  -webkit-backdrop-filter: none !important
+  filter: none !important
+
+// ── Share Cards ───────────────────────────────────────────────────────────────
+
+.share-card
+  width: 100%
+  height: 100%
+  display: flex
+  flex-direction: column
+  padding: 44px 40px 36px
+  box-sizing: border-box
+  position: relative
+  overflow: hidden
+  gap: 20px
+
+  &--weekly
+    background: linear-gradient(160deg, #07081e 0%, #050514 50%, #080820 100%)
+
+  &--monthly
+    background: linear-gradient(160deg, #06101a 0%, #050510 50%, #081420 100%)
+
+  &--overall
+    background: linear-gradient(160deg, #0a0720 0%, #060518 50%, #0a0820 100%)
+
+.share-card__bg-glow
+  position: absolute
+  border-radius: 50%
+  pointer-events: none
+  filter: blur(80px)
+
+  &--blue
+    width: 400px
+    height: 400px
+    background: radial-gradient(ellipse, rgba(61,127,255,0.18) 0%, transparent 60%)
+    top: -100px
+    left: -100px
+
+  &--purple
+    width: 350px
+    height: 350px
+    background: radial-gradient(ellipse, rgba(123,95,255,0.14) 0%, transparent 60%)
+    bottom: -80px
+    right: -80px
+
+  &--cyan
+    width: 400px
+    height: 400px
+    background: radial-gradient(ellipse, rgba(0,229,255,0.12) 0%, transparent 60%)
+    top: -80px
+    right: -100px
+
+  &--gold
+    width: 300px
+    height: 300px
+    background: radial-gradient(ellipse, rgba(255,215,0,0.1) 0%, transparent 60%)
+    bottom: -60px
+    left: -60px
+
+  &--gold-center
+    width: 400px
+    height: 400px
+    background: radial-gradient(ellipse, rgba(255,215,0,0.08) 0%, transparent 60%)
+    top: 50%
+    left: 50%
+    transform: translate(-50%, -50%)
+
+.share-card__header
+  display: flex
+  align-items: center
+  gap: 16px
+  padding-bottom: 18px
+  border-bottom: 1px solid rgba(255,255,255,0.07)
+  position: relative
+  z-index: 1
+
+.share-card__rank-badge
+  width: 56px
+  height: 56px
+  border-radius: 12px
+  display: flex
+  align-items: center
+  justify-content: center
+  font-size: 1.6rem
+  font-weight: 900
+  font-family: "Consolas", monospace
+  border: 2px solid
+
+  &[data-rank="S"]
+    background: rgba(255,51,85,0.15)
+    border-color: #ff3355
+    color: #ff3355
+    box-shadow: 0 0 24px rgba(255,51,85,0.4)
+  &[data-rank="A"]
+    background: rgba(255,215,0,0.15)
+    border-color: #ffd700
+    color: #ffd700
+    box-shadow: 0 0 24px rgba(255,215,0,0.4)
+  &[data-rank="B"]
+    background: rgba(123,95,255,0.15)
+    border-color: #7b5fff
+    color: #7b5fff
+    box-shadow: 0 0 20px rgba(123,95,255,0.35)
+  &[data-rank="C"]
+    background: rgba(61,127,255,0.15)
+    border-color: #3d7fff
+    color: #3d7fff
+    box-shadow: 0 0 16px rgba(61,127,255,0.3)
+  &[data-rank="D"]
+    background: rgba(74,222,128,0.12)
+    border-color: #4ade80
+    color: #4ade80
+  &[data-rank="E"]
+    background: rgba(100,120,160,0.1)
+    border-color: rgba(100,120,160,0.4)
+    color: rgba(100,120,160,0.8)
+
+  &--large
+    width: 72px
+    height: 72px
+    font-size: 2rem
+
+.share-card__player
+  flex: 1
+
+.share-card__name
+  font-size: 1.2rem
+  font-weight: 800
+  color: rgba(220,235,255,0.95)
+
+.share-card__meta
+  font-size: 0.82rem
+  font-weight: 600
+  color: rgba(120,160,220,0.75)
+  margin-top: 3px
+
+.share-card__app-tag
+  font-size: 0.62rem
+  font-weight: 800
+  letter-spacing: 0.2em
+  text-align: center
+  line-height: 1.3
+  color: rgba(61,127,255,0.6)
+  font-family: "Consolas", monospace
+
+.share-card__report-type
+  font-size: 0.72rem
+  font-weight: 800
+  letter-spacing: 0.22em
+  color: rgba(61,127,255,0.7)
+  font-family: "Consolas", monospace
+  position: relative
+  z-index: 1
+  margin-bottom: -12px
+
+.share-card__period
+  font-size: 1.9rem
+  font-weight: 900
+  color: rgba(220,235,255,0.95)
+  letter-spacing: -0.01em
+  line-height: 1.05
+  position: relative
+  z-index: 1
+
+.share-card__stats-grid
+  display: grid
+  grid-template-columns: 1fr 1fr
+  gap: 12px
+  position: relative
+  z-index: 1
+
+  &--4
+    grid-template-columns: repeat(2, 1fr)
+
+.share-stat
+  background: rgba(255,255,255,0.03)
+  border: 1px solid rgba(255,255,255,0.06)
+  border-radius: 14px
+  padding: 14px 16px
+  display: flex
+  flex-direction: column
+  gap: 4px
+
+  &--large
+    padding: 16px
+
+.share-stat__label
+  font-size: 0.65rem
+  letter-spacing: 0.12em
+  text-transform: uppercase
+  color: rgba(255,255,255,0.5)
+  font-weight: 700
+  font-family: "Consolas", monospace
+
+.share-stat__value
+  font-size: 1.6rem
+  font-weight: 900
+  color: #00e5ff
+  line-height: 1.1
+
+  &--gold
+    color: #ffd700
+    text-shadow: 0 0 16px rgba(255,215,0,0.4)
+
+  &--cyan
+    color: #00e5ff
+    text-shadow: 0 0 16px rgba(0,229,255,0.4)
+
+.share-stat__of
+  font-size: 1rem
+  font-weight: 600
+  color: rgba(255,255,255,0.4)
+
+.share-stat__pct
+  font-size: 0.75rem
+  color: rgba(255,255,255,0.5)
+  font-family: "Consolas", monospace
+
+.share-card__section-label
+  font-size: 0.65rem
+  font-weight: 800
+  letter-spacing: 0.18em
+  text-transform: uppercase
+  color: rgba(61,127,255,0.65)
+  font-family: "Consolas", monospace
+  position: relative
+  z-index: 1
+  margin-bottom: -10px
+
+.share-card__habits
+  display: flex
+  flex-direction: column
+  gap: 8px
+  position: relative
+  z-index: 1
+
+.share-habit
+  border-radius: 10px
+  background: rgba(255,255,255,0.025)
+  border: 1px solid rgba(255,255,255,0.05)
+  padding: 8px 12px
+  display: flex
+  flex-direction: column
+  gap: 6px
+
+.share-habit__head
+  display: flex
+  align-items: center
+  gap: 10px
+
+.share-habit__num
+  font-size: 0.72rem
+  font-weight: 700
+  color: rgba(61,127,255,0.7)
+  font-family: "Consolas", monospace
+  width: 18px
+  flex-shrink: 0
+
+.share-habit__name
+  flex: 1
+  font-size: 0.88rem
+  font-weight: 600
+  color: rgba(220,235,255,0.88)
+  overflow: hidden
+  text-overflow: ellipsis
+  white-space: nowrap
+
+.share-habit__metric
+  font-size: 0.78rem
+  font-weight: 700
+  color: rgba(150,190,255,0.7)
+  font-family: "Consolas", monospace
+
+.share-habit__bar-track
+  width: 100%
+  height: 6px
+  border-radius: 99px
+  background: rgba(255,255,255,0.06)
+  overflow: hidden
+
+.share-habit__bar-fill
+  height: 100%
+  background: linear-gradient(90deg, #3d7fff, #00e5ff)
+  border-radius: inherit
+
+  &--full
+    background: linear-gradient(90deg, #ffd700, #ff9500)
+
+.share-card__level-row
+  position: relative
+  z-index: 1
+  border-top: 1px solid rgba(255,255,255,0.06)
+  padding-top: 14px
+  display: flex
+  flex-direction: column
+  gap: 6px
+
+.share-level-label
+  font-size: 0.62rem
+  letter-spacing: 0.12em
+  font-weight: 700
+  color: rgba(255,255,255,0.4)
+  text-transform: uppercase
+  font-family: "Consolas", monospace
+
+.share-level-value
+  font-size: 1rem
+  font-weight: 800
+  color: #facc15
+
+.share-level-bar-track
+  height: 8px
+  border-radius: 99px
+  background: rgba(255,255,255,0.06)
+  overflow: hidden
+
+.share-level-bar-fill
+  height: 100%
+  background: linear-gradient(90deg, #1a3fff, #7b5fff, #00e5ff)
+  border-radius: inherit
+
+.share-level-sub
+  font-size: 0.72rem
+  color: rgba(255,255,255,0.55)
+
+.share-card__footer
+  margin-top: auto
+  border-top: 1px solid rgba(255,255,255,0.06)
+  padding-top: 14px
+  display: flex
+  align-items: center
+  justify-content: space-between
+  gap: 12px
+  position: relative
+  z-index: 1
+
+.share-card__footer-text
+  font-size: 0.82rem
+  font-weight: 600
+  color: rgba(220,235,255,0.75)
+  flex: 1
+
+.share-card__footer-badge
+  font-size: 0.72rem
+  font-weight: 800
+  letter-spacing: 0.1em
+  color: rgba(255,215,0,0.8)
+  white-space: nowrap
+
+.share-card__watermark
+  text-align: center
+  font-size: 0.6rem
+  letter-spacing: 0.14em
+  color: rgba(61,127,255,0.35)
+  font-family: "Consolas", monospace
+  position: relative
+  z-index: 1
+
+// ── Monthly ring row ──────────────────────────────────────────────────────────
+
+.share-card__month-ring-row
+  display: flex
+  align-items: center
+  gap: 20px
+  position: relative
+  z-index: 1
+
+.share-month-ring
+  position: relative
+  flex-shrink: 0
+
+  svg
+    display: block
+
+.share-month-ring__inner
+  position: absolute
+  inset: 0
+  display: flex
+  flex-direction: column
+  align-items: center
+  justify-content: center
+  gap: 2px
+
+.share-month-ring__pct
+  font-size: 1.3rem
+  font-weight: 900
+  color: rgba(220,235,255,0.95)
+  line-height: 1
+
+.share-month-ring__label
+  font-size: 0.6rem
+  font-weight: 600
+  color: rgba(150,190,255,0.6)
+  font-family: "Consolas", monospace
+
+.share-month-ring-stats
+  display: flex
+  flex-direction: column
+  gap: 10px
+  flex: 1
+
+.share-ring-stat
+  display: flex
+  flex-direction: column
+  gap: 2px
+
+.share-ring-stat__val
+  font-size: 1.2rem
+  font-weight: 900
+  color: rgba(220,235,255,0.9)
+  line-height: 1
+
+  &--gold
+    color: #ffd700
+
+.share-ring-stat__label
+  font-size: 0.6rem
+  font-weight: 700
+  letter-spacing: 0.1em
+  color: rgba(120,160,220,0.55)
+  font-family: "Consolas", monospace
+
+// ── Best week row ─────────────────────────────────────────────────────────────
+
+.share-best-week
+  display: flex
+  align-items: center
+  gap: 10px
+  position: relative
+  z-index: 1
+  padding: 10px 14px
+  background: rgba(255,255,255,0.025)
+  border: 1px solid rgba(255,255,255,0.05)
+  border-radius: 10px
+
+.share-best-week__label
+  font-size: 0.78rem
+  font-weight: 800
+  font-family: "Consolas", monospace
+  color: rgba(220,235,255,0.85)
+  min-width: 52px
+
+.share-best-week__bar-track
+  flex: 1
+  height: 8px
+  border-radius: 99px
+  background: rgba(255,255,255,0.06)
+  overflow: hidden
+
+.share-best-week__bar-fill
+  height: 100%
+  background: linear-gradient(90deg, #3d7fff, #00e5ff)
+  border-radius: inherit
+
+.share-best-week__pct
+  font-size: 0.75rem
+  font-weight: 700
+  color: #00e5ff
+  font-family: "Consolas", monospace
+  min-width: 40px
+  text-align: right
+
+// ── Domain rows (share cards) ─────────────────────────────────────────────────
+
+.share-domains
+  display: flex
+  flex-direction: column
+  gap: 7px
+  position: relative
+  z-index: 1
+
+  &--overall
+    gap: 8px
+
+.share-domain
+  display: flex
+  align-items: center
+  gap: 10px
+  padding: 8px 12px
+  background: rgba(255,255,255,0.025)
+  border: 1px solid rgba(255,255,255,0.04)
+  border-radius: 10px
+
+.share-domain__emoji
+  font-size: 1.15rem
+  flex-shrink: 0
+  width: 24px
+
+.share-domain__info
+  flex: 1
+
+.share-domain__name
+  font-size: 0.78rem
+  font-weight: 600
+  color: rgba(220,235,255,0.88)
+  margin-bottom: 4px
+
+.share-domain__bar-track
+  height: 5px
+  border-radius: 99px
+  background: rgba(255,255,255,0.06)
+  overflow: hidden
+
+.share-domain__bar-fill
+  height: 100%
+  background: linear-gradient(90deg, #3d7fff, #00e5ff)
+  border-radius: inherit
+
+.share-domain__lv
+  font-size: 0.68rem
+  font-weight: 700
+  font-family: "Consolas", monospace
+  color: rgba(120,160,220,0.7)
+  flex-shrink: 0
+
+// ── Overall level display ─────────────────────────────────────────────────────
+
+.share-overall__level-section
+  position: relative
+  z-index: 1
+
+.share-overall__level-display
+  display: flex
+  align-items: center
+  gap: 16px
+  padding: 14px
+  background: rgba(255,255,255,0.025)
+  border: 1px solid rgba(255,215,0,0.1)
+  border-radius: 12px
+  margin-top: 6px
+
+.share-overall__rank-big
+  width: 64px
+  height: 64px
+  border-radius: 12px
+  display: flex
+  align-items: center
+  justify-content: center
+  font-size: 1.8rem
+  font-weight: 900
+  font-family: "Consolas", monospace
+  border: 2px solid
+  flex-shrink: 0
+
+  &[data-rank="S"]
+    background: rgba(255,51,85,0.15)
+    border-color: #ff3355
+    color: #ff3355
+    box-shadow: 0 0 20px rgba(255,51,85,0.35)
+  &[data-rank="A"]
+    background: rgba(255,215,0,0.15)
+    border-color: #ffd700
+    color: #ffd700
+    box-shadow: 0 0 20px rgba(255,215,0,0.35)
+  &[data-rank="B"]
+    background: rgba(123,95,255,0.15)
+    border-color: #7b5fff
+    color: #7b5fff
+  &[data-rank="C"]
+    background: rgba(61,127,255,0.15)
+    border-color: #3d7fff
+    color: #3d7fff
+  &[data-rank="D"]
+    background: rgba(74,222,128,0.12)
+    border-color: #4ade80
+    color: #4ade80
+  &[data-rank="E"]
+    background: rgba(100,120,160,0.1)
+    border-color: rgba(100,120,160,0.4)
+    color: rgba(100,120,160,0.8)
+
+.share-overall__level-info
+  flex: 1
+
+.share-overall__level-num
+  font-size: 1.2rem
+  font-weight: 900
+  color: rgba(220,235,255,0.95)
+
+.share-overall__xp
+  font-size: 0.78rem
+  color: #facc15
+  font-weight: 600
+  margin: 3px 0 8px
+
+.share-overall__bar-track
+  height: 7px
+  border-radius: 99px
+  background: rgba(255,255,255,0.06)
+  overflow: hidden
+
+.share-overall__bar-fill
+  height: 100%
+  background: linear-gradient(90deg, #1a3fff, #7b5fff, #00e5ff)
+  border-radius: inherit
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+
+@media (max-width: 480px)
+  .stat-crystals
+    grid-template-columns: 1fr 1fr
+
+  .mission-columns
+    grid-template-columns: 1fr
+
+  .share-strip
+    grid-template-columns: 1fr 1fr 1fr
+
+  .player-hero__chips
+    flex-direction: row
+    flex-wrap: wrap
+
+  .manaa-row__meta
+    flex-wrap: wrap
+
+  .manaa-week-tabs
+    gap: 4px
+
+  .manaa-week-tab
+    padding: 3px 8px
+    font-size: 0.62rem

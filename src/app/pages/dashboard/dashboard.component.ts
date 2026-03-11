@@ -84,39 +84,52 @@ type SystemOverlayType = 'none' | 'perfect' | 'levelup';
 
     <div class="page-container system-vignette-layer" [@.disabled]="reduceMotion" [class.reduce-motion]="reduceMotion">
       <ng-container *ngIf="ready$ | async; else loading">
-      <section class="today-header arcane-card" [class.perfect-day]="isPerfectTodaySelected">
-        <div>
+      <!-- ── Player Status Window ──────────────────────────────────────────── -->
+      <section class="today-header" [class.perfect-day]="isPerfectTodaySelected">
+        <div class="today-header__scanlines" aria-hidden="true"></div>
+
+        <div class="today-header__top-bar">
+          <span class="today-header__sys-label">SYSTEM</span>
+          <span class="today-header__date-label">{{ isEditingToday ? todayLabel : ('&#x23EA; ' + todayLabel) }}</span>
+        </div>
+
+        <div class="today-header__name-row">
           <button class="title-link" type="button" (click)="goToProfile()">
             <span class="title-name">{{ userName }}</span>
-            <span class="level-badge arcane-pill glass-pill primary-chip glow-white" [class.lv-celebrate]="headerLevelUpCelebrating">Lv {{ levelStats.level }}</span>
           </button>
-          <div class="text-muted today-date">
-            {{ isEditingToday ? todayLabel : ('Editing: ' + todayLabel) }}
-          </div>
-          <div class="text-muted today-subtitle quote-line">{{ dailyMotivation }}</div>
-          <div class="next-level-block" [class.level-up-glow]="levelUpAnimating">
-            <div class="level-next text-muted" [class.glow-white]="nextLevelRemaining === 0">{{ nextLevelLabel }}</div>
-            <div class="level-progress" [class.progress-near]="displayedHeaderProgress >= 0.9">
-              <app-progress-bar [value]="displayedHeaderProgress" [height]="4"></app-progress-bar>
-            </div>
-          </div>
+          <span class="level-badge" [class.lv-celebrate]="headerLevelUpCelebrating">
+            <span class="level-badge__lv">LV</span>
+            <span class="level-badge__num">{{ levelStats.level }}</span>
+          </span>
+        </div>
 
-          <div class="status-row" *ngIf="selectedIsPerfect || selectedIsWon || streakCount > 0">
-            <div class="perfect-chip arcane-pill glass-pill primary-chip" *ngIf="selectedIsPerfect" [class.celebrate]="celebrateBadge" [class.glow-white]="selectedIsPerfect || celebrateBadge">Perfect Day &#x1F525;</div>
-            <div class="perfect-chip arcane-pill glass-pill" *ngIf="selectedIsWon && !selectedIsPerfect">Won Today &#x1F525;</div>
-            <div class="streak-badge arcane-pill glass-pill glow-white" *ngIf="streakCount > 0" [class.streak-pop]="streakCelebrating" [class.streak-fire]="streakFireAnimating">
-              <div class="streak-count">&#x1F525; {{ streakCount | dayCount }} in a row </div>
-            </div>
+        <div class="today-header__motivation">{{ dailyMotivation }}</div>
+
+        <div class="today-header__xp-block" [class.level-up-glow]="levelUpAnimating">
+          <div class="today-header__xp-label">
+            <span class="today-header__xp-title">EXP</span>
+            <span class="today-header__xp-next" [class.glow-white]="nextLevelRemaining === 0">{{ nextLevelLabel }}</span>
+          </div>
+          <div class="today-header__xp-track">
+            <div class="today-header__xp-fill" [style.width.%]="displayedHeaderProgress * 100" [class.xp-near-max]="displayedHeaderProgress >= 0.9"></div>
+            <div class="today-header__xp-glow" [style.width.%]="displayedHeaderProgress * 100"></div>
           </div>
         </div>
+
+        <div class="status-row" *ngIf="selectedIsPerfect || selectedIsWon || streakCount > 0">
+          <div class="perfect-chip arcane-pill glass-pill primary-chip" *ngIf="selectedIsPerfect" [class.celebrate]="celebrateBadge" [class.glow-white]="selectedIsPerfect || celebrateBadge">Perfect Day &#x1F525;</div>
+          <div class="perfect-chip arcane-pill glass-pill" *ngIf="selectedIsWon && !selectedIsPerfect">Won Today &#x1F525;</div>
+          <div class="streak-badge arcane-pill glass-pill glow-white" *ngIf="streakCount > 0" [class.streak-pop]="streakCelebrating" [class.streak-fire]="streakFireAnimating">
+            <div class="streak-count">&#x1F525; {{ streakCount | dayCount }} in a row</div>
+          </div>
+        </div>
+
         <div class="date-carousel arcane-card arcane-card--tight" *ngIf="canUseDateCarousel">
           <button class="carousel-arrow arcane-btn arcane-btn--ghost" type="button" aria-label="Previous week" (click)="shiftDateWindow(-7)">
             <mat-icon>chevron_left</mat-icon>
           </button>
           <div class="carousel-track" role="listbox" aria-label="Select day">
-            <button
-              class="day-chip arcane-pill glass-pill"
-              type="button"
+            <button class="day-chip arcane-pill glass-pill" type="button"
               *ngFor="let chip of dateChips"
               [class.perfect-day]="chip.isPerfect"
               [class.is-selected]="isSameDate(chip.date, selectedDate)"
@@ -135,33 +148,47 @@ type SystemOverlayType = 'none' | 'perfect' | 'levelup';
         </div>
       </section>
 
-      <div class="today-cue arcane-card arcane-card--tight" *ngIf="isEditingToday && !isSelectedDayFinalized">
-        <ng-container *ngIf="doneToday === 0; else cueKeepGoing">
-          <div class="cue-title">Start small. Win once.</div>
-          <div class="cue-sub text-muted">Momentum builds from action.</div>
-        </ng-container>
-        <ng-template #cueKeepGoing>
-          <div class="cue-title">Good. Keep going.</div>
-          <div class="cue-sub text-muted">{{ momentumSubtitle }}</div>
-        </ng-template>
+      <!-- ── System Cue (motivational banner) ─────────────────────────────── -->
+      <div class="today-cue" *ngIf="isEditingToday && !isSelectedDayFinalized">
+        <div class="today-cue__icon">{{ doneToday === 0 ? '⚡' : '🔥' }}</div>
+        <div class="today-cue__content">
+          <ng-container *ngIf="doneToday === 0; else cueKeepGoing">
+            <div class="cue-title">Start small. Win once.</div>
+            <div class="cue-sub">Momentum builds from action.</div>
+          </ng-container>
+          <ng-template #cueKeepGoing>
+            <div class="cue-title">Good. Keep going.</div>
+            <div class="cue-sub">{{ momentumSubtitle }}</div>
+          </ng-template>
+        </div>
       </div>
 
-      <div class="today-hero arcane-card" [class.perfect-day]="isPerfectTodaySelected">
-        <div class="hero-text">
-          <div class="hero-title">{{ isEditingToday && selectedIsPerfect ? 'Perfect day.' : 'Today' }}</div>
-          <div class="hero-subtitle">{{ heroStatusLine }}</div>
-          <div class="hero-helper text-muted" *ngIf="isEditingToday && selectedIsWon">
+      <!-- ── Today Hero panel ───────────────────────────────────────────── -->
+      <div class="today-hero" [class.perfect-day]="isPerfectTodaySelected">
+        <div class="today-hero__left">
+          <div class="today-hero__mission-label">TODAY'S MISSION</div>
+          <div class="today-hero__title">{{ isEditingToday && selectedIsPerfect ? '✦ PERFECT DAY' : 'TODAY' }}</div>
+          <div class="today-hero__status">{{ heroStatusLine }}</div>
+          <div class="today-hero__chain" *ngIf="isEditingToday && selectedIsWon">
             Return tomorrow. Protect the chain.
           </div>
           <div class="finish-message" *ngIf="finishMomentActive">{{ finishMomentMessage }}</div>
+        </div>
+        <div class="today-hero__counter" [class.perfect-day]="isPerfectTodaySelected">
+          <div class="today-hero__counter-done">{{ doneCount }}</div>
+          <div class="today-hero__counter-sep">/</div>
+          <div class="today-hero__counter-total">{{ totalCount }}</div>
         </div>
       </div>
       <div class="hero-progress">
         <app-progress-bar [value]="selectedSummary.percentHandled / 100" [height]="6"></app-progress-bar>
       </div>
 
-      <mat-card class="aesthetic-card today-list-card" [@staggerFadeUp]="animationKey" #todaySection [class.perfect-day]="isPerfectTodaySelected" [class.finish-moment]="finishMomentActive">
-        <div class="section-header text-section">Today Habits</div>
+      <!-- ── Today Habits List ──────────────────────────────────────────── -->
+      <section class="today-list-section" [@staggerFadeUp]="animationKey" #todaySection [class.perfect-day]="isPerfectTodaySelected" [class.finish-moment]="finishMomentActive">
+        <div class="today-list-header">
+          <span class="today-list-title">TODAY HABITS</span>
+        </div>
         <div class="confetti-layer" *ngIf="confettiPieces.length > 0">
           <span
             class="confetti-piece"
@@ -175,7 +202,7 @@ type SystemOverlayType = 'none' | 'perfect' | 'levelup';
             [style.--confetti-rotate]="piece.rotate + 'deg'">
           </span>
         </div>
-        <mat-card-content>
+        <div class="today-list-content">
           <div class="today-list" [class.perfect-day]="isPerfectTodaySelected">
             <div class="domain-section"
               *ngFor="let group of domainGroups; trackBy: trackByDomain">
@@ -233,59 +260,108 @@ type SystemOverlayType = 'none' | 'perfect' | 'levelup';
             <div class="text-muted finish-hint">Marks remaining as skipped.</div>
           </div>
           <div class="identity-line text-muted" *ngIf="isEditingToday && selectedIsPerfect">{{ identityLine }}</div>
-        </mat-card-content>
-      </mat-card>
+        </div>
+      </section>
 
-      <mat-card class="aesthetic-card streak-card">
-        <div class="section-header text-section">Daily Streak</div>
-        <mat-card-content>
-          <div class="streak-row">
-            <div class="streak-value">{{ currentStreakDisplay | dayCount }}</div>
-          </div>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="aesthetic-card insights-card">
+      <!-- ── Insights Section ───────────────────────────────────────────── -->
+      <section class="insights-section">
         <div class="insights-header">
-          <span class="insights-chip text-section">Insights</span>
-        <button class="btn btn-outline btn-sm charts-toggle glass-btn glass-btn--ghost" type="button" (click)="toggleInsights()">
-          {{ insightsOpen ? 'Hide Insights' : 'Show Insights' }}
-        </button>
-      </div>
-        <mat-card-content class="insights-body" [class.is-collapsed]="!insightsOpen">
-          <div class="dashboard-grid" [@staggerFadeUp]="animationKey">
-            <mat-card class="aesthetic-card chart-card">
-              <div class="section-header text-section">Daily Completion</div>
-              <mat-card-content>
+          <div class="insights-header-left">
+            <span class="insights-sys-label">SYSTEM ANALYTICS</span>
+          </div>
+          <button class="btn btn-outline btn-sm charts-toggle glass-btn glass-btn--ghost" type="button" (click)="toggleInsights()">
+            {{ insightsOpen ? 'Hide' : 'Show' }}
+          </button>
+        </div>
+        <div class="insights-body" [class.is-collapsed]="!insightsOpen">
+
+          <!-- ── KPI Stat Tiles ── -->
+          <div class="stat-tiles">
+            <div class="stat-tile stat-tile--streak">
+              <div class="stat-tile__icon">🔥</div>
+              <div class="stat-tile__value">{{ streakCount }}</div>
+              <div class="stat-tile__label">Day Streak</div>
+            </div>
+            <div class="stat-tile stat-tile--perfect">
+              <div class="stat-tile__icon">⭐</div>
+              <div class="stat-tile__value">{{ insights.perfectDays }}</div>
+              <div class="stat-tile__label">Perfect Days</div>
+            </div>
+            <div class="stat-tile stat-tile--monthly">
+              <div class="stat-tile__icon">📈</div>
+              <div class="stat-tile__value">{{ monthlyTotals.percent }}%</div>
+              <div class="stat-tile__label">Monthly Rate</div>
+            </div>
+            <div class="stat-tile stat-tile--xp">
+              <div class="stat-tile__icon">⚡</div>
+              <div class="stat-tile__value">{{ levelStats.totalXp }}</div>
+              <div class="stat-tile__label">Total XP</div>
+            </div>
+          </div>
+
+          <!-- ── Chart Row: Weekly Pulse + Monthly Trend ── -->
+          <div class="insight-charts-row">
+            <div class="sys-chart-card">
+              <div class="sys-chart-card__header">
+                <span class="chart-dot chart-dot--cyan"></span>Weekly Pulse
+              </div>
+              <div class="sys-chart-card__body">
+                <canvas #barCanvas></canvas>
+              </div>
+            </div>
+            <div class="sys-chart-card">
+              <div class="sys-chart-card__header">
+                <span class="chart-dot chart-dot--blue"></span>Monthly Trend
+              </div>
+              <div class="sys-chart-card__body">
                 <canvas #lineCanvas></canvas>
-              </mat-card-content>
-            </mat-card>
+              </div>
+            </div>
+          </div>
 
-            <mat-card class="aesthetic-card chart-card">
-              <div class="section-header text-section">Awakening Progress</div>
-              <mat-card-content>
-                <canvas #doughnutCanvas></canvas>
-                <p class="percent-text">{{ monthlyTotals.percent }}% Complete</p>
-              </mat-card-content>
-            </mat-card>
-
-            <mat-card class="aesthetic-card chart-card wide">
-              <div class="section-header text-section">Top Habits</div>
-              <mat-card-content>
+          <!-- ── Bottom Row: Domain Radar + Top Habits Leaderboard ── -->
+          <div class="insight-bottom-row">
+            <div class="sys-chart-card insight-radar-card" *ngIf="domainGroups.length > 1">
+              <div class="sys-chart-card__header">
+                <span class="chart-dot chart-dot--purple"></span>Domain Power
+              </div>
+              <div class="sys-chart-card__body">
+                <canvas #radarCanvas></canvas>
+              </div>
+            </div>
+            <div class="sys-chart-card insight-leaderboard-card" [class.insight-full-width]="domainGroups.length <= 1">
+              <div class="sys-chart-card__header">
+                <span class="chart-dot chart-dot--gold"></span>Top Habits
+              </div>
+              <div class="sys-chart-card__body sys-chart-card__body--list">
                 <div class="habits-empty" *ngIf="topHabits.length === 0">
                   No habits yet. Add your first habit.
                 </div>
-                <ul class="habits-list" *ngIf="topHabits.length > 0">
-                  <li *ngFor="let habit of topHabits; trackBy: trackByHabitId">
-                    <span>{{ habit.habit.name }}</span>
-                    <span class="habit-percent">{{ habit.completionPercent }}%</span>
+                <ol class="leaderboard-list" *ngIf="topHabits.length > 0">
+                  <li *ngFor="let habit of topHabits; let i = index; trackBy: trackByHabitId"
+                    class="leaderboard-item"
+                    [class.leaderboard-item--gold]="i === 0"
+                    [class.leaderboard-item--silver]="i === 1"
+                    [class.leaderboard-item--bronze]="i === 2">
+                    <span class="leaderboard-rank">{{ i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i + 1) }}</span>
+                    <span class="leaderboard-name">{{ habit.habit.name }}</span>
+                    <div class="leaderboard-right">
+                      <div class="leaderboard-bar-track">
+                        <div class="leaderboard-bar-fill"
+                          [style.width.%]="habit.completionPercent"
+                          [style.background]="i === 0 ? '#ffd700' : i === 1 ? '#c0c0c0' : i === 2 ? '#cd7f32' : 'var(--accent)'">
+                        </div>
+                      </div>
+                      <span class="leaderboard-pct">{{ habit.completionPercent }}%</span>
+                    </div>
                   </li>
-                </ul>
-              </mat-card-content>
-            </mat-card>
+                </ol>
+              </div>
+            </div>
           </div>
-        </mat-card-content>
-      </mat-card>
+
+        </div>
+      </section>
 
       <div class="today-footer" *ngIf="showTodayFooter">
         <span>{{ doneCount }}/{{ totalCount }} done</span>
@@ -313,9 +389,11 @@ type SystemOverlayType = 'none' | 'perfect' | 'levelup';
 export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('todaySection') todaySection?: ElementRef<HTMLElement>;
   @ViewChild('lineCanvas') lineCanvas!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('doughnutCanvas') doughnutCanvas!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('barCanvas') barCanvas!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('radarCanvas') radarCanvas?: ElementRef<HTMLCanvasElement>;
   private lineChart?: Chart;
-  private doughnutChart?: Chart;
+  private barChart?: Chart;
+  private radarChart?: Chart;
   selectedMonthYear: MonthKey | null = null;
   daysInMonth = 0;
   monthlyTotals: MonthlyTotals = { completed: 0, goal: 0, left: 0, percent: 0 };
@@ -416,6 +494,35 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   get userName(): string {
     return this.habitStore.getCurrentUsername() || 'Player';
+  }
+
+  get weeklyBarLabels(): string[] {
+    const today = this.todayDate.getDate();
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const labels: string[] = [];
+    const startDay = Math.max(1, today - 6);
+    for (let d = startDay; d <= today; d++) {
+      const date = new Date(this.todayDate.getFullYear(), this.todayDate.getMonth(), d);
+      labels.push(dayNames[date.getDay()]);
+    }
+    return labels;
+  }
+
+  get weeklyBarData(): number[] {
+    const today = this.todayDate.getDate();
+    return this.dailyCounts.slice(Math.max(0, today - 7), today);
+  }
+
+  get domainRadarLabels(): string[] {
+    return this.domainGroups
+      .filter(g => g.totalCount > 0)
+      .map(g => g.config?.label ?? 'General');
+  }
+
+  get domainRadarData(): number[] {
+    return this.domainGroups
+      .filter(g => g.totalCount > 0)
+      .map(g => Math.round((g.completedCount / g.totalCount) * 100));
   }
 
   get canUseDateCarousel(): boolean {
@@ -629,8 +736,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     requestAnimationFrame(() => {
       this.chartInitQueued = false;
       this.createChartsIfNeeded();
-      const missingCanvas = !this.lineCanvas?.nativeElement || !this.doughnutCanvas?.nativeElement;
-      const missingCharts = !this.lineChart || !this.doughnutChart;
+      const missingCanvas = !this.lineCanvas?.nativeElement || !this.barCanvas?.nativeElement;
+      const missingCharts = !this.lineChart || !this.barChart;
       if (this.readyResolved && this.viewReady && missingCanvas && missingCharts && this.chartInitRetries < 8) {
         this.chartInitRetries++;
         this.queueChartInitialization();
@@ -645,11 +752,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
     const hasLineCanvas = !!this.lineCanvas?.nativeElement;
-    const hasDoughnutCanvas = !!this.doughnutCanvas?.nativeElement;
-    if (!hasLineCanvas || !hasDoughnutCanvas) {
+    const hasBarCanvas = !!this.barCanvas?.nativeElement;
+    if (!hasLineCanvas || !hasBarCanvas) {
       return;
     }
-    if (!this.lineChart || !this.doughnutChart) {
+    if (!this.lineChart || !this.barChart) {
       this.createCharts();
       this.updateChartTheme();
       return;
@@ -671,20 +778,25 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
             fill: true,
             pointBackgroundColor: this.getCssVar('--theme-accent'),
             pointBorderColor: this.getCssVar('--theme-accent'),
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            tension: 0.3
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            tension: 0.4,
+            borderWidth: 2
           }]
         },
         options: {
           responsive: true,
+          maintainAspectRatio: true,
           scales: {
             y: {
               beginAtZero: true,
-              max: this.habitsCount
-            }
+              max: Math.max(this.habitsCount, 1),
+              ticks: { stepSize: 1 }
+            },
+            x: { ticks: { maxTicksLimit: 10 } }
           },
           plugins: {
+            legend: { display: false },
             tooltip: {
               callbacks: {
                 label: (context) => `Day ${context.label}: ${context.parsed.y} of ${this.habitsCount}`
@@ -694,21 +806,78 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       });
     }
-    if (this.doughnutCanvas && !this.doughnutChart) {
-      this.doughnutChart = new Chart(this.doughnutCanvas.nativeElement, {
-        type: 'doughnut',
+    if (this.barCanvas && !this.barChart) {
+      this.barChart = new Chart(this.barCanvas.nativeElement, {
+        type: 'bar',
         data: {
-          labels: ['Completed', 'Left'],
+          labels: this.weeklyBarLabels,
           datasets: [{
-            data: [this.monthlyTotals.completed, this.monthlyTotals.left],
-            backgroundColor: [this.getCssVar('--theme-accent'), this.getCssVar('--theme-accent-soft')]
+            label: 'Completed',
+            data: this.weeklyBarData,
+            backgroundColor: 'rgba(0, 229, 255, 0.22)',
+            borderColor: 'rgba(0, 229, 255, 0.7)',
+            borderWidth: 1,
+            borderRadius: 5,
+            hoverBackgroundColor: 'rgba(0, 229, 255, 0.42)'
+          } as any]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: Math.max(this.habitsCount, 1),
+              ticks: { stepSize: 1 }
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (context) => `${context.parsed.y} / ${this.habitsCount} habits`
+              }
+            }
+          }
+        }
+      });
+    }
+    if (this.radarCanvas && !this.radarChart && this.domainRadarLabels.length > 1) {
+      this.radarChart = new Chart(this.radarCanvas.nativeElement, {
+        type: 'radar',
+        data: {
+          labels: this.domainRadarLabels,
+          datasets: [{
+            label: 'Completion %',
+            data: this.domainRadarData,
+            backgroundColor: 'rgba(123, 95, 255, 0.18)',
+            borderColor: 'rgba(123, 95, 255, 0.75)',
+            borderWidth: 1.5,
+            pointBackgroundColor: 'rgba(123, 95, 255, 1)',
+            pointBorderColor: 'rgba(200, 220, 255, 0.5)',
+            pointRadius: 4,
+            pointHoverRadius: 6
           }]
         },
         options: {
           responsive: true,
+          maintainAspectRatio: true,
+          scales: {
+            r: {
+              beginAtZero: true,
+              max: 100,
+              ticks: { display: false, stepSize: 25 },
+              pointLabels: { color: 'rgba(150, 190, 255, 0.8)', font: { size: 11 } },
+              grid: { color: 'rgba(61, 127, 255, 0.12)' },
+              angleLines: { color: 'rgba(61, 127, 255, 0.12)' }
+            }
+          },
           plugins: {
-            legend: {
-              position: 'bottom'
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (context) => `${context.parsed.r}% complete`
+              }
             }
           }
         }
@@ -728,7 +897,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         clearTimeout(this.headerLevelUpTimer);
       }
       this.lineChart?.destroy();
-      this.doughnutChart?.destroy();
+      this.barChart?.destroy();
+      this.radarChart?.destroy();
       if (this.resizeListener) {
         window.removeEventListener('resize', this.resizeListener);
       }
@@ -1004,22 +1174,24 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.lineChart) {
       this.lineChart.data.labels = Array.from({ length: this.daysInMonth }, (_, i) => (i + 1).toString());
       this.lineChart.data.datasets[0].data = this.dailyCounts;
-      this.lineChart.options.scales!['y']!.max = this.habitsCount;
-      this.updateChartTheme();
+      this.lineChart.options.scales!['y']!.max = Math.max(this.habitsCount, 1);
       this.lineChart.update();
     }
-
-    if (this.doughnutChart) {
-      this.doughnutChart.data.datasets[0].data = [this.monthlyTotals.completed, this.monthlyTotals.left];
-      this.updateChartTheme();
-      this.doughnutChart.update();
+    if (this.barChart) {
+      this.barChart.data.labels = this.weeklyBarLabels;
+      this.barChart.data.datasets[0].data = this.weeklyBarData;
+      this.barChart.options.scales!['y']!.max = Math.max(this.habitsCount, 1);
+      this.barChart.update();
     }
+    if (this.radarChart) {
+      this.radarChart.data.labels = this.domainRadarLabels;
+      this.radarChart.data.datasets[0].data = this.domainRadarData;
+      this.radarChart.update();
+    }
+    this.updateChartTheme();
   }
 
   private updateChartTheme(): void {
-    if (!this.lineChart || !this.doughnutChart) {
-      return;
-    }
     const accent = this.getCssVar('--theme-accent');
     const glow = this.getCssVar('--theme-accent-soft');
     const muted = this.getCssVar('--theme-chart-text');
@@ -1029,33 +1201,55 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       Chart.defaults.font.family = fontFamily;
     }
 
-    const lineDataset = this.lineChart.data.datasets[0] as ChartDataset<'line'>;
-    lineDataset.borderColor = accent;
-    lineDataset.backgroundColor = glow;
-    lineDataset.pointBackgroundColor = accent;
-    lineDataset.pointBorderColor = accent;
-    if (this.lineChart.options.scales?.['y']?.ticks) {
-      this.lineChart.options.scales['y'].ticks.color = muted;
-    }
-    if (this.lineChart.options.scales?.['x']?.ticks) {
-      this.lineChart.options.scales['x'].ticks.color = muted;
-    }
-    if (this.lineChart.options.scales?.['y']?.grid) {
-      this.lineChart.options.scales['y'].grid.color = grid;
-    }
-    if (this.lineChart.options.scales?.['x']?.grid) {
-      this.lineChart.options.scales['x'].grid.color = grid;
-    }
-    this.lineChart.options.font = { family: fontFamily || Chart.defaults.font.family };
-
-    this.doughnutChart.data.datasets[0].backgroundColor = [accent, glow];
-    if (this.doughnutChart.options.plugins?.legend) {
-      this.doughnutChart.options.plugins.legend.display = !this.isMobile;
-      if (this.doughnutChart.options.plugins.legend.labels) {
-        this.doughnutChart.options.plugins.legend.labels.color = muted;
+    if (this.lineChart) {
+      const lineDataset = this.lineChart.data.datasets[0] as ChartDataset<'line'>;
+      lineDataset.borderColor = accent;
+      lineDataset.backgroundColor = glow;
+      lineDataset.pointBackgroundColor = accent;
+      lineDataset.pointBorderColor = accent;
+      if (this.lineChart.options.scales?.['y']?.ticks) {
+        this.lineChart.options.scales['y'].ticks.color = muted;
       }
+      if (this.lineChart.options.scales?.['x']?.ticks) {
+        this.lineChart.options.scales['x'].ticks.color = muted;
+      }
+      if (this.lineChart.options.scales?.['y']?.grid) {
+        this.lineChart.options.scales['y'].grid.color = grid;
+      }
+      if (this.lineChart.options.scales?.['x']?.grid) {
+        this.lineChart.options.scales['x'].grid.color = grid;
+      }
+      this.lineChart.options.font = { family: fontFamily || Chart.defaults.font.family };
     }
-    this.doughnutChart.options.font = { family: fontFamily || Chart.defaults.font.family };
+
+    if (this.barChart) {
+      if (this.barChart.options.scales?.['y']?.ticks) {
+        this.barChart.options.scales['y'].ticks.color = muted;
+      }
+      if (this.barChart.options.scales?.['x']?.ticks) {
+        this.barChart.options.scales['x'].ticks.color = muted;
+      }
+      if (this.barChart.options.scales?.['y']?.grid) {
+        this.barChart.options.scales['y'].grid.color = grid;
+      }
+      if (this.barChart.options.scales?.['x']?.grid) {
+        this.barChart.options.scales['x'].grid.color = grid;
+      }
+      this.barChart.options.font = { family: fontFamily || Chart.defaults.font.family };
+    }
+
+    if (this.radarChart) {
+      if (this.radarChart.options.scales?.['r']?.grid) {
+        this.radarChart.options.scales['r'].grid.color = grid;
+      }
+      if ((this.radarChart.options.scales?.['r'] as any)?.angleLines) {
+        (this.radarChart.options.scales!['r'] as any).angleLines.color = grid;
+      }
+      if ((this.radarChart.options.scales?.['r'] as any)?.pointLabels) {
+        (this.radarChart.options.scales!['r'] as any).pointLabels.color = muted;
+      }
+      this.radarChart.options.font = { family: fontFamily || Chart.defaults.font.family };
+    }
   }
 
   private getCssVar(name: string): string {

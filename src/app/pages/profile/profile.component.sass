@@ -1,67 +1,541 @@
-.page-title
-  margin-bottom: var(--space-3)
-  font-size: calc(var(--fs-title) * var(--font-scale))
-
 .profile-page
+  display: flex
+  flex-direction: column
+  gap: 16px
+  padding-bottom: calc(var(--tabbar-height, 72px) + 24px)
   font-size: calc(var(--fs-body) * var(--font-scale))
+
+// ── Quest-style page header ──────────────────────────────────────────────────
+
+.profile-page-header
+  display: flex
+  flex-direction: column
+  gap: 12px
+
+.profile-page-header__title-row
+  display: flex
+  align-items: center
+  gap: 12px
+
+.profile-page-header__icon-wrap
+  display: flex
+  align-items: center
+  justify-content: center
+  width: 44px
+  height: 44px
+  border-radius: var(--radius-sm)
+  background: rgba(61, 127, 255, 0.12)
+  border: 1px solid rgba(61, 127, 255, 0.24)
+  flex-shrink: 0
+
+  mat-icon
+    font-size: 24px
+    width: 24px
+    height: 24px
+    color: #00e5ff
+
+.profile-page-header__title
+  margin: 0
+  font-size: 22px
+  font-weight: 800
+  color: rgba(200, 220, 255, 0.95)
+  line-height: 1.1
+
+.profile-page-header__subtitle
+  margin: 2px 0 0
+  font-size: 13px
+  color: var(--text-2)
+
+.profile-page-header__chips
+  display: flex
+  flex-wrap: wrap
+  gap: 8px
+
+.profile-stat-chip
+  display: inline-flex
+  align-items: center
+  gap: 4px
+  font-size: 12px
+  font-weight: 700
+  padding: 4px 10px
+  border-radius: 99px
+  background: color-mix(in oklab, var(--border-subtle) 50%, transparent)
+  color: var(--text-2)
+  border: 1px solid color-mix(in oklab, var(--border-subtle) 40%, transparent)
+
+  mat-icon
+    font-size: 13px
+    width: 13px
+    height: 13px
+
+  &--xp
+    color: #facc15
+    background: color-mix(in oklab, #facc15 12%, transparent)
+    border-color: color-mix(in oklab, #facc15 20%, transparent)
+
+    mat-icon
+      color: #facc15
+
+// ── Identity card ────────────────────────────────────────────────────────────
+
+.profile-identity-card
+  display: flex
+  align-items: center
+  gap: 14px
+  padding: 16px 18px
+  border-radius: var(--radius-md)
+  background: linear-gradient(160deg, rgba(8, 12, 32, 0.9), rgba(6, 8, 24, 0.95))
+  border: 1px solid rgba(61, 127, 255, 0.2)
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.04)
+  position: relative
+  overflow: hidden
+
+  &::before
+    content: ''
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    height: 1px
+    background: linear-gradient(90deg, transparent, rgba(61, 127, 255, 0.5), rgba(0, 229, 255, 0.3), transparent)
+    pointer-events: none
+
+.profile-identity__avatar
+  width: 52px
+  height: 52px
+  border-radius: 50%
+  display: grid
+  place-items: center
+  font-weight: 800
+  font-size: 1.1rem
+  color: #fff
+  background: linear-gradient(135deg, rgba(61, 127, 255, 0.8), rgba(0, 229, 255, 0.6))
+  border: 2px solid rgba(61, 127, 255, 0.4)
+  box-shadow: 0 0 20px rgba(61, 127, 255, 0.3)
+  flex-shrink: 0
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.4)
+
+.profile-identity__info
+  flex: 1
+  min-width: 0
+  display: flex
+  flex-direction: column
+  gap: 4px
+
+.profile-identity__name
+  font-size: 1.2rem
+  font-weight: 800
+  color: rgba(200, 220, 255, 0.95)
+  text-shadow: 0 0 20px rgba(61, 127, 255, 0.4)
+
+.profile-identity__sub
+  font-size: 0.8rem
+  color: var(--text-2)
+
+.profile-identity__stats
+  display: flex
+  flex-wrap: wrap
+  gap: 6px
+  margin-top: 4px
+
+.profile-tag
+  display: inline-flex
+  align-items: center
+  font-size: 11px
+  font-weight: 600
+  padding: 2px 8px
+  border-radius: 99px
+  background: rgba(61, 127, 255, 0.1)
+  border: 1px solid rgba(61, 127, 255, 0.2)
+  color: rgba(200, 220, 255, 0.8)
+
+  &--goal
+    background: rgba(0, 229, 160, 0.1)
+    border-color: rgba(0, 229, 160, 0.2)
+    color: #00e5a0
+
+.profile-edit-btn
+  display: inline-flex
+  align-items: center
+  gap: 6px
+  padding: 8px 14px
+  border-radius: 10px
+  border: 1px solid rgba(61, 127, 255, 0.24)
+  background: rgba(61, 127, 255, 0.08)
+  color: rgba(200, 220, 255, 0.8)
+  font-size: 0.8rem
+  font-weight: 600
+  cursor: pointer
+  transition: all 160ms ease
+  flex-shrink: 0
+
+  mat-icon
+    font-size: 16px
+    width: 16px
+    height: 16px
+
+  &:hover
+    background: rgba(61, 127, 255, 0.16)
+    border-color: rgba(61, 127, 255, 0.4)
+    color: rgba(200, 220, 255, 0.95)
+
+// ── Why card ─────────────────────────────────────────────────────────────────
+
+.profile-why-card
+  padding: 14px 18px 14px 20px
+  border-radius: var(--radius-md)
+  border: 1px solid rgba(61, 127, 255, 0.16)
+  border-left: 3px solid rgba(0, 229, 255, 0.6)
+  background: linear-gradient(160deg, rgba(8, 12, 32, 0.85), rgba(6, 8, 24, 0.9))
+  box-shadow: -2px 0 10px rgba(0, 229, 255, 0.06)
+
+.profile-why-card__label
+  font-size: 0.65rem
+  font-weight: 700
+  letter-spacing: 0.12em
+  color: #00e5ff
+  text-transform: uppercase
+  margin-bottom: 6px
+
+.profile-why-card__text
+  font-size: 0.9rem
+  color: rgba(200, 220, 255, 0.8)
+  line-height: 1.5
 
 .profile-section
   margin-bottom: var(--space-2)
 
-.profile-header
-  display: grid
-  grid-template-columns: auto 1fr auto
-  align-items: center
-  gap: var(--space-2)
-  padding: var(--space-2) var(--space-3)
-  border-radius: 16px
-  background: rgba(10, 14, 26, 0.65)
-  border: 1px solid color-mix(in oklab, var(--system-border) 60%, transparent)
-  box-shadow: var(--system-shadow-deep), inset 0 0 18px rgba(0, 0, 0, 0.35)
-  margin-bottom: var(--space-3)
-
-.avatar-circle
-  width: 48px
-  height: 48px
-  border-radius: 999px
-  display: grid
-  place-items: center
-  font-weight: 700
-  color: #fff
-  background: linear-gradient(135deg, #f27a2a, #8b5cf6)
-  font-size: 1rem
-
-.profile-meta
-  display: grid
-  gap: 4px
-
-.profile-name
-  font-size: calc(var(--fs-title) * var(--font-scale))
-  font-weight: 700
-  color: #ffffff
-  text-shadow: 0 0 20px rgba(61, 127, 255, 0.5)
-
-.profile-subtitle
-  font-size: calc(var(--fs-muted) * var(--font-scale))
-  color: color-mix(in oklab, var(--theme-text) 70%, var(--system-highlight))
-
-.edit-pill
-  border: 1px solid color-mix(in oklab, var(--system-border) 60%, transparent)
-  background: rgba(10, 14, 26, 0.4)
-  color: var(--theme-text)
-  padding: 6px 14px
-  border-radius: 999px
-  font-size: calc(var(--fs-muted) * var(--font-scale))
-  cursor: pointer
-  white-space: nowrap
-
-.edit-pill:hover
-  border-color: var(--system-border)
-  color: var(--theme-text)
-  box-shadow: 0 0 14px var(--system-glow-soft)
-
 .settings-section
-  margin-bottom: var(--space-3)
+  margin-bottom: 0
+
+// ── Quest-style collapsible section cards ────────────────────────────────────
+
+.pf-section
+  border-radius: var(--radius-md)
+  background: linear-gradient(160deg, rgba(8, 12, 32, 0.9), rgba(6, 8, 24, 0.95))
+  border: 1px solid rgba(61, 127, 255, 0.16)
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.03)
+  overflow: hidden
+  position: relative
+
+  &::before
+    content: ''
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    height: 1px
+    background: linear-gradient(90deg, transparent, rgba(61, 127, 255, 0.4), rgba(0, 229, 255, 0.2), transparent)
+    pointer-events: none
+
+.pf-section__toggle
+  width: 100%
+  display: flex
+  align-items: center
+  gap: 12px
+  padding: 14px 16px
+  border: none
+  background: transparent
+  color: var(--text-1)
+  cursor: pointer
+  font: inherit
+  text-align: left
+  transition: background 160ms ease
+
+  &:hover
+    background: rgba(61, 127, 255, 0.05)
+
+.pf-section__icon-wrap
+  display: flex
+  align-items: center
+  justify-content: center
+  width: 36px
+  height: 36px
+  border-radius: 10px
+  background: rgba(61, 127, 255, 0.12)
+  border: 1px solid rgba(61, 127, 255, 0.22)
+  flex-shrink: 0
+
+  mat-icon
+    font-size: 18px
+    width: 18px
+    height: 18px
+    color: #00e5ff
+
+  &--green
+    background: rgba(0, 229, 160, 0.1)
+    border-color: rgba(0, 229, 160, 0.2)
+    mat-icon
+      color: #00e5a0
+
+  &--purple
+    background: rgba(162, 89, 255, 0.1)
+    border-color: rgba(162, 89, 255, 0.2)
+    mat-icon
+      color: #a259ff
+
+  &--muted
+    background: rgba(255, 255, 255, 0.05)
+    border-color: rgba(255, 255, 255, 0.1)
+    mat-icon
+      color: var(--text-2)
+
+.pf-section__title-group
+  flex: 1
+  min-width: 0
+  display: flex
+  flex-direction: column
+  gap: 2px
+
+.pf-section__title
+  font-size: 0.95rem
+  font-weight: 700
+  color: rgba(200, 220, 255, 0.92)
+  line-height: 1.2
+
+.pf-section__sub
+  font-size: 0.72rem
+  color: var(--text-2)
+  line-height: 1.3
+
+.pf-section__chevron
+  color: var(--text-2)
+  transition: transform 200ms ease
+  flex-shrink: 0
+  font-size: 20px
+  width: 20px
+  height: 20px
+
+  &.is-open
+    transform: rotate(180deg)
+
+.pf-section__body
+  display: grid
+  grid-template-rows: 0fr
+  transition: grid-template-rows 220ms ease
+  overflow: hidden
+
+  &.is-open
+    grid-template-rows: 1fr
+
+  > *
+    min-height: 0
+    overflow: hidden
+
+  // inner wrapper needed for grid animation
+  .badge-grid,
+  .theme-picker,
+  .accent-swatches,
+  .pf-action-grid,
+  .pf-control-group,
+  .pf-control-row,
+  .pf-info-rows,
+  .pf-link-row,
+  .pf-section-divider,
+  .custom-accent,
+  .pf-control-label--section,
+  .reminder-time-input,
+  .font-slider
+    padding-left: 16px
+    padding-right: 16px
+
+// Wrap all body content
+.pf-section__body.is-open > *:last-child
+  padding-bottom: 16px
+
+// ── Action buttons (Backup) ────────────────────────────────────────────────
+
+.pf-action-grid
+  display: grid
+  grid-template-columns: 1fr 1fr
+  gap: 10px
+  padding: 14px 16px !important
+
+.pf-action-btn
+  display: flex
+  align-items: center
+  justify-content: center
+  gap: 6px
+  padding: 12px 10px
+  border-radius: 12px
+  border: 1px solid rgba(61, 127, 255, 0.2)
+  background: rgba(61, 127, 255, 0.07)
+  color: rgba(200, 220, 255, 0.85)
+  font-size: 0.82rem
+  font-weight: 600
+  cursor: pointer
+  transition: all 160ms ease
+
+  mat-icon
+    font-size: 18px
+    width: 18px
+    height: 18px
+    color: #00e5ff
+
+  &:hover
+    background: rgba(61, 127, 255, 0.14)
+    border-color: rgba(61, 127, 255, 0.35)
+    color: rgba(200, 220, 255, 0.95)
+
+// ── Control rows (Personalization) ────────────────────────────────────────
+
+.pf-control-group
+  display: flex
+  flex-direction: column
+  gap: 8px
+  padding: 12px 16px !important
+
+.pf-control-row
+  display: flex
+  align-items: center
+  justify-content: space-between
+  gap: 12px
+  padding: 10px 16px !important
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05)
+
+  &:last-of-type
+    border-bottom: none
+
+.pf-control-label
+  font-size: 0.82rem
+  font-weight: 500
+  color: var(--text-2)
+
+  &--section
+    display: block
+    font-size: 0.7rem
+    font-weight: 700
+    letter-spacing: 0.1em
+    text-transform: uppercase
+    color: rgba(0, 229, 255, 0.6)
+    padding: 10px 16px 0 !important
+
+.pf-section-divider
+  height: 1px
+  background: rgba(61, 127, 255, 0.1)
+  margin: 4px 16px !important
+  padding: 0 !important
+
+// ── Info rows (Help & About) ───────────────────────────────────────────────
+
+.pf-info-rows
+  display: flex
+  flex-direction: column
+  padding: 12px 16px !important
+
+.pf-info-row
+  display: flex
+  align-items: flex-start
+  justify-content: space-between
+  gap: 12px
+  padding: 8px 0
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05)
+
+  &:last-child
+    border-bottom: none
+
+.pf-info-label
+  font-size: 0.75rem
+  font-weight: 700
+  letter-spacing: 0.06em
+  text-transform: uppercase
+  color: var(--text-2)
+  flex-shrink: 0
+
+.pf-info-value
+  font-size: 0.82rem
+  font-weight: 500
+  color: rgba(200, 220, 255, 0.8)
+  text-align: right
+
+.pf-link-row
+  display: flex
+  gap: 8px
+  flex-wrap: wrap
+  padding: 10px 16px 0 !important
+
+.pf-link-btn
+  display: inline-flex
+  align-items: center
+  padding: 6px 12px
+  border-radius: 8px
+  border: 1px solid rgba(61, 127, 255, 0.2)
+  background: rgba(61, 127, 255, 0.06)
+  color: rgba(200, 220, 255, 0.7)
+  font-size: 0.8rem
+  font-weight: 600
+  cursor: pointer
+  transition: all 160ms ease
+  font: inherit
+
+  &:hover
+    background: rgba(61, 127, 255, 0.14)
+    border-color: rgba(61, 127, 255, 0.35)
+    color: rgba(200, 220, 255, 0.95)
+
+// ── Nav links (Help & About) ───────────────────────────────────────────────
+
+.pf-nav-links
+  display: flex
+  flex-direction: column
+  gap: 6px
+  padding: 4px 16px 12px
+
+.pf-nav-link
+  display: flex
+  align-items: center
+  gap: 14px
+  padding: 13px 16px
+  border-radius: 14px
+  border: 1px solid rgba(61, 127, 255, 0.16)
+  background: linear-gradient(160deg, rgba(10, 16, 40, 0.7), rgba(6, 10, 28, 0.75))
+  color: rgba(200, 220, 255, 0.88)
+  text-decoration: none
+  transition: all 160ms ease
+  position: relative
+  overflow: hidden
+
+  &::before
+    content: ''
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    height: 1px
+    background: linear-gradient(90deg, transparent, rgba(61, 127, 255, 0.3), transparent)
+    pointer-events: none
+
+  &:hover
+    background: linear-gradient(160deg, rgba(20, 30, 70, 0.8), rgba(12, 18, 50, 0.85))
+    border-color: rgba(61, 127, 255, 0.35)
+    color: #00e5ff
+    box-shadow: 0 0 18px rgba(61, 127, 255, 0.12)
+
+    .pf-nav-link__arrow
+      transform: translateX(3px)
+      color: #00e5ff
+
+.pf-nav-link__icon
+  font-size: 20px
+  width: 20px
+  height: 20px
+  color: #00e5ff
+  flex-shrink: 0
+  opacity: 0.85
+
+.pf-nav-link__label
+  flex: 1
+  font-size: 0.9rem
+  font-weight: 600
+  letter-spacing: 0.01em
+
+.pf-nav-link__arrow
+  font-size: 20px
+  width: 20px
+  height: 20px
+  color: rgba(140, 180, 255, 0.45)
+  transition: transform 160ms ease, color 160ms ease
+  flex-shrink: 0
 
 .settings-list
   display: grid

@@ -1,16 +1,120 @@
 .privacy-page
-  display: grid
-  gap: var(--space-3)
+  display: flex
+  flex-direction: column
+  gap: 16px
+  padding-bottom: calc(var(--tabbar-height, 72px) + 24px)
 
-.page-header
+// All shared styles (info-page-header, info-card, info-bullet, etc.)
+// are defined in about.component.sass and reused here via the same class names
+// because Angular's component styles are scoped — we duplicate the minimal needed.
+
+.info-page-header
   display: flex
   align-items: center
-  justify-content: space-between
-  gap: var(--space-2)
+  gap: 12px
 
-.privacy-body
-  display: grid
-  gap: var(--space-2)
+.info-back-btn
+  display: flex
+  align-items: center
+  justify-content: center
+  width: 36px
+  height: 36px
+  border-radius: 10px
+  border: 1px solid rgba(61, 127, 255, 0.2)
+  background: rgba(61, 127, 255, 0.06)
+  color: var(--text-2)
+  cursor: pointer
+  transition: all 160ms ease
+  flex-shrink: 0
 
-.privacy-body h2
+  mat-icon
+    font-size: 18px
+    width: 18px
+    height: 18px
+
+  &:hover
+    background: rgba(61, 127, 255, 0.14)
+    border-color: rgba(61, 127, 255, 0.35)
+    color: rgba(200, 220, 255, 0.9)
+
+.info-page-header__icon-wrap
+  display: flex
+  align-items: center
+  justify-content: center
+  width: 44px
+  height: 44px
+  border-radius: var(--radius-sm)
+  background: rgba(61, 127, 255, 0.12)
+  border: 1px solid rgba(61, 127, 255, 0.24)
+  flex-shrink: 0
+
+  mat-icon
+    font-size: 24px
+    width: 24px
+    height: 24px
+    color: #00e5ff
+
+.info-page-header__title
   margin: 0
+  font-size: 22px
+  font-weight: 800
+  color: rgba(200, 220, 255, 0.95)
+  line-height: 1.1
+
+.info-page-header__subtitle
+  margin: 2px 0 0
+  font-size: 12px
+  color: var(--text-2)
+
+.info-card
+  padding: 16px 18px
+  border-radius: var(--radius-md)
+  background: linear-gradient(160deg, rgba(8, 12, 32, 0.88), rgba(6, 8, 24, 0.92))
+  border: 1px solid rgba(61, 127, 255, 0.16)
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25)
+
+  &--accent
+    border-color: rgba(0, 229, 255, 0.2)
+    border-left: 3px solid rgba(0, 229, 255, 0.6)
+    box-shadow: -2px 0 10px rgba(0, 229, 255, 0.06)
+
+.info-card__header
+  display: flex
+  align-items: center
+  gap: 8px
+  margin-bottom: 14px
+  font-size: 0.68rem
+  font-weight: 700
+  letter-spacing: 0.14em
+  color: #00e5ff
+  text-transform: uppercase
+
+  mat-icon
+    font-size: 16px
+    width: 16px
+    height: 16px
+
+.info-card__body
+  margin: 0
+  font-size: 0.9rem
+  color: rgba(200, 220, 255, 0.8)
+  line-height: 1.6
+
+.info-bullets
+  display: flex
+  flex-direction: column
+  gap: 12px
+
+.info-bullet
+  display: flex
+  align-items: center
+  gap: 10px
+  font-size: 0.9rem
+  color: rgba(200, 220, 255, 0.8)
+
+  mat-icon
+    font-size: 18px
+    width: 18px
+    height: 18px
+    color: #00e5a0
+    flex-shrink: 0

@@ -1,85 +1,228 @@
 .about-page
-  display: grid
-  gap: 20px
-  padding-top: calc(env(safe-area-inset-top, 0px) + 12px)
-  font-size: calc(var(--fs-body) * var(--font-scale))
+  display: flex
+  flex-direction: column
+  gap: 16px
+  padding-bottom: calc(var(--tabbar-height, 72px) + 24px)
 
-.page-header
-  display: grid
-  grid-template-columns: auto 1fr
+// ── Shared info page header ──────────────────────────────────────────────────
+
+.info-page-header
+  display: flex
   align-items: center
   gap: 12px
 
-.back-button
+.info-back-btn
+  display: flex
+  align-items: center
+  justify-content: center
   width: 36px
   height: 36px
-  border-radius: 999px
-  border: 1px solid var(--theme-border)
-  background: transparent
-  color: var(--theme-text)
-  display: grid
-  place-items: center
+  border-radius: 10px
+  border: 1px solid rgba(61, 127, 255, 0.2)
+  background: rgba(61, 127, 255, 0.06)
+  color: var(--text-2)
   cursor: pointer
+  transition: all 160ms ease
+  flex-shrink: 0
 
-.page-title
-  font-size: calc(var(--fs-title) * var(--font-scale))
+  mat-icon
+    font-size: 18px
+    width: 18px
+    height: 18px
+
+  &:hover
+    background: rgba(61, 127, 255, 0.14)
+    border-color: rgba(61, 127, 255, 0.35)
+    color: rgba(200, 220, 255, 0.9)
+
+.info-page-header__icon-wrap
+  display: flex
+  align-items: center
+  justify-content: center
+  width: 44px
+  height: 44px
+  border-radius: var(--radius-sm)
+  background: rgba(61, 127, 255, 0.12)
+  border: 1px solid rgba(61, 127, 255, 0.24)
+  flex-shrink: 0
+
+  mat-icon
+    font-size: 24px
+    width: 24px
+    height: 24px
+    color: #00e5ff
+
+.info-page-header__title
   margin: 0
-  color: var(--theme-text)
+  font-size: 22px
+  font-weight: 800
+  color: rgba(200, 220, 255, 0.95)
+  line-height: 1.1
 
-.page-subtitle
-  font-size: calc(var(--fs-muted) * var(--font-scale))
-  color: var(--theme-text-muted)
+.info-page-header__subtitle
+  margin: 2px 0 0
+  font-size: 12px
+  color: var(--text-2)
 
-.app-meta
+// ── App identity card ────────────────────────────────────────────────────────
+
+.app-identity-card
   display: flex
   align-items: center
   gap: 14px
-  padding: 12px 16px
-  border-radius: 16px
-  background: var(--theme-surface)
-  border: 1px solid var(--theme-border)
+  padding: 16px 18px
+  border-radius: var(--radius-md)
+  background: linear-gradient(160deg, rgba(8, 12, 32, 0.9), rgba(6, 8, 24, 0.95))
+  border: 1px solid rgba(61, 127, 255, 0.2)
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.04)
+  position: relative
+  overflow: hidden
 
-.app-icon
+  &::before
+    content: ''
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    height: 1px
+    background: linear-gradient(90deg, transparent, rgba(61, 127, 255, 0.5), rgba(0, 229, 255, 0.3), transparent)
+    pointer-events: none
+
+.app-identity__icon-wrap
+  position: relative
+  width: 48px
+  height: 48px
+  flex-shrink: 0
+
+.app-identity__icon
   width: 48px
   height: 48px
   border-radius: 12px
+  border: 1px solid rgba(61, 127, 255, 0.2)
 
-.app-name
+.app-identity__fallback-icon
+  display: none
+  font-size: 32px
+  width: 48px
+  height: 48px
+  color: #00e5ff
+
+.app-identity__info
+  flex: 1
+  min-width: 0
+
+.app-identity__name
+  font-size: 1.1rem
+  font-weight: 800
+  color: rgba(200, 220, 255, 0.95)
+
+.app-identity__tagline
+  font-size: 0.8rem
+  color: var(--text-2)
+  margin-top: 2px
+
+.app-identity__version-chip
+  display: inline-flex
+  align-items: center
+  gap: 4px
+  font-size: 11px
   font-weight: 600
-  color: var(--theme-text)
+  padding: 3px 8px
+  border-radius: 99px
+  background: rgba(61, 127, 255, 0.1)
+  border: 1px solid rgba(61, 127, 255, 0.2)
+  color: var(--text-2)
+  flex-shrink: 0
 
-.app-version
-  font-size: calc(var(--fs-muted) * var(--font-scale))
-  color: var(--theme-text-muted)
+  mat-icon
+    font-size: 12px
+    width: 12px
+    height: 12px
 
-.about-section
-  padding: 16px
-  border-radius: 16px
-  background: var(--theme-surface)
-  border: 1px solid var(--theme-border)
+// ── Info cards ───────────────────────────────────────────────────────────────
 
-.section-title
-  font-size: calc(var(--fs-label) * var(--font-scale))
-  letter-spacing: 0.12em
+.info-card
+  padding: 16px 18px
+  border-radius: var(--radius-md)
+  background: linear-gradient(160deg, rgba(8, 12, 32, 0.88), rgba(6, 8, 24, 0.92))
+  border: 1px solid rgba(61, 127, 255, 0.16)
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25)
+
+  &--accent
+    border-color: rgba(0, 229, 255, 0.2)
+    border-left: 3px solid rgba(0, 229, 255, 0.6)
+    box-shadow: -2px 0 10px rgba(0, 229, 255, 0.06)
+
+.info-card__header
+  display: flex
+  align-items: center
+  gap: 8px
+  margin-bottom: 14px
+  font-size: 0.68rem
+  font-weight: 700
+  letter-spacing: 0.14em
+  color: #00e5ff
   text-transform: uppercase
-  color: var(--theme-text-muted)
-  margin-bottom: 10px
 
-.about-list
-  margin: 0
-  padding-left: 18px
-  display: grid
-  gap: 6px
-  color: var(--theme-text)
+  mat-icon
+    font-size: 16px
+    width: 16px
+    height: 16px
 
-.about-bullets
+.info-card__body
   margin: 0
-  padding-left: 18px
-  display: grid
-  gap: 6px
-  color: var(--theme-text)
+  font-size: 0.9rem
+  color: rgba(200, 220, 255, 0.8)
+  line-height: 1.6
 
-.section-body
+// ── Steps list ───────────────────────────────────────────────────────────────
+
+.info-steps
+  list-style: none
   margin: 0
-  font-size: calc(var(--fs-body) * var(--font-scale))
-  color: var(--theme-text)
+  padding: 0
+  display: flex
+  flex-direction: column
+  gap: 12px
+
+.info-step
+  display: flex
+  align-items: flex-start
+  gap: 12px
+  font-size: 0.9rem
+  color: rgba(200, 220, 255, 0.8)
+  line-height: 1.5
+
+.info-step__num
+  flex-shrink: 0
+  font-size: 0.65rem
+  font-weight: 800
+  font-family: "Consolas", "SFMono-Regular", monospace
+  letter-spacing: 0.04em
+  color: #00e5ff
+  background: rgba(0, 229, 255, 0.1)
+  border: 1px solid rgba(0, 229, 255, 0.2)
+  border-radius: 99px
+  padding: 2px 8px
+  line-height: 1.6
+
+// ── Bullets list ─────────────────────────────────────────────────────────────
+
+.info-bullets
+  display: flex
+  flex-direction: column
+  gap: 12px
+
+.info-bullet
+  display: flex
+  align-items: center
+  gap: 10px
+  font-size: 0.9rem
+  color: rgba(200, 220, 255, 0.8)
+
+  mat-icon
+    font-size: 18px
+    width: 18px
+    height: 18px
+    color: #00e5a0
+    flex-shrink: 0

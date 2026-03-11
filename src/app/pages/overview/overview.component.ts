@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, HostListener, Inject, PLATFORM_ID, ViewCh
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatIconModule } from '@angular/material/icon';
 import { Subscription, combineLatest, Observable } from 'rxjs';
 import { HabitStoreService } from '../../services/habit-store.service';
 import { Habit, MonthKey, MonthSlot, HabitSkips, HabitCompletion, DomainConfig } from '../../models/habit.model';
@@ -17,7 +18,6 @@ import { getLevelProgress, LevelProgress } from '../../shared/level-utils';
 import { BackupService } from '../../services/backup.service';
 import { WeeklyReportShareService } from '../../services/weekly-report-share.service';
 import { WeeklyReportService } from '../../services/weekly-report.service';
-import { GamificationService } from '../../services/gamification.service';
 
 type CalendarCell = {
   dayNumber: number | null;
@@ -51,257 +51,575 @@ type SelectedDateHabits = {
   incomplete: Habit[];
 };
 
+type MonthlySharePayload = {
+  playerName: string;
+  playerMeta: string;
+  monthLabel: string;
+  level: number;
+  totalXp: number;
+  monthDone: number;
+  monthGoal: number;
+  monthPercent: number;
+  perfectDays: number;
+  totalDaysInMonth: number;
+  bestWeekLabel: string;
+  bestWeekPercent: number;
+  domains: Array<{ label: string; emoji: string; level: number; xp: number; percent: number }>;
+  footerSummary: string;
+};
+
+type OverallSharePayload = {
+  playerName: string;
+  playerRank: string;
+  level: number;
+  totalXp: number;
+  currentStreak: number;
+  bestStreak: number;
+  totalDone: number;
+  totalGoal: number;
+  overallPercent: number;
+  totalPerfectDays: number;
+  activeSince: string;
+  domains: Array<{ label: string; emoji: string; level: number; xp: number; percent: number }>;
+  footerSummary: string;
+};
+
 @Component({
   selector: 'app-overview',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatSnackBarModule, DayCountPipe],
+  imports: [CommonModule, MatCardModule, MatSnackBarModule, MatIconModule, DayCountPipe],
   animations: [staggerFadeUp || noopAnimation],
-    template: `
-    <div class="page-container" [@.disabled]="reduceMotion" [class.reduce-motion]="reduceMotion">
-      <h1 class="text-title page-title">Overview</h1>
-      <ng-container *ngIf="ready$ | async; else loading">
-        <ng-container *ngIf="hasAnyData; else emptyState">
-          <mat-card class="aesthetic-card overview-hero arcane-card" [@staggerFadeUp]="animationKey">
-            <div class="hero-grid">
-              <div class="hero-block arcane-card--tight">
-                <div class="hero-label">Streak</div>
-                <div class="hero-value">{{ currentStreak | dayCount }}</div>
-              </div>
-              <div class="hero-block arcane-card--tight">
-                <div class="hero-label">Level</div>
-                <div class="hero-value"><span class="glass-pill">Lv {{ levelStats.level }}</span></div>
-                <div class="text-muted">Total XP: {{ levelStats.totalXp }}</div>
-                <div class="text-muted">Next: Level {{ levelStats.nextLevel }} in {{ levelStats.remainingToNext }} XP</div>
-              </div>
-              <div class="hero-block arcane-card--tight">
-                <div class="hero-label">Perfect Days</div>
-                <div class="hero-value">Perfect days: {{ weekAttendanceCount }} / {{ weekTotalDays }}</div>
-              </div>
-              <div class="hero-block hero-action arcane-card--tight">
-                <div class="hero-label">Next best action</div>
-                <div class="hero-value">{{ nextBestActionText }}</div>
-                <button class="btn btn-primary btn-sm glass-btn glass-btn--primary" type="button" (click)="goToTodayAction()" [disabled]="todayRemainingCount === 0">
-                  Go to Today
-                </button>
-              </div>
-            </div>
-            <button class="btn btn-outline btn-sm details-button glass-btn glass-btn--ghost" type="button" (click)="toggleInsights()">
-              {{ insightsOpen ? 'Hide Details' : 'Show Details' }}
-            </button>
-          </mat-card>
+  template: `
+<div class="page-container overview-page" [@.disabled]="reduceMotion" [class.reduce-motion]="reduceMotion">
 
-          <div class="details-section" [class.is-collapsed]="!insightsOpen">
-
-            <!-- Domain XP Cards -->
-            <div class="domain-xp-section" *ngIf="domainStats.length > 0">
-              <div class="section-kicker">DOMAIN MASTERY</div>
-              <div class="domain-xp-grid">
-                <div class="domain-xp-card"
-                     *ngFor="let d of domainStats"
-                     [style.--d-color]="d.config.color"
-                     [style.--d-glow]="d.config.glowColor">
-                  <div class="dxp-top">
-                    <span class="dxp-emoji">{{ d.config.emoji }}</span>
-                    <div class="dxp-info">
-                      <div class="dxp-label">{{ d.config.label }}</div>
-                      <div class="dxp-level">LV {{ d.level }}</div>
-                    </div>
-                    <div class="dxp-xp-total">{{ d.xp }} XP</div>
-                  </div>
-                  <div class="dxp-bar-track">
-                    <div class="dxp-bar-fill" [style.width.%]="d.percent"></div>
-                  </div>
-                  <div class="dxp-progress-label">{{ d.current }} / {{ d.needed }} XP to LV {{ d.level + 1 }}</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Heatmap Calendar -->
-            <mat-card class="aesthetic-card calendar-card arcane-card" [@staggerFadeUp]="animationKey">
-              <mat-card-content class="card-body">
-                <div class="heatmap-section">
-                  <div class="section-kicker">ACTIVITY — {{ selectedMonthLabel }}</div>
-                  <div class="heatmap-dow-labels">
-                    <span *ngFor="let d of ['M','T','W','T','F','S','S']">{{ d }}</span>
-                  </div>
-                  <div class="heatmap-grid">
-                    <div class="heatmap-cell heatmap-cell--empty" *ngFor="let _ of firstWeekOffset"></div>
-                    <div class="heatmap-cell"
-                         *ngFor="let cell of heatmapCells; trackBy: trackByCalendarCell"
-                         [class.heatmap-cell--perfect]="cell.isPerfect"
-                         [class.heatmap-cell--today]="cell.isToday"
-                         [class.heatmap-cell--selected]="cell.isSelected"
-                         [style.--intensity]="cell.percent / 100"
-                         [title]="cell.done + '/' + cell.goal + ' habits'"
-                         (click)="selectDay(cell)">
-                    </div>
-                  </div>
-                  <div class="heatmap-legend">
-                    <span class="legend-label">Less</span>
-                    <div class="legend-cell" style="--intensity: 0"></div>
-                    <div class="legend-cell" style="--intensity: 0.25"></div>
-                    <div class="legend-cell" style="--intensity: 0.5"></div>
-                    <div class="legend-cell" style="--intensity: 0.75"></div>
-                    <div class="legend-cell" style="--intensity: 1"></div>
-                    <span class="legend-label">More</span>
-                  </div>
-                </div>
-              </mat-card-content>
-            </mat-card>
-
-            <mat-card class="aesthetic-card summary-card arcane-card selected-date-card" [@staggerFadeUp]="animationKey">
-              <ng-container *ngIf="selectedDateHabits$ | async as selectedDateHabits">
-                <div class="card-header text-section">
-                  Habits on {{ selectedDateHabits.date ? (selectedDateHabits.date | date:'MMM d, y') : selectedDateHabits.dateKey }}
-                </div>
-                <mat-card-content class="card-body">
-                  <div class="selected-date-columns">
-                    <section class="selected-date-group">
-                      <h3 class="selected-date-title">&#x2705; Completed ({{ selectedDateHabits.completed.length }})</h3>
-                      <p class="text-muted selected-date-empty" *ngIf="selectedDateHabits.completed.length === 0">No completed habits.</p>
-                      <ul class="selected-date-list" *ngIf="selectedDateHabits.completed.length > 0">
-                        <li *ngFor="let habit of selectedDateHabits.completed; trackBy: trackByHabitId">{{ habit.name }}</li>
-                      </ul>
-                    </section>
-                    <section class="selected-date-group">
-                      <h3 class="selected-date-title">&#x274C; Not completed ({{ selectedDateHabits.incomplete.length }})</h3>
-                      <p class="text-muted selected-date-empty" *ngIf="selectedDateHabits.incomplete.length === 0">Nothing left incomplete.</p>
-                      <ul class="selected-date-list" *ngIf="selectedDateHabits.incomplete.length > 0">
-                        <li *ngFor="let habit of selectedDateHabits.incomplete; trackBy: trackByHabitId">{{ habit.name }}</li>
-                      </ul>
-                    </section>
-                  </div>
-                </mat-card-content>
-              </ng-container>
-            </mat-card>
-
-            <mat-card class="aesthetic-card summary-card arcane-card" [@staggerFadeUp]="animationKey">
-              <div class="card-header text-section weekly-header-row">
-                <div class="weekly-header-copy">
-                  <span>Weekly Summary</span>
-                  <small class="text-muted" *ngIf="selectedWeekRangeLabel">{{ selectedWeekRangeLabel }}</small>
-                </div>
-                <button
-                  class="btn btn-outline btn-sm glass-btn glass-btn--ghost weekly-share-btn"
-                  type="button"
-                  (click)="shareWeeklyReport()"
-                  [disabled]="!canShareWeeklyReport || weeklyReportBusy">
-                  <span>{{ weeklyReportBusy ? 'Preparing...' : 'Share weekly report' }}</span>
-                  <small>PNG image</small>
-                </button>
-              </div>
-              <mat-card-content class="card-body">
-                <div class="week-selector" *ngIf="weeklySummaries.length > 0">
-                  <button
-                    type="button"
-                    class="week-selector-btn glass-btn glass-btn--ghost"
-                    *ngFor="let week of weeklySummaries; trackBy: trackByWeek"
-                    [class.is-selected]="week.weekIndex === selectedWeekIndex"
-                    (click)="selectWeekByIndex(week.weekIndex)">
-                    W{{ week.weekIndex + 1 }}
-                  </button>
-                </div>
-                <div class="weekly-row weekly-header">
-                  <span>Week</span>
-                  <span>Done/Goal</span>
-                  <span>Progress</span>
-                  <span>%</span>
-                  <span>Perfect level</span>
-                </div>
-                <button class="weekly-row weekly-row-button" type="button" *ngFor="let week of weeklySummaries; trackBy: trackByWeek" (click)="selectWeekByIndex(week.weekIndex)" [class.is-selected]="week.weekIndex === selectedWeekIndex">
-                  <span class="week-label">W{{ week.weekIndex + 1 }}</span>
-                  <span class="week-metric">{{ week.done }}/{{ week.goal }}</span>
-                  <div class="week-bar arcane-progress">
-                    <div class="week-bar-fill arcane-progress__bar" [style.width.%]="week.percent"></div>
-                  </div>
-                  <span class="week-percent">{{ week.percent }}%</span>
-                  <span class="week-perfect">&#x1F525;{{ week.perfectDays }}</span>
-                </button>
-              </mat-card-content>
-            </mat-card>
-          </div>
-        </ng-container>
-        <ng-template #emptyState>
-          <mat-card class="aesthetic-card empty-state arcane-card" [@staggerFadeUp]="animationKey">
-            <mat-card-content>
-              <div class="empty-title">Start with 1 habit today</div>
-              <div class="text-muted">Small steps build your streak.</div>
-              <button class="btn btn-primary btn-sm glass-btn glass-btn--primary" type="button" (click)="goToTodayAction()">
-                Go to Today
-              </button>
-            </mat-card-content>
-          </mat-card>
-        </ng-template>
-      </ng-container>
-      <ng-template #loading>
-        <mat-card class="aesthetic-card">
-          <mat-card-content>Loading overview...</mat-card-content>
-        </mat-card>
-      </ng-template>
-      <div class="weekly-report-export-host" *ngIf="weeklySharePayload" aria-hidden="true">
-        <section id="weeklyReportExportRoot" #weeklyReportExportRoot class="weekly-report-export-root weekly-report-export-mode">
-          <div class="weekly-report-capture-card">
-            <div class="weekly-report-capture-header">
-              <div class="weekly-report-capture-user">{{ weeklySharePayload.headerName || 'Player' }}</div>
-              <div class="weekly-report-capture-meta" *ngIf="weeklySharePayload.headerMeta">{{ weeklySharePayload.headerMeta }}</div>
-            </div>
-
-            <div class="weekly-report-capture-title">WEEKLY REPORT</div>
-            <div class="weekly-report-capture-range">{{ weeklySharePayload.weekRangeLabel }}</div>
-
-            <div class="weekly-report-capture-stats">
-              <div class="weekly-report-capture-stat">
-                <div class="weekly-report-capture-stat-label">Completed</div>
-                <div class="weekly-report-capture-stat-value">{{ weeklySharePayload.stats.completed }}/{{ weeklySharePayload.stats.goal }}</div>
-                <div class="weekly-report-capture-stat-sub">
-                  {{ weeklySharePayload.stats.goal > 0 ? ((weeklySharePayload.stats.completed / weeklySharePayload.stats.goal) * 100 | number:'1.0-0') : 0 }}% • Week XP {{ weeklySharePayload.stats.weekXp }}
-                </div>
-              </div>
-              <div class="weekly-report-capture-stat">
-                <div class="weekly-report-capture-stat-label">Perfect days</div>
-                <div class="weekly-report-capture-stat-value">{{ weeklySharePayload.stats.perfectDays }}</div>
-              </div>
-              <div class="weekly-report-capture-stat">
-                <div class="weekly-report-capture-stat-label">Weekly streak</div>
-                <div class="weekly-report-capture-stat-value">{{ weeklySharePayload.stats.goal > 0 ? (weeklySharePayload.stats.weeklyPerfectStreak + ' days') : '--' }}</div>
-              </div>
-              <div class="weekly-report-capture-stat">
-                <div class="weekly-report-capture-stat-label">Best streak</div>
-                <div class="weekly-report-capture-stat-value">{{ weeklySharePayload.stats.bestStreak }}</div>
-              </div>
-            </div>
-
-            <div class="weekly-report-capture-section">Habits</div>
-            <div class="weekly-report-capture-empty" *ngIf="weeklySharePayload.habits.length === 0">No habits active this week</div>
-            <div class="weekly-report-capture-habits" *ngIf="weeklySharePayload.habits.length > 0">
-              <div class="weekly-report-capture-habit" *ngFor="let habit of weeklySharePayload.habits; let i = index">
-                <div class="weekly-report-capture-habit-head">
-                  <div class="weekly-report-capture-habit-name">{{ i + 1 }}. {{ habit.name }}</div>
-                  <div class="weekly-report-capture-habit-metric">{{ habit.doneCount }}/{{ habit.daysActive }}</div>
-                </div>
-                <div class="weekly-report-capture-habit-bar">
-                  <div class="weekly-report-capture-habit-fill" [style.width.%]="habit.daysActive > 0 ? ((habit.doneCount / habit.daysActive) * 100) : 0"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="weekly-report-capture-level" *ngIf="weeklySharePayload.levelLine">
-              <div class="weekly-report-capture-stat-label">Level</div>
-              <div class="weekly-report-capture-level-line">{{ weeklySharePayload.levelLine }}</div>
-              <div class="weekly-report-capture-level-sub" *ngIf="weeklySharePayload.levelSubline">{{ weeklySharePayload.levelSubline }}</div>
-            </div>
-
-            <div class="weekly-report-capture-footer">{{ weeklySharePayload.footerSummary || 'LEVEL UP • One week stronger' }}</div>
-          </div>
-        </section>
+  <!-- ── PLAYER HERO CARD ─────────────────────────────────────────── -->
+  <div class="player-hero">
+    <div class="player-hero__rank-badge" [attr.data-rank]="playerRank">{{ playerRank }}</div>
+    <div class="player-hero__info">
+      <div class="player-hero__name">{{ playerDisplayName }}</div>
+      <div class="player-hero__title">{{ playerTitle }}</div>
+    </div>
+    <div class="player-hero__chips">
+      <div class="hero-chip hero-chip--fire">
+        <span class="hero-chip__icon">🔥</span>
+        <span>{{ currentStreak }}d</span>
+      </div>
+      <div class="hero-chip hero-chip--bolt">
+        <span class="hero-chip__icon">⚡</span>
+        <span>Lv {{ levelStats.level }}</span>
+      </div>
+      <div class="hero-chip hero-chip--perfect" *ngIf="weekAttendanceCount > 0">
+        <span class="hero-chip__icon">✦</span>
+        <span>{{ weekAttendanceCount }}/{{ weekTotalDays }}</span>
       </div>
     </div>
-  `,
+  </div>
 
+  <!-- ── MANA BAR (XP Progress) ──────────────────────────────────── -->
+  <div class="mana-bar-section">
+    <div class="mana-bar-labels">
+      <span class="mana-bar-label">MANA · LV {{ levelStats.level }}</span>
+      <span class="mana-bar-xp">{{ levelStats.progressInLevel }} / {{ levelStats.requiredThisLevel }} XP</span>
+    </div>
+    <div class="mana-bar-track">
+      <div class="mana-bar-fill" [style.width.%]="levelStats.progressPercent"></div>
+      <div class="mana-bar-shine"></div>
+    </div>
+    <div class="mana-bar-sub">{{ levelStats.remainingToNext }} XP to Level {{ levelStats.nextLevel }}</div>
+  </div>
+
+  <ng-container *ngIf="ready$ | async; else loading">
+    <ng-container *ngIf="hasAnyData; else emptyState">
+
+      <!-- ── STAT CRYSTALS ──────────────────────────────────────────── -->
+      <div class="stat-crystals" [@staggerFadeUp]="animationKey">
+        <div class="crystal crystal--streak">
+          <div class="crystal__label">STREAK</div>
+          <div class="crystal__value">{{ currentStreak | dayCount }}</div>
+          <div class="crystal__glow"></div>
+        </div>
+        <div class="crystal crystal--level">
+          <div class="crystal__label">LEVEL</div>
+          <div class="crystal__value">{{ levelStats.level }}</div>
+          <div class="crystal__sub">{{ levelStats.totalXp }} XP total</div>
+          <div class="crystal__glow"></div>
+        </div>
+        <div class="crystal crystal--perfect">
+          <div class="crystal__label">PERFECT DAYS</div>
+          <div class="crystal__value">{{ weekAttendanceCount }}<span class="crystal__denom">/{{ weekTotalDays }}</span></div>
+          <div class="crystal__sub">this week</div>
+          <div class="crystal__glow"></div>
+        </div>
+        <div class="crystal crystal--action">
+          <div class="crystal__label">NEXT MISSION</div>
+          <div class="crystal__value-sm">{{ nextBestActionText }}</div>
+          <button class="btn-arise" type="button" (click)="goToTodayAction()" [disabled]="todayRemainingCount === 0">
+            <span>{{ todayRemainingCount === 0 ? 'ALL DONE' : 'ARISE' }}</span>
+          </button>
+          <div class="crystal__glow"></div>
+        </div>
+      </div>
+
+      <!-- ── TOGGLE BUTTON ─────────────────────────────────────────── -->
+      <button class="overview-toggle-btn" type="button" (click)="toggleInsights()">
+        <span class="toggle-btn__line"></span>
+        <span class="toggle-btn__text">{{ insightsOpen ? '▲ HIDE DETAILS' : '▼ SHOW DETAILS' }}</span>
+        <span class="toggle-btn__line"></span>
+      </button>
+
+      <!-- ── DETAILS SECTION ───────────────────────────────────────── -->
+      <div class="details-section" [class.is-collapsed]="!insightsOpen">
+
+        <!-- DOMAIN MASTERY -->
+        <div class="domain-mastery-section" *ngIf="domainStats.length > 0">
+          <div class="section-kicker">
+            <span class="section-kicker__line"></span>
+            DOMAIN MASTERY
+            <span class="section-kicker__line"></span>
+          </div>
+          <div class="domain-cards">
+            <div class="domain-card"
+                 *ngFor="let d of domainStats"
+                 [style.--d-color]="d.config.color"
+                 [style.--d-glow]="d.config.glowColor">
+              <div class="domain-card__header">
+                <span class="domain-card__emoji">{{ d.config.emoji }}</span>
+                <div class="domain-card__info">
+                  <div class="domain-card__name">{{ d.config.label }}</div>
+                  <div class="domain-card__rank-row">
+                    <span class="domain-card__lv">LV {{ d.level }}</span>
+                    <span class="domain-card__rank-badge" [attr.data-rank]="getDomainRank(d.level)">{{ getDomainRank(d.level) }}</span>
+                  </div>
+                </div>
+                <div class="domain-card__xp">{{ d.xp }} XP</div>
+              </div>
+              <div class="domain-card__bar-track">
+                <div class="domain-card__bar-fill" [style.width.%]="d.percent"></div>
+              </div>
+              <div class="domain-card__progress">{{ d.current }} / {{ d.needed }} XP → LV {{ d.level + 1 }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIVITY CALENDAR -->
+        <div class="cal-section arcane-card">
+          <div class="cal-nav">
+            <button class="cal-nav__arrow" type="button" (click)="navigateCalendarMonth(-1)">‹</button>
+            <div class="cal-nav__center">
+              <div class="cal-nav__month">{{ calendarViewLabel }}</div>
+              <div class="cal-nav__stats">{{ perfectDaysCount }} perfect · {{ completionPercent }}% done</div>
+            </div>
+            <button class="cal-nav__arrow" type="button" (click)="navigateCalendarMonth(1)" [disabled]="isCurrentMonth">›</button>
+          </div>
+          <div class="cal-year-nav">
+            <button class="cal-year-btn" type="button" (click)="navigateCalendarYear(-1)">« {{ calendarViewYear - 1 }}</button>
+            <span class="cal-year-current">{{ calendarViewYear }}</span>
+            <button class="cal-year-btn" type="button" (click)="navigateCalendarYear(1)" [disabled]="calendarViewYear >= currentYear">{{ calendarViewYear + 1 }} »</button>
+          </div>
+          <div class="cal-dow-labels">
+            <span *ngFor="let d of ['M','T','W','T','F','S','S']">{{ d }}</span>
+          </div>
+          <div class="cal-grid">
+            <div class="cal-cell cal-cell--empty" *ngFor="let _ of firstWeekOffset"></div>
+            <div class="cal-cell"
+                 *ngFor="let cell of heatmapCells; trackBy: trackByCalendarCell"
+                 [class.cal-cell--perfect]="cell.isPerfect"
+                 [class.cal-cell--today]="cell.isToday"
+                 [class.cal-cell--selected]="cell.isSelected"
+                 [class.cal-cell--done]="cell.percent > 0 && !cell.isPerfect"
+                 [style.--intensity]="cell.percent / 100"
+                 [title]="(cell.dayNumber || '') + ' · ' + cell.done + '/' + cell.goal + ' habits'"
+                 (click)="selectDay(cell)">
+              <span class="cal-cell__day">{{ cell.dayNumber }}</span>
+              <span class="cal-cell__dot" *ngIf="cell.isPerfect">★</span>
+            </div>
+          </div>
+          <div class="cal-legend">
+            <span class="cal-legend__label">Less</span>
+            <div class="cal-legend__cell" style="--intensity: 0"></div>
+            <div class="cal-legend__cell" style="--intensity: 0.25"></div>
+            <div class="cal-legend__cell" style="--intensity: 0.5"></div>
+            <div class="cal-legend__cell" style="--intensity: 0.75"></div>
+            <div class="cal-legend__cell" style="--intensity: 1"></div>
+            <div class="cal-legend__cell cal-legend__cell--perfect"></div>
+            <span class="cal-legend__label">★ Perfect</span>
+          </div>
+        </div>
+
+        <!-- DAILY HABITS - VICTORIES / DEFEATS -->
+        <ng-container *ngIf="selectedDateHabits$ | async as sdh">
+          <div class="mission-report arcane-card">
+            <div class="mission-report__header">
+              <span class="mission-report__date">{{ sdh.date ? (sdh.date | date:'EEE, MMM d') : sdh.dateKey }}</span>
+              <span class="mission-report__summary">{{ sdh.completed.length }} done · {{ sdh.incomplete.length }} missed</span>
+            </div>
+            <div class="mission-columns">
+              <!-- VICTORIES -->
+              <div class="mission-group mission-group--won">
+                <div class="mission-group__title">
+                  <span class="mission-group__icon">⚔️</span>
+                  VICTORIES
+                  <span class="mission-group__count">{{ sdh.completed.length }}</span>
+                </div>
+                <div class="mission-empty" *ngIf="sdh.completed.length === 0">No victories yet today</div>
+                <div class="mission-item mission-item--won"
+                     *ngFor="let habit of sdh.completed; trackBy: trackByHabitId">
+                  <span class="mission-item__check">✓</span>
+                  <span class="mission-item__name">{{ habit.name }}</span>
+                </div>
+              </div>
+              <!-- DEFEATS -->
+              <div class="mission-group mission-group--lost">
+                <div class="mission-group__title">
+                  <span class="mission-group__icon">💀</span>
+                  FALLEN
+                  <span class="mission-group__count">{{ sdh.incomplete.length }}</span>
+                </div>
+                <div class="mission-empty" *ngIf="sdh.incomplete.length === 0">No fallen missions!</div>
+                <div class="mission-item mission-item--lost"
+                     *ngFor="let habit of sdh.incomplete; trackBy: trackByHabitId">
+                  <span class="mission-item__x">✗</span>
+                  <span class="mission-item__name">{{ habit.name }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- WEEKLY POWER - MANAA STYLE -->
+        <div class="manaa-section arcane-card">
+          <div class="manaa-section__header">
+            <div class="manaa-section__title-col">
+              <div class="section-kicker-inline">WEEKLY POWER</div>
+              <div class="manaa-section__range" *ngIf="selectedWeekRangeLabel">{{ selectedWeekRangeLabel }}</div>
+            </div>
+            <div class="manaa-week-tabs" *ngIf="weeklySummaries.length > 0">
+              <button class="manaa-week-tab"
+                      type="button"
+                      *ngFor="let week of weeklySummaries; trackBy: trackByWeek"
+                      [class.is-active]="week.weekIndex === selectedWeekIndex"
+                      (click)="selectWeekByIndex(week.weekIndex)">
+                W{{ week.weekIndex + 1 }}
+              </button>
+            </div>
+          </div>
+
+          <div class="manaa-rows">
+            <div class="manaa-row"
+                 *ngFor="let week of weeklySummaries; trackBy: trackByWeek"
+                 [class.is-selected]="week.weekIndex === selectedWeekIndex"
+                 (click)="selectWeekByIndex(week.weekIndex)">
+              <div class="manaa-row__meta">
+                <span class="manaa-row__label">W{{ week.weekIndex + 1 }}</span>
+                <span class="manaa-row__fraction">{{ week.done }}/{{ week.goal }}</span>
+                <span class="manaa-row__perfect">🔥 {{ week.perfectDays }}</span>
+                <span class="manaa-row__pct" [class.manaa-row__pct--high]="week.percent >= 80">{{ week.percent }}%</span>
+              </div>
+              <div class="manaa-row__bar-track">
+                <div class="manaa-row__bar-fill" [style.width.%]="week.percent"
+                     [class.manaa-row__bar-fill--full]="week.percent === 100"
+                     [class.manaa-row__bar-fill--high]="week.percent >= 80 && week.percent < 100"
+                     [class.manaa-row__bar-fill--low]="week.percent < 40"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SHARE BUTTONS -->
+          <div class="share-strip">
+            <button class="share-btn share-btn--week"
+                    type="button"
+                    (click)="shareWeeklyReport()"
+                    [disabled]="!canShareWeeklyReport || weeklyReportBusy">
+              <span class="share-btn__icon">📊</span>
+              <span class="share-btn__text">{{ weeklyReportBusy ? 'Capturing...' : 'WEEK REPORT' }}</span>
+            </button>
+            <button class="share-btn share-btn--month"
+                    type="button"
+                    (click)="shareMonthlyReport()"
+                    [disabled]="!canShareWeeklyReport || monthlyReportBusy">
+              <span class="share-btn__icon">📅</span>
+              <span class="share-btn__text">{{ monthlyReportBusy ? 'Capturing...' : 'MONTH REPORT' }}</span>
+            </button>
+            <button class="share-btn share-btn--overall"
+                    type="button"
+                    (click)="shareOverallReport()"
+                    [disabled]="!canShareWeeklyReport || overallReportBusy">
+              <span class="share-btn__icon">🏆</span>
+              <span class="share-btn__text">{{ overallReportBusy ? 'Capturing...' : 'ALL-TIME' }}</span>
+            </button>
+          </div>
+        </div>
+
+      </div><!-- end details-section -->
+    </ng-container>
+    <ng-template #emptyState>
+      <div class="empty-state-card arcane-card">
+        <div class="empty-state__icon">⚔️</div>
+        <div class="empty-state__title">Your journey begins</div>
+        <div class="empty-state__sub">Add your first habit to start leveling up.</div>
+        <button class="btn-arise" type="button" (click)="goToTodayAction()">BEGIN</button>
+      </div>
+    </ng-template>
+  </ng-container>
+  <ng-template #loading>
+    <div class="loading-card arcane-card">
+      <div class="loading-spinner"></div>
+      <div>Loading your stats...</div>
+    </div>
+  </ng-template>
+
+  <!-- ── WEEKLY REPORT EXPORT (off-screen) ────────────────────────── -->
+  <div class="report-export-host" *ngIf="weeklySharePayload" aria-hidden="true">
+    <section id="weeklyReportExportRoot" #weeklyReportExportRoot class="report-export-root report-export-mode">
+      <div class="share-card share-card--weekly">
+        <div class="share-card__bg-glow share-card__bg-glow--blue"></div>
+        <div class="share-card__bg-glow share-card__bg-glow--purple"></div>
+
+        <div class="share-card__header">
+          <div class="share-card__rank-badge" [attr.data-rank]="playerRank">{{ playerRank }}</div>
+          <div class="share-card__player">
+            <div class="share-card__name">{{ weeklySharePayload.headerName || 'Player' }}</div>
+            <div class="share-card__meta">{{ weeklySharePayload.headerMeta }}</div>
+          </div>
+          <div class="share-card__app-tag">HABIT<br>SYSTEM</div>
+        </div>
+
+        <div class="share-card__report-type">WEEKLY REPORT</div>
+        <div class="share-card__period">{{ weeklySharePayload.weekRangeLabel }}</div>
+
+        <div class="share-card__stats-grid">
+          <div class="share-stat">
+            <div class="share-stat__label">COMPLETED</div>
+            <div class="share-stat__value">{{ weeklySharePayload.stats.completed }}<span class="share-stat__of">/{{ weeklySharePayload.stats.goal }}</span></div>
+            <div class="share-stat__pct">{{ weeklySharePayload.stats.goal > 0 ? ((weeklySharePayload.stats.completed / weeklySharePayload.stats.goal) * 100 | number:'1.0-0') : 0 }}%</div>
+          </div>
+          <div class="share-stat">
+            <div class="share-stat__label">PERFECT DAYS</div>
+            <div class="share-stat__value">{{ weeklySharePayload.stats.perfectDays }}</div>
+            <div class="share-stat__pct">out of 7</div>
+          </div>
+          <div class="share-stat">
+            <div class="share-stat__label">WEEK XP</div>
+            <div class="share-stat__value share-stat__value--gold">+{{ weeklySharePayload.stats.weekXp }}</div>
+            <div class="share-stat__pct">gained</div>
+          </div>
+          <div class="share-stat">
+            <div class="share-stat__label">BEST STREAK</div>
+            <div class="share-stat__value">{{ weeklySharePayload.stats.bestStreak }}</div>
+            <div class="share-stat__pct">days</div>
+          </div>
+        </div>
+
+        <div class="share-card__section-label">MISSION LOG</div>
+        <div class="share-card__habits" *ngIf="weeklySharePayload.habits.length > 0">
+          <div class="share-habit" *ngFor="let habit of weeklySharePayload.habits.slice(0, 8); let i = index">
+            <div class="share-habit__head">
+              <span class="share-habit__num">{{ i + 1 }}</span>
+              <span class="share-habit__name">{{ habit.name }}</span>
+              <span class="share-habit__metric">{{ habit.doneCount }}/{{ habit.daysActive }}</span>
+            </div>
+            <div class="share-habit__bar-track">
+              <div class="share-habit__bar-fill"
+                   [style.width.%]="habit.daysActive > 0 ? ((habit.doneCount / habit.daysActive) * 100) : 0"
+                   [class.share-habit__bar-fill--full]="habit.doneCount === habit.daysActive"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="share-card__level-row" *ngIf="weeklySharePayload.levelLine">
+          <div class="share-level-label">LEVEL PROGRESS</div>
+          <div class="share-level-value">{{ weeklySharePayload.levelLine }}</div>
+          <div class="share-level-bar-track">
+            <div class="share-level-bar-fill" [style.width.%]="levelStats.progressPercent"></div>
+          </div>
+          <div class="share-level-sub" *ngIf="weeklySharePayload.levelSubline">{{ weeklySharePayload.levelSubline }}</div>
+        </div>
+
+        <div class="share-card__footer">
+          <div class="share-card__footer-text">{{ weeklySharePayload.footerSummary }}</div>
+          <div class="share-card__footer-badge">🔥 KEEP GOING</div>
+        </div>
+        <div class="share-card__watermark">HabitSystem · Gen-Z Edition</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ── MONTHLY REPORT EXPORT (off-screen) ───────────────────────── -->
+  <div class="report-export-host" *ngIf="monthlySharePayload" aria-hidden="true">
+    <section id="monthlyReportExportRoot" #monthlyReportExportRoot class="report-export-root report-export-mode">
+      <div class="share-card share-card--monthly">
+        <div class="share-card__bg-glow share-card__bg-glow--cyan"></div>
+        <div class="share-card__bg-glow share-card__bg-glow--gold"></div>
+
+        <div class="share-card__header">
+          <div class="share-card__rank-badge" [attr.data-rank]="playerRank">{{ playerRank }}</div>
+          <div class="share-card__player">
+            <div class="share-card__name">{{ monthlySharePayload.playerName }}</div>
+            <div class="share-card__meta">{{ monthlySharePayload.playerMeta }}</div>
+          </div>
+          <div class="share-card__app-tag">HABIT<br>SYSTEM</div>
+        </div>
+
+        <div class="share-card__report-type">MONTHLY REPORT</div>
+        <div class="share-card__period">{{ monthlySharePayload.monthLabel }}</div>
+
+        <div class="share-card__month-ring-row">
+          <div class="share-month-ring">
+            <svg viewBox="0 0 120 120" width="120" height="120">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(61,127,255,0.12)" stroke-width="10"/>
+              <circle cx="60" cy="60" r="50" fill="none"
+                      [attr.stroke]="monthlySharePayload.monthPercent >= 80 ? '#ffd700' : monthlySharePayload.monthPercent >= 50 ? '#00e5ff' : '#3d7fff'"
+                      stroke-width="10"
+                      stroke-linecap="round"
+                      stroke-dasharray="314"
+                      [attr.stroke-dashoffset]="314 - (314 * monthlySharePayload.monthPercent / 100)"
+                      transform="rotate(-90 60 60)"/>
+            </svg>
+            <div class="share-month-ring__inner">
+              <div class="share-month-ring__pct">{{ monthlySharePayload.monthPercent }}%</div>
+              <div class="share-month-ring__label">done</div>
+            </div>
+          </div>
+          <div class="share-month-ring-stats">
+            <div class="share-ring-stat">
+              <div class="share-ring-stat__val">{{ monthlySharePayload.monthDone }}</div>
+              <div class="share-ring-stat__label">HABITS DONE</div>
+            </div>
+            <div class="share-ring-stat">
+              <div class="share-ring-stat__val share-ring-stat__val--gold">{{ monthlySharePayload.perfectDays }}</div>
+              <div class="share-ring-stat__label">PERFECT DAYS</div>
+            </div>
+            <div class="share-ring-stat">
+              <div class="share-ring-stat__val">{{ monthlySharePayload.totalDaysInMonth }}</div>
+              <div class="share-ring-stat__label">DAYS IN MONTH</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="share-card__section-label">BEST WEEK</div>
+        <div class="share-best-week">
+          <span class="share-best-week__label">{{ monthlySharePayload.bestWeekLabel }}</span>
+          <div class="share-best-week__bar-track">
+            <div class="share-best-week__bar-fill" [style.width.%]="monthlySharePayload.bestWeekPercent"></div>
+          </div>
+          <span class="share-best-week__pct">{{ monthlySharePayload.bestWeekPercent }}%</span>
+        </div>
+
+        <div class="share-card__section-label" *ngIf="monthlySharePayload.domains.length > 0">DOMAIN PROGRESS</div>
+        <div class="share-domains" *ngIf="monthlySharePayload.domains.length > 0">
+          <div class="share-domain" *ngFor="let d of monthlySharePayload.domains.slice(0, 4)">
+            <span class="share-domain__emoji">{{ d.emoji }}</span>
+            <div class="share-domain__info">
+              <div class="share-domain__name">{{ d.label }}</div>
+              <div class="share-domain__bar-track">
+                <div class="share-domain__bar-fill" [style.width.%]="d.percent"></div>
+              </div>
+            </div>
+            <span class="share-domain__lv">LV {{ d.level }}</span>
+          </div>
+        </div>
+
+        <div class="share-card__footer">
+          <div class="share-card__footer-text">{{ monthlySharePayload.footerSummary }}</div>
+          <div class="share-card__footer-badge">🌙 MONTH CLEARED</div>
+        </div>
+        <div class="share-card__watermark">HabitSystem · Gen-Z Edition</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ── OVERALL REPORT EXPORT (off-screen) ───────────────────────── -->
+  <div class="report-export-host" *ngIf="overallSharePayload" aria-hidden="true">
+    <section id="overallReportExportRoot" #overallReportExportRoot class="report-export-root report-export-mode">
+      <div class="share-card share-card--overall">
+        <div class="share-card__bg-glow share-card__bg-glow--purple"></div>
+        <div class="share-card__bg-glow share-card__bg-glow--gold-center"></div>
+
+        <div class="share-card__header">
+          <div class="share-card__rank-badge share-card__rank-badge--large" [attr.data-rank]="overallSharePayload.playerRank">{{ overallSharePayload.playerRank }}</div>
+          <div class="share-card__player">
+            <div class="share-card__name">{{ overallSharePayload.playerName }}</div>
+            <div class="share-card__meta">Level {{ overallSharePayload.level }} · {{ overallSharePayload.totalXp }} XP</div>
+          </div>
+          <div class="share-card__app-tag">HABIT<br>SYSTEM</div>
+        </div>
+
+        <div class="share-card__report-type">ALL-TIME STATS</div>
+        <div class="share-card__period">Since {{ overallSharePayload.activeSince }}</div>
+
+        <div class="share-card__stats-grid share-card__stats-grid--4">
+          <div class="share-stat share-stat--large">
+            <div class="share-stat__label">TOTAL DONE</div>
+            <div class="share-stat__value share-stat__value--cyan">{{ overallSharePayload.totalDone }}</div>
+            <div class="share-stat__pct">{{ overallSharePayload.overallPercent }}% rate</div>
+          </div>
+          <div class="share-stat share-stat--large">
+            <div class="share-stat__label">BEST STREAK</div>
+            <div class="share-stat__value share-stat__value--gold">{{ overallSharePayload.bestStreak }}</div>
+            <div class="share-stat__pct">days</div>
+          </div>
+          <div class="share-stat share-stat--large">
+            <div class="share-stat__label">PERFECT DAYS</div>
+            <div class="share-stat__value">{{ overallSharePayload.totalPerfectDays }}</div>
+            <div class="share-stat__pct">all time</div>
+          </div>
+          <div class="share-stat share-stat--large">
+            <div class="share-stat__label">CURR STREAK</div>
+            <div class="share-stat__value">{{ overallSharePayload.currentStreak }}</div>
+            <div class="share-stat__pct">days 🔥</div>
+          </div>
+        </div>
+
+        <div class="share-overall__level-section">
+          <div class="share-card__section-label">LEVEL MASTERY</div>
+          <div class="share-overall__level-display">
+            <div class="share-overall__rank-big" [attr.data-rank]="overallSharePayload.playerRank">{{ overallSharePayload.playerRank }}</div>
+            <div class="share-overall__level-info">
+              <div class="share-overall__level-num">Level {{ overallSharePayload.level }}</div>
+              <div class="share-overall__xp">{{ overallSharePayload.totalXp }} Total XP</div>
+              <div class="share-overall__bar-track">
+                <div class="share-overall__bar-fill" [style.width.%]="levelStats.progressPercent"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="share-card__section-label" *ngIf="overallSharePayload.domains.length > 0">DOMAIN MASTERY</div>
+        <div class="share-domains share-domains--overall" *ngIf="overallSharePayload.domains.length > 0">
+          <div class="share-domain" *ngFor="let d of overallSharePayload.domains.slice(0, 5)">
+            <span class="share-domain__emoji">{{ d.emoji }}</span>
+            <div class="share-domain__info">
+              <div class="share-domain__name">{{ d.label }}</div>
+              <div class="share-domain__bar-track">
+                <div class="share-domain__bar-fill" [style.width.%]="d.percent"></div>
+              </div>
+            </div>
+            <span class="share-domain__lv">LV {{ d.level }}</span>
+          </div>
+        </div>
+
+        <div class="share-card__footer">
+          <div class="share-card__footer-text">{{ overallSharePayload.footerSummary }}</div>
+          <div class="share-card__footer-badge">👑 SHADOW SYSTEM</div>
+        </div>
+        <div class="share-card__watermark">HabitSystem · Gen-Z Edition</div>
+      </div>
+    </section>
+  </div>
+
+</div>
+  `,
   styleUrls: ['./overview.component.sass']
 })
 export class OverviewComponent implements OnInit, OnDestroy {
   @ViewChild('weeklyReportExportRoot') weeklyReportExportRoot?: ElementRef<HTMLElement>;
+  @ViewChild('monthlyReportExportRoot') monthlyReportExportRoot?: ElementRef<HTMLElement>;
+  @ViewChild('overallReportExportRoot') overallReportExportRoot?: ElementRef<HTMLElement>;
+
+  // Calendar view state (local, independent of store)
+  calendarViewYear: number = new Date().getFullYear();
+  calendarViewMonth: number = new Date().getMonth();
+
   monthMatrix: MonthSlot[][] = [];
   selectedMonthYear: MonthKey | null = null;
   animationKey = 0;
@@ -329,10 +647,13 @@ export class OverviewComponent implements OnInit, OnDestroy {
   private gridRows = 6;
   canShareWeeklyReport = false;
   weeklyReportBusy = false;
+  monthlyReportBusy = false;
+  overallReportBusy = false;
   weeklySharePayload: Parameters<BackupService['exportWeeklyReportPng']>[0] | null = null;
+  monthlySharePayload: MonthlySharePayload | null = null;
+  overallSharePayload: OverallSharePayload | null = null;
   selectedWeekIndex = 0;
   selectedWeekRangeLabel = '';
-  private latestHabits: Habit[] = [];
   private latestCompletions: Record<string, Record<string, boolean>> = {};
   ready$!: Observable<boolean>;
   selectedDateHabits$!: Observable<SelectedDateHabits>;
@@ -351,10 +672,8 @@ export class OverviewComponent implements OnInit, OnDestroy {
     private habitStore: HabitStoreService,
     private themeService: ThemeService,
     private router: Router,
-    private backupService: BackupService,
     private weeklyReportShareService: WeeklyReportShareService,
     private weeklyReportService: WeeklyReportService,
-    private gamification: GamificationService,
     private domainService: DomainService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
@@ -367,6 +686,12 @@ export class OverviewComponent implements OnInit, OnDestroy {
     this.ready$ = this.habitStore.getReady();
     this.selectedDateHabits$ = this.habitStore.getSelectedDateHabitBreakdown();
     this.setViewportFlags();
+
+    // Initialize calendar view from store's current month
+    const initialMonth = this.habitStore.getSelectedMonthYearSync();
+    this.calendarViewYear = initialMonth.year;
+    this.calendarViewMonth = initialMonth.month;
+
     this.subscription.add(
       combineLatest([
         this.habitStore.getSelectedMonthYear(),
@@ -379,7 +704,6 @@ export class OverviewComponent implements OnInit, OnDestroy {
         this.selectedMonthYear = monthYear;
         this.selectedDateKey = selectedDateKey;
         this.levelStats = levelStats;
-        this.latestHabits = habits;
         this.latestCompletions = completions;
         const domainXP = this.domainService.computeDomainXP(habits, completions as HabitCompletion);
         this.domainStats = DOMAINS.map(config => {
@@ -400,10 +724,101 @@ export class OverviewComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
   }
+
   @HostListener('window:resize')
   onResize(): void {
     this.setViewportFlags();
   }
+
+  // ── Calendar navigation ────────────────────────────────────────────────────
+
+  navigateCalendarMonth(dir: -1 | 1): void {
+    let month = this.calendarViewMonth + dir;
+    let year = this.calendarViewYear;
+    if (month < 0) { month = 11; year--; }
+    if (month > 11) { month = 0; year++; }
+    const today = new Date();
+    if (year > today.getFullYear() || (year === today.getFullYear() && month > today.getMonth())) {
+      return;
+    }
+    this.calendarViewYear = year;
+    this.calendarViewMonth = month;
+    this.rebuildCalendarForView();
+  }
+
+  navigateCalendarYear(dir: -1 | 1): void {
+    const newYear = this.calendarViewYear + dir;
+    const today = new Date();
+    if (newYear > today.getFullYear()) return;
+    this.calendarViewYear = newYear;
+    // Clamp month if we're now in the future
+    if (newYear === today.getFullYear() && this.calendarViewMonth > today.getMonth()) {
+      this.calendarViewMonth = today.getMonth();
+    }
+    this.rebuildCalendarForView();
+  }
+
+  private rebuildCalendarForView(): void {
+    this.monthMatrix = DateUtils.getMonthMatrix(this.calendarViewYear, this.calendarViewMonth);
+    this.gridRows = this.getGridRows(this.calendarViewYear, this.calendarViewMonth);
+    this.buildCalendar(this.latestCompletions);
+    const monthKey = `${this.calendarViewYear}-${this.calendarViewMonth}`;
+    if (this.lastMonthKey !== monthKey) {
+      this.animationKey++;
+      this.lastMonthKey = monthKey;
+    }
+  }
+
+  get calendarViewLabel(): string {
+    return new Date(this.calendarViewYear, this.calendarViewMonth, 1)
+      .toLocaleString('default', { month: 'long', year: 'numeric' });
+  }
+
+  get isCurrentMonth(): boolean {
+    const today = new Date();
+    return this.calendarViewYear === today.getFullYear() && this.calendarViewMonth === today.getMonth();
+  }
+
+  get currentYear(): number {
+    return new Date().getFullYear();
+  }
+
+  // ── Player rank / title ────────────────────────────────────────────────────
+
+  get playerRank(): string {
+    const lv = this.levelStats.level;
+    if (lv >= 81) return 'S';
+    if (lv >= 41) return 'A';
+    if (lv >= 21) return 'B';
+    if (lv >= 11) return 'C';
+    if (lv >= 6) return 'D';
+    return 'E';
+  }
+
+  get playerTitle(): string {
+    const streak = this.currentStreak;
+    if (streak >= 61) return 'Shadow Monarch';
+    if (streak >= 31) return 'S-Rank Hunter';
+    if (streak >= 15) return 'A-Rank Hunter';
+    if (streak >= 8) return 'Elite Hunter';
+    if (streak >= 1) return 'Hunter';
+    return 'Awakened';
+  }
+
+  get playerDisplayName(): string {
+    return this.habitStore.getCurrentUsername() || 'Player';
+  }
+
+  getDomainRank(level: number): string {
+    if (level >= 15) return 'S';
+    if (level >= 10) return 'A';
+    if (level >= 7) return 'B';
+    if (level >= 4) return 'C';
+    if (level >= 2) return 'D';
+    return 'E';
+  }
+
+  // ── Data update ────────────────────────────────────────────────────────────
 
   private updateData(
     habits: Array<{ id: string; isActive: boolean }>,
@@ -413,18 +828,21 @@ export class OverviewComponent implements OnInit, OnDestroy {
     const today = this.normalizeDate(new Date());
     const todayKey = this.habitStore.toDateKey(today);
     this.activeHabitsCount = habits.filter(habit => habit.isActive).length;
-    if (this.selectedMonthYear) {
-      this.monthMatrix = DateUtils.getMonthMatrix(this.selectedMonthYear.year, this.selectedMonthYear.month);
-      this.gridRows = this.getGridRows(this.selectedMonthYear.year, this.selectedMonthYear.month);
-      this.buildCalendar(completions);
-      const streakDateKey = this.selectedDateKey || this.todayKey;
-      this.currentStreak = this.habitStore.getStreakCount(streakDateKey);
-      const monthKey = `${this.selectedMonthYear.year}-${this.selectedMonthYear.month}`;
-      if (this.lastMonthKey !== monthKey) {
-        this.animationKey++;
-        this.lastMonthKey = monthKey;
-      }
+
+    // Always use local calendarView for rendering
+    this.monthMatrix = DateUtils.getMonthMatrix(this.calendarViewYear, this.calendarViewMonth);
+    this.gridRows = this.getGridRows(this.calendarViewYear, this.calendarViewMonth);
+    this.buildCalendar(completions);
+
+    const streakDateKey = this.selectedDateKey || this.todayKey;
+    this.currentStreak = this.habitStore.getStreakCount(streakDateKey);
+
+    const monthKey = `${this.calendarViewYear}-${this.calendarViewMonth}`;
+    if (this.lastMonthKey !== monthKey) {
+      this.animationKey++;
+      this.lastMonthKey = monthKey;
     }
+
     const weeklyWins = this.habitStore.getWeeklyWins(this.selectedDateKey || todayKey);
     this.weekAttendanceCount = weeklyWins.wins;
     this.weekTotalDays = weeklyWins.total;
@@ -436,10 +854,8 @@ export class OverviewComponent implements OnInit, OnDestroy {
   }
 
   private buildCalendar(completions: Record<string, Record<string, boolean>>): void {
-    if (!this.selectedMonthYear) {
-      return;
-    }
-    const { year, month } = this.selectedMonthYear;
+    const year = this.calendarViewYear;
+    const month = this.calendarViewMonth;
     const dayStats = new Map<number, { done: number; percent: number; isPerfect: boolean }>();
     let monthDone = 0;
     let monthGoal = 0;
@@ -457,9 +873,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
       dayStats.set(day, { done, percent, isPerfect });
       monthDone += done;
       monthGoal += goalPerDay;
-      if (isPerfect) {
-        perfectDays++;
-      }
+      if (isPerfect) perfectDays++;
     }
     this.completionPercent = monthGoal > 0 ? Math.round((monthDone / monthGoal) * 100) : 0;
     this.perfectDaysCount = perfectDays;
@@ -467,15 +881,9 @@ export class OverviewComponent implements OnInit, OnDestroy {
     this.calendarCells = this.monthMatrix.flat().map(slot => {
       if (!slot.dayNumber) {
         return {
-          dayNumber: null,
-          dateKey: null,
-          date: null,
-          done: 0,
-          goal: 0,
-          percent: 0,
-          isPerfect: false,
-          isSelected: false,
-          isToday: false,
+          dayNumber: null, dateKey: null, date: null,
+          done: 0, goal: 0, percent: 0,
+          isPerfect: false, isSelected: false, isToday: false,
           intensityClass: 'is-empty'
         };
       }
@@ -500,63 +908,41 @@ export class OverviewComponent implements OnInit, OnDestroy {
     const allSummaries = this.monthMatrix.map((week, weekIndex) => {
       let done = 0;
       let goal = 0;
-      let perfectDays = 0;
+      let perfectDaysW = 0;
       const dateKeys: string[] = [];
       let startDate: Date | null = null;
       let endDate: Date | null = null;
       week.forEach(slot => {
-        if (!slot.dayNumber) {
-          return;
-        }
+        if (!slot.dayNumber) return;
         const stats = dayStats.get(slot.dayNumber);
-        if (!stats) {
-          return;
-        }
+        if (!stats) return;
         const date = this.normalizeDate(new Date(year, month, slot.dayNumber));
         const dateKey = this.habitStore.toDateKey(date);
         dateKeys.push(dateKey);
-        if (!startDate || date < startDate) {
-          startDate = date;
-        }
-        if (!endDate || date > endDate) {
-          endDate = date;
-        }
+        if (!startDate || date < startDate) startDate = date;
+        if (!endDate || date > endDate) endDate = date;
         const goalPerDay = this.habitStore.getHabitsActiveOn(dateKey).length;
         done += stats.done;
         goal += goalPerDay;
-        if (stats.isPerfect) {
-          perfectDays++;
-        }
+        if (stats.isPerfect) perfectDaysW++;
       });
       const percent = goal > 0 ? Math.round((done / goal) * 100) : 0;
       return {
-        weekIndex,
-        done,
-        goal,
-        percent,
-        perfectDays,
-        dateKeys,
-        startDate,
-        endDate,
+        weekIndex, done, goal, percent, perfectDays: perfectDaysW, dateKeys, startDate, endDate,
         rangeLabel: startDate && endDate ? this.formatWeekRange(startDate, endDate) : '--'
       };
     });
     this.weeklySummaries = allSummaries.slice(0, this.gridRows);
     this.syncSelectedWeek();
 
-    const bestWeek = this.weeklySummaries
-      .filter(week => week.goal > 0)
-      .sort((a, b) => b.percent - a.percent)[0];
+    const bestWeek = this.weeklySummaries.filter(w => w.goal > 0).sort((a, b) => b.percent - a.percent)[0];
     this.bestWeekLabel = bestWeek ? `W${bestWeek.weekIndex + 1}` : '--';
   }
 
   selectDay(cell: CalendarCell): void {
-    if (!cell.date || !this.selectedMonthYear) {
-      return;
-    }
+    if (!cell.date) return;
     this.habitStore.setSelectedDate(cell.date);
-    this.habitStore.setSelectedMonthYear(this.selectedMonthYear.year, this.selectedMonthYear.month);
-    }
+  }
 
   trackByWeek(index: number, week: WeekSummary): number {
     return week.weekIndex;
@@ -575,10 +961,10 @@ export class OverviewComponent implements OnInit, OnDestroy {
     this.router.navigate(['/today'], { queryParams: { focus: 'todayList' } });
   }
 
+  // ── Weekly share ────────────────────────────────────────────────────────────
+
   async shareWeeklyReport(): Promise<void> {
-    if (!isPlatformBrowser(this.platformId) || this.weeklyReportBusy) {
-      return;
-    }
+    if (!isPlatformBrowser(this.platformId) || this.weeklyReportBusy) return;
     this.weeklyReportBusy = true;
     try {
       this.weeklySharePayload = this.buildWeeklyReportPayload();
@@ -586,39 +972,196 @@ export class OverviewComponent implements OnInit, OnDestroy {
       await this.weeklyReportShareService.waitForStableLayout();
       await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
       await new Promise<void>(resolve => setTimeout(() => resolve(), 50));
-
       const element = this.weeklyReportExportRoot?.nativeElement;
-      if (!element) {
-        throw new Error('Weekly report export element not found');
-      }
+      if (!element) throw new Error('Weekly report export element not found');
       const rect = element.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) {
-        throw new Error('Weekly report export element is not measurable');
-      }
+      if (rect.width <= 0 || rect.height <= 0) throw new Error('Weekly report export element not measurable');
       element.scrollTop = 0;
-
       const safeKey = (this.weeklySharePayload.weekStartKey || 'weekly').replace(/[^0-9-]/g, '');
       const fileName = `weekly_report_${safeKey}_${Date.now()}.png`;
       const dataUrl = await this.weeklyReportShareService.withTimeout(
         this.weeklyReportShareService.captureElementToPngDataUrl(element, {
-          width: 900,
-          height: 1600,
-          pixelRatio: 2,
-          backgroundColor: '#05070f'
+          width: 900, height: 1600, pixelRatio: 2, backgroundColor: '#05070f'
         }),
         8000
       );
       await this.weeklyReportShareService.sharePngDataUrl(dataUrl, fileName);
-      this.snackBar.open('Weekly report shared', undefined, { duration: 1800 });
+      this.snackBar.open('Weekly report shared!', undefined, { duration: 1800 });
     } catch (error) {
       console.error('[WeeklyReportShare] export failed:', error);
-      this.snackBar.open('Weekly report export failed', undefined, { duration: 2400 });
+      this.snackBar.open('Export failed', undefined, { duration: 2400 });
     } finally {
       this.weeklyReportBusy = false;
       this.weeklySharePayload = null;
       this.cdr.detectChanges();
     }
   }
+
+  // ── Monthly share ────────────────────────────────────────────────────────────
+
+  async shareMonthlyReport(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId) || this.monthlyReportBusy) return;
+    this.monthlyReportBusy = true;
+    try {
+      this.monthlySharePayload = this.buildMonthlyReportPayload();
+      this.cdr.detectChanges();
+      await this.weeklyReportShareService.waitForStableLayout();
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 50));
+      const element = this.monthlyReportExportRoot?.nativeElement;
+      if (!element) throw new Error('Monthly report export element not found');
+      element.scrollTop = 0;
+      const fileName = `monthly_report_${this.calendarViewYear}_${this.calendarViewMonth + 1}_${Date.now()}.png`;
+      const dataUrl = await this.weeklyReportShareService.withTimeout(
+        this.weeklyReportShareService.captureElementToPngDataUrl(element, {
+          width: 900, height: 1600, pixelRatio: 2, backgroundColor: '#05070f'
+        }),
+        8000
+      );
+      await this.weeklyReportShareService.sharePngDataUrl(dataUrl, fileName);
+      this.snackBar.open('Monthly report shared!', undefined, { duration: 1800 });
+    } catch (error) {
+      console.error('[MonthlyReportShare] export failed:', error);
+      this.snackBar.open('Export failed', undefined, { duration: 2400 });
+    } finally {
+      this.monthlyReportBusy = false;
+      this.monthlySharePayload = null;
+      this.cdr.detectChanges();
+    }
+  }
+
+  // ── Overall share ────────────────────────────────────────────────────────────
+
+  async shareOverallReport(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId) || this.overallReportBusy) return;
+    this.overallReportBusy = true;
+    try {
+      this.overallSharePayload = this.buildOverallReportPayload();
+      this.cdr.detectChanges();
+      await this.weeklyReportShareService.waitForStableLayout();
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 50));
+      const element = this.overallReportExportRoot?.nativeElement;
+      if (!element) throw new Error('Overall report export element not found');
+      element.scrollTop = 0;
+      const fileName = `overall_report_${Date.now()}.png`;
+      const dataUrl = await this.weeklyReportShareService.withTimeout(
+        this.weeklyReportShareService.captureElementToPngDataUrl(element, {
+          width: 900, height: 1600, pixelRatio: 2, backgroundColor: '#05070f'
+        }),
+        8000
+      );
+      await this.weeklyReportShareService.sharePngDataUrl(dataUrl, fileName);
+      this.snackBar.open('Overall report shared!', undefined, { duration: 1800 });
+    } catch (error) {
+      console.error('[OverallReportShare] export failed:', error);
+      this.snackBar.open('Export failed', undefined, { duration: 2400 });
+    } finally {
+      this.overallReportBusy = false;
+      this.overallSharePayload = null;
+      this.cdr.detectChanges();
+    }
+  }
+
+  // ── Payload builders ─────────────────────────────────────────────────────────
+
+  private buildMonthlyReportPayload(): MonthlySharePayload {
+    const monthLabel = new Date(this.calendarViewYear, this.calendarViewMonth, 1)
+      .toLocaleString('default', { month: 'long', year: 'numeric' }).toUpperCase();
+    const monthDone = this.weeklySummaries.reduce((s, w) => s + w.done, 0);
+    const monthGoal = this.weeklySummaries.reduce((s, w) => s + w.goal, 0);
+    const bestWeek = this.weeklySummaries.filter(w => w.goal > 0).sort((a, b) => b.percent - a.percent)[0];
+    const totalDaysInMonth = DateUtils.daysInMonth(this.calendarViewYear, this.calendarViewMonth);
+    const footerSummary = this.perfectDaysCount >= 20
+      ? 'Legendary month. You are unstoppable.'
+      : this.perfectDaysCount >= 10
+        ? 'Strong month. Keep the momentum.'
+        : this.completionPercent >= 60
+          ? 'Solid effort. Rise again next month.'
+          : 'A quiet month. The shadow grows stronger.';
+    return {
+      playerName: this.habitStore.getCurrentUsername() || 'Player',
+      playerMeta: `Level ${this.levelStats.level} · ${this.levelStats.totalXp} XP`,
+      monthLabel,
+      level: this.levelStats.level,
+      totalXp: this.levelStats.totalXp,
+      monthDone,
+      monthGoal,
+      monthPercent: this.completionPercent,
+      perfectDays: this.perfectDaysCount,
+      totalDaysInMonth,
+      bestWeekLabel: bestWeek ? `Week ${bestWeek.weekIndex + 1}` : '--',
+      bestWeekPercent: bestWeek?.percent ?? 0,
+      domains: this.domainStats.map(d => ({
+        label: d.config.label,
+        emoji: d.config.emoji,
+        level: d.level,
+        xp: d.xp,
+        percent: d.percent
+      })),
+      footerSummary
+    };
+  }
+
+  private buildOverallReportPayload(): OverallSharePayload {
+    const { totalDone, totalGoal, totalPerfectDays } = this.computeOverallStats();
+    const overallPercent = totalGoal > 0 ? Math.round((totalDone / totalGoal) * 100) : 0;
+    const bestStreak = this.computeBestPerfectStreak();
+    const activeSince = this.computeActiveSince();
+    const footerSummary = this.levelStats.level >= 10
+      ? 'You have awakened. The system recognizes your power.'
+      : 'Every habit is a step toward becoming the strongest.';
+    return {
+      playerName: this.habitStore.getCurrentUsername() || 'Player',
+      playerRank: this.playerRank,
+      level: this.levelStats.level,
+      totalXp: this.levelStats.totalXp,
+      currentStreak: this.currentStreak,
+      bestStreak,
+      totalDone,
+      totalGoal,
+      overallPercent,
+      totalPerfectDays,
+      activeSince,
+      domains: this.domainStats.map(d => ({
+        label: d.config.label,
+        emoji: d.config.emoji,
+        level: d.level,
+        xp: d.xp,
+        percent: d.percent
+      })),
+      footerSummary
+    };
+  }
+
+  private computeOverallStats(): { totalDone: number; totalGoal: number; totalPerfectDays: number } {
+    let totalDone = 0;
+    let totalGoal = 0;
+    let totalPerfectDays = 0;
+    const allDateKeys = Object.keys(this.latestCompletions);
+    for (const dateKey of allDateKeys) {
+      const activeHabits = this.habitStore.getHabitsActiveOn(dateKey);
+      const goal = activeHabits.length;
+      const dayMap = this.latestCompletions[dateKey] || {};
+      const done = activeHabits.reduce((sum, h) => sum + (dayMap[h.id] ? 1 : 0), 0);
+      totalDone += done;
+      totalGoal += goal;
+      if (goal > 0 && done === goal) totalPerfectDays++;
+    }
+    return { totalDone, totalGoal, totalPerfectDays };
+  }
+
+  private computeActiveSince(): string {
+    const keys = Object.keys(this.latestCompletions).sort();
+    if (keys.length === 0) return 'Day 1';
+    const firstKey = keys[0];
+    const parts = firstKey.split('-');
+    if (parts.length !== 3) return firstKey;
+    const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  }
+
+  // ── Tracking ──────────────────────────────────────────────────────────────
 
   trackByCalendarCell(index: number, cell: CalendarCell): string {
     return cell.dateKey ?? `empty-${index}`;
@@ -629,17 +1172,13 @@ export class OverviewComponent implements OnInit, OnDestroy {
   }
 
   get firstWeekOffset(): number[] {
-    if (!this.selectedMonthYear) return [];
-    const { year, month } = this.selectedMonthYear;
-    const firstDay = new Date(year, month, 1).getDay();
-    const offset = (firstDay + 6) % 7; // Monday-first: Mon=0 … Sun=6
+    const firstDay = new Date(this.calendarViewYear, this.calendarViewMonth, 1).getDay();
+    const offset = (firstDay + 6) % 7;
     return Array(offset).fill(0);
   }
 
   get selectedMonthLabel(): string {
-    if (!this.selectedMonthYear) return '';
-    const { year, month } = this.selectedMonthYear;
-    return new Date(year, month, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+    return this.calendarViewLabel;
   }
 
   get heatmapCells(): CalendarCell[] {
@@ -647,18 +1186,10 @@ export class OverviewComponent implements OnInit, OnDestroy {
   }
 
   private getIntensityClass(percent: number, isPerfect: boolean): string {
-    if (isPerfect) {
-      return 'is-perfect';
-    }
-    if (percent === 0) {
-      return 'is-zero';
-    }
-    if (percent < 50) {
-      return 'is-low';
-    }
-    if (percent < 100) {
-      return 'is-mid';
-    }
+    if (isPerfect) return 'is-perfect';
+    if (percent === 0) return 'is-zero';
+    if (percent < 50) return 'is-low';
+    if (percent < 100) return 'is-mid';
     return 'is-high';
   }
 
@@ -671,18 +1202,14 @@ export class OverviewComponent implements OnInit, OnDestroy {
   }
 
   private setViewportFlags(): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      return;
-    }
+    if (!isPlatformBrowser(this.platformId)) return;
     this.isMobile = window.innerWidth < 768;
     if (!this.hasSetInsightsDefault) {
       this.insightsOpen = !this.isMobile;
       this.hasSetInsightsDefault = true;
       return;
     }
-    if (!this.isMobile) {
-      this.insightsOpen = true;
-    }
+    if (!this.isMobile) this.insightsOpen = true;
   }
 
   private normalizeDate(date: Date): Date {
@@ -696,12 +1223,12 @@ export class OverviewComponent implements OnInit, OnDestroy {
     if (selectedWeek && selectedWeek.dateKeys.length > 0) {
       return this.buildWeeklyPayloadFromDateKeys(selectedWeek.dateKeys, selectedWeek.rangeLabel);
     }
-
     const baseDate = this.parseDateKey(this.selectedDateKey || this.todayKey) ?? this.normalizeDate(new Date());
     const weekDates = this.getWeekDatesMondayToSunday(baseDate);
     const fallbackKeys = weekDates.map(date => this.habitStore.toDateKey(date));
     return this.buildWeeklyPayloadFromDateKeys(fallbackKeys, this.formatWeekRange(weekDates[0], weekDates[6]));
   }
+
   private syncSelectedWeek(): void {
     if (this.weeklySummaries.length === 0) {
       this.selectedWeekIndex = 0;
@@ -731,58 +1258,32 @@ export class OverviewComponent implements OnInit, OnDestroy {
     const sortedKeys = [...dateKeys].sort();
     const weekStartKey = sortedKeys[0] || this.todayKey;
     const weekEndKey = sortedKeys[sortedKeys.length - 1] || this.todayKey;
-
     const computed = this.weeklyReportService.computeWeekStats(
       sortedKeys,
       this.latestCompletions,
       dateKey => this.habitStore.getHabitsActiveOn(dateKey)
     );
-
-    const completed = computed.completed;
-    const goal = computed.goal;
+    const { completed, goal, perfectDays, weeklyPerfectStreak } = computed;
     const weekXp = computed.weekXP ?? 0;
-    const perfectDays = computed.perfectDays;
-    const weeklyPerfectStreak = computed.weeklyPerfectStreak;
-    const habits: Array<{ name: string; doneCount: number; daysActive: number }> = computed.perHabit
-      .map(habit => ({
-        name: habit.name,
-        doneCount: habit.doneCount,
-        daysActive: habit.daysActive
-      }))
-      .sort((a, b) => (b.doneCount - a.doneCount) || (b.daysActive - a.daysActive) || a.name.localeCompare(b.name));
-
+    const habits = computed.perHabit
+      .map(h => ({ name: h.name, doneCount: h.doneCount, daysActive: h.daysActive }))
+      .sort((a, b) => (b.doneCount - a.doneCount) || a.name.localeCompare(b.name));
     const bestStreak = this.computeBestPerfectStreak();
     const levelLine = `Level ${this.levelStats.level} - XP ${this.levelStats.totalXp}`;
     const levelSubline = this.levelStats.remainingToNext > 0
       ? `Next level in ${this.levelStats.remainingToNext} XP`
-      : 'Next level unlocked';
+      : 'Next level unlocked!';
     const footerSummary = goal === 0
       ? 'No habits active this week'
-      : perfectDays >= 5
-        ? 'Strong consistency this week.'
-        : perfectDays >= 3
-          ? 'Good momentum. Keep pushing.'
-          : 'A slow week - reset and rise.';
-
+      : perfectDays >= 5 ? 'Legendary week. You are unstoppable.'
+      : perfectDays >= 3 ? 'Strong momentum. Keep pushing.'
+      : 'A slow week. Rise stronger.';
     return {
-      weekStartKey,
-      weekEndKey,
-      weekRangeLabel: rangeLabel,
-      dateKeys: sortedKeys,
+      weekStartKey, weekEndKey, weekRangeLabel: rangeLabel, dateKeys: sortedKeys,
       headerName: this.habitStore.getCurrentUsername(),
       headerMeta: `Level ${this.levelStats.level} - XP ${this.levelStats.totalXp}`,
-      stats: {
-        completed,
-        goal,
-        weekXp,
-        perfectDays,
-        weeklyPerfectStreak,
-        bestStreak
-      },
-      habits,
-      levelLine,
-      levelSubline,
-      footerSummary
+      stats: { completed, goal, weekXp, perfectDays, weeklyPerfectStreak, bestStreak },
+      habits, levelLine, levelSubline, footerSummary
     };
   }
 
@@ -796,26 +1297,23 @@ export class OverviewComponent implements OnInit, OnDestroy {
       const activeHabits = this.habitStore.getHabitsActiveOn(dateKey);
       const goal = activeHabits.length;
       const dayMap = this.latestCompletions[dateKey] || {};
-      const done = activeHabits.reduce((sum, habit) => sum + (dayMap[habit.id] ? 1 : 0), 0);
+      const done = activeHabits.reduce((sum, h) => sum + (dayMap[h.id] ? 1 : 0), 0);
       const isPerfect = goal > 0 && done === goal;
-      if (isPerfect) {
-        current += 1;
-        best = Math.max(best, current);
-      } else {
-        current = 0;
-      }
+      if (isPerfect) { current++; best = Math.max(best, current); }
+      else current = 0;
     }
     return best;
   }
+
   private getWeekDatesMondayToSunday(date: Date): Date[] {
     const normalized = this.normalizeDate(date);
-    const day = normalized.getDay(); // Sun=0
+    const day = normalized.getDay();
     const offsetToMonday = day === 0 ? -6 : 1 - day;
     const monday = new Date(normalized);
     monday.setDate(normalized.getDate() + offsetToMonday);
-    return Array.from({ length: 7 }, (_, index) => {
+    return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(monday);
-      d.setDate(monday.getDate() + index);
+      d.setDate(monday.getDate() + i);
       return this.normalizeDate(d);
     });
   }
@@ -823,33 +1321,20 @@ export class OverviewComponent implements OnInit, OnDestroy {
   private formatWeekRange(start: Date, end: Date): string {
     const startMonth = start.toLocaleDateString('en-US', { month: 'short' });
     const endMonth = end.toLocaleDateString('en-US', { month: 'short' });
-    const startDay = start.getDate();
-    const endDay = end.getDate();
     if (startMonth === endMonth) {
-      return `${startMonth} ${startDay} - ${endDay}`;
+      return `${startMonth} ${start.getDate()} - ${end.getDate()}`;
     }
-    return `${startMonth} ${startDay} - ${endMonth} ${endDay}`;
+    return `${startMonth} ${start.getDate()} - ${endMonth} ${end.getDate()}`;
   }
 
   private parseDateKey(dateKey: string): Date | null {
-    if (!dateKey) {
-      return null;
-    }
+    if (!dateKey) return null;
     const parts = dateKey.split('-');
-    if (parts.length !== 3) {
-      return null;
-    }
+    if (parts.length !== 3) return null;
     const year = Number(parts[0]);
     const monthIndex = Number(parts[1]) - 1;
     const day = Number(parts[2]);
-    if (!Number.isFinite(year) || !Number.isFinite(monthIndex) || !Number.isFinite(day)) {
-      return null;
-    }
+    if (!Number.isFinite(year) || !Number.isFinite(monthIndex) || !Number.isFinite(day)) return null;
     return this.normalizeDate(new Date(year, monthIndex, day));
   }
 }
-
-
-
-
-

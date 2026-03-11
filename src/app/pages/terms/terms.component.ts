@@ -1,37 +1,69 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-terms',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatCardModule],
+  imports: [CommonModule, RouterModule, MatIconModule],
   template: `
     <div class="page-container terms-page">
-      <div class="page-header">
-        <h1 class="text-title">Terms & Conditions</h1>
-        <button class="btn btn-ghost btn-sm" type="button" routerLink="/profile">Back</button>
+
+      <!-- Header -->
+      <header class="info-page-header">
+        <button class="info-back-btn" type="button" routerLink="/profile" aria-label="Back">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div class="info-page-header__icon-wrap">
+          <mat-icon>gavel</mat-icon>
+        </div>
+        <div>
+          <h1 class="info-page-header__title">Terms & Conditions</h1>
+          <p class="info-page-header__subtitle">Simple and honest</p>
+        </div>
+      </header>
+
+      <div class="info-card">
+        <div class="info-card__header">
+          <mat-icon>storage</mat-icon>
+          <span>OFFLINE-FIRST</span>
+        </div>
+        <p class="info-card__body">
+          Your data stays on your device unless you explicitly export it. No hidden cloud transfers.
+        </p>
       </div>
 
-      <mat-card class="aesthetic-card">
-        <mat-card-content class="card-body terms-body">
-          <h2 class="text-section">Offline-first</h2>
-          <p class="text-muted">Your data stays on your device unless you export it.</p>
+      <div class="info-card">
+        <div class="info-card__header">
+          <mat-icon>self_improvement</mat-icon>
+          <span>PURPOSE</span>
+        </div>
+        <p class="info-card__body">
+          Level-Up is a personal growth and habit consistency tool. It is not a substitute for professional advice.
+        </p>
+      </div>
 
-          <h2 class="text-section">Self-improvement tool</h2>
-          <p class="text-muted">Level-Up is for personal growth and habit consistency.</p>
+      <div class="info-card">
+        <div class="info-card__header">
+          <mat-icon>warning_amber</mat-icon>
+          <span>NO GUARANTEES</span>
+        </div>
+        <p class="info-card__body">
+          Results depend entirely on your actions and consistency. We provide the system — you provide the effort.
+        </p>
+      </div>
 
-          <h2 class="text-section">No guarantees</h2>
-          <p class="text-muted">Results depend on your actions and consistency.</p>
+      <div class="info-card info-card--accent">
+        <div class="info-card__header">
+          <mat-icon>mail</mat-icon>
+          <span>CONTACT</span>
+        </div>
+        <p class="info-card__body">giri&#64;dailylevel-up.com</p>
+      </div>
 
-          <h2 class="text-section">Contact</h2>
-          <p class="text-muted">giri@dailylevel-up.com </p>
-        </mat-card-content>
-      </mat-card>
     </div>
   `,
   styleUrls: ['./terms.component.sass']
 })
 export class TermsComponent {}
-
