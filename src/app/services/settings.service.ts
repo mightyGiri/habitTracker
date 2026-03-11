@@ -80,10 +80,9 @@ export class SettingsService {
     this.applyFontFamily(settings.fontFamily);
   }
 
-  private applyThemeMode(mode: ThemeMode): void {
-    this.themeService.setTheme('dark');
-    this.setRootAttribute('data-theme', 'dark');
-    this.setBodyClass('dark');
+  private applyThemeMode(_mode: ThemeMode): void {
+    // Theme is now managed by ThemeService with localStorage persistence.
+    // Do not override the user's saved theme here.
   }
 
   private applyAccent(accent: AccentSetting): void {

@@ -8,7 +8,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Subscription, combineLatest, Observable } from 'rxjs';
 import { HabitStoreService } from '../../services/habit-store.service';
-import { MonthKey, MonthlyTotals, TopHabit, MonthInsights, Habit } from '../../models/habit.model';
+import { MonthKey, MonthlyTotals, TopHabit, MonthInsights, Habit, DomainConfig, HabitCompletion, HabitSkips, HabitDomain } from '../../models/habit.model';
+import { DOMAINS, getDomainConfig } from '../../config/domains.config';
 import type { ChartDataset } from 'chart.js';
 import Chart from 'chart.js/auto';
 import { ThemeService } from '../../services/theme.service';
@@ -27,6 +28,14 @@ type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 };
+
+interface DomainGroup {
+  domain: HabitDomain | 'uncategorized';
+  config: DomainConfig | null;
+  habits: Array<{ habit: Habit; checked: boolean; skipped: boolean }>;
+  completedCount: number;
+  totalCount: number;
+}
 
 type DateChip = {
   date: Date;
@@ -168,41 +177,56 @@ type SystemOverlayType = 'none' | 'perfect' | 'levelup';
         </div>
         <mat-card-content>
           <div class="today-list" [class.perfect-day]="isPerfectTodaySelected">
-            <button
-              class="today-item"
-              type="button"
-              *ngFor="let habit of habits; trackBy: trackByHabitCard"
-              [class.is-completed]="isTodayChecked(habit.id)"
-              [class.is-skipped]="isSelectedDaySkipped(habit.id)"
-              [class.is-next]="isNextHabit(habit.id)"
-              [class.reward-pulse]="inlineRewardHabitId === habit.id"
-              [class.done-pop]="isDonePopActive(habit.id)"
-              (click)="onHabitCardActivate(habit, $event)"
-              (keydown.enter)="onHabitCardActivate(habit, $event)"
-              (keydown.space)="onHabitCardActivate(habit, $event); $event.preventDefault()"
-              [attr.aria-label]="'Toggle ' + habit.name + ' for today'"
-              [attr.id]="'habit-' + habit.id">
-              <div class="today-item-info">
-                <div class="today-item-name">{{ habit.name }}</div>
-                <div class="today-item-sub text-muted">{{ habitProgressMap[habit.id] || 0 }}% this month</div>
-                <span class="habit-xp-chip text-label">+{{ getHabitXp(habit) }} XP</span>
-                <span class="skipped-chip" *ngIf="isSelectedDaySkipped(habit.id)">Skipped</span>
-                <span class="inline-reward" *ngIf="inlineRewardHabitId === habit.id">{{ inlineRewardText }}</span>
-              </div>
-              <div class="today-item-meta">
-                <span class="today-item-percent text-label">{{ habitProgressMap[habit.id] || 0 }}%</span>
-                <div class="habit-check-wrap">
-                  <span class="xp-float" *ngIf="isXpFloatActive(habit.id)">+{{ getHabitXp(habit) }} XP</span>
-                  <app-habit-check
-                    class="habit-check-cta"
-                    [class.check-pop]="isDonePopActive(habit.id)"
-                    [checked]="isTodayChecked(habit.id)"
-                    (toggle)="toggleHabitForSelectedDay(habit)"
-                    [attr.aria-label]="'Toggle ' + habit.name">
-                  </app-habit-check>
+            <div class="domain-section"
+              *ngFor="let group of domainGroups; trackBy: trackByDomain">
+              <div class="domain-header" [style.--domain-color]="group.config?.color ?? '#4f8cff'">
+                <span class="domain-emoji">{{ group.config?.emoji ?? '⚡' }}</span>
+                <span class="domain-label">{{ group.config?.label ?? 'General' }}</span>
+                <div class="domain-progress-mini">
+                  <span class="domain-count">{{ group.completedCount }}/{{ group.totalCount }}</span>
+                  <div class="domain-bar-track">
+                    <div class="domain-bar-fill" [style.width.%]="(group.completedCount / group.totalCount) * 100"></div>
+                  </div>
                 </div>
               </div>
-            </button>
+              <div class="domain-habits">
+                <button
+                  class="today-item"
+                  type="button"
+                  *ngFor="let item of group.habits; trackBy: trackByHabitInGroup"
+                  [class.is-completed]="isTodayChecked(item.habit.id)"
+                  [class.is-skipped]="isSelectedDaySkipped(item.habit.id)"
+                  [class.is-next]="isNextHabit(item.habit.id)"
+                  [class.reward-pulse]="inlineRewardHabitId === item.habit.id"
+                  [class.done-pop]="isDonePopActive(item.habit.id)"
+                  (click)="onHabitCardActivate(item.habit, $event)"
+                  (keydown.enter)="onHabitCardActivate(item.habit, $event)"
+                  (keydown.space)="onHabitCardActivate(item.habit, $event); $event.preventDefault()"
+                  [attr.aria-label]="'Toggle ' + item.habit.name + ' for today'"
+                  [attr.id]="'habit-' + item.habit.id">
+                  <div class="today-item-info">
+                    <div class="today-item-name">{{ item.habit.name }}</div>
+                    <div class="today-item-sub text-muted">{{ habitProgressMap[item.habit.id] || 0 }}% this month</div>
+                    <span class="habit-xp-chip text-label">+{{ getHabitXp(item.habit) }} XP</span>
+                    <span class="skipped-chip" *ngIf="isSelectedDaySkipped(item.habit.id)">Skipped</span>
+                    <span class="inline-reward" *ngIf="inlineRewardHabitId === item.habit.id">{{ inlineRewardText }}</span>
+                  </div>
+                  <div class="today-item-meta">
+                    <span class="today-item-percent text-label">{{ habitProgressMap[item.habit.id] || 0 }}%</span>
+                    <div class="habit-check-wrap">
+                      <span class="xp-float" *ngIf="isXpFloatActive(item.habit.id)">+{{ getHabitXp(item.habit) }} XP</span>
+                      <app-habit-check
+                        class="habit-check-cta"
+                        [class.check-pop]="isDonePopActive(item.habit.id)"
+                        [checked]="isTodayChecked(item.habit.id)"
+                        (toggle)="toggleHabitForSelectedDay(item.habit)"
+                        [attr.aria-label]="'Toggle ' + item.habit.name">
+                      </app-habit-check>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
           </div>
           <div class="finish-day" *ngIf="showTodayActions">
             <button class="btn btn-primary btn-sm" type="button" (click)="finishToday()">Level Up Today</button>
@@ -367,6 +391,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   private previousTodayPerfect = false;
   private levelStatsReady = false;
   private deferredPrompt: BeforeInstallPromptEvent | null = null;
+  domainGroups: DomainGroup[] = [];
   private viewReady = false;
   private readyResolved = false;
   private chartInitQueued = false;
@@ -530,6 +555,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         this.previousHeaderLevel = levelStats.level;
         this.habits = this.habitStore.getHabitsActiveOn(dateKey);
         this.habitsCount = this.habits.length;
+        this.domainGroups = this.getHabitsByDomain(this.habits, completions, skips, dateKey);
         this.updateData();
         this.syncSelectedDateToMonth();
         this.updateTodayLabels();
@@ -896,6 +922,44 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   trackByHabitCard(index: number, habit: Habit): string {
     return habit.id;
+  }
+
+  trackByDomain(index: number, group: DomainGroup): string {
+    return group.domain;
+  }
+
+  trackByHabitInGroup(index: number, item: { habit: Habit; checked: boolean; skipped: boolean }): string {
+    return item.habit.id;
+  }
+
+  getHabitsByDomain(habits: Habit[], completions: HabitCompletion, skips: HabitSkips, dateKey: string): DomainGroup[] {
+    const grouped = new Map<string, DomainGroup>();
+    const domainOrder = DOMAINS.map(d => d.id);
+
+    for (const habit of habits) {
+      const domain = habit.domain ?? 'uncategorized';
+      if (!grouped.has(domain)) {
+        grouped.set(domain, {
+          domain: domain as HabitDomain,
+          config: domain !== 'uncategorized' ? getDomainConfig(domain as HabitDomain) : null,
+          habits: [],
+          completedCount: 0,
+          totalCount: 0
+        });
+      }
+      const checked = !!completions[dateKey]?.[habit.id];
+      const skipped = !!skips[dateKey]?.[habit.id];
+      const group = grouped.get(domain)!;
+      group.habits.push({ habit, checked, skipped });
+      group.totalCount++;
+      if (checked) group.completedCount++;
+    }
+
+    return Array.from(grouped.values()).sort((a, b) => {
+      const ai = domainOrder.indexOf(a.domain as HabitDomain);
+      const bi = domainOrder.indexOf(b.domain as HabitDomain);
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    });
   }
 
   private findFirstRemainingHabitId(): string | null {

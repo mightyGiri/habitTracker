@@ -4,7 +4,9 @@ import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Subscription, combineLatest, Observable } from 'rxjs';
 import { HabitStoreService } from '../../services/habit-store.service';
-import { Habit, MonthKey, MonthSlot, HabitSkips } from '../../models/habit.model';
+import { Habit, MonthKey, MonthSlot, HabitSkips, HabitCompletion, DomainConfig } from '../../models/habit.model';
+import { DomainService } from '../../services/domain.service';
+import { DOMAINS } from '../../config/domains.config';
 import { DateUtils } from '../../shared/date-utils';
 import { getDailyMotivation } from '../../shared/daily-motivations';
 import { DayCountPipe } from '../../shared/day-count.pipe';
@@ -89,29 +91,60 @@ type SelectedDateHabits = {
           </mat-card>
 
           <div class="details-section" [class.is-collapsed]="!insightsOpen">
+
+            <!-- Domain XP Cards -->
+            <div class="domain-xp-section" *ngIf="domainStats.length > 0">
+              <div class="section-kicker">DOMAIN MASTERY</div>
+              <div class="domain-xp-grid">
+                <div class="domain-xp-card"
+                     *ngFor="let d of domainStats"
+                     [style.--d-color]="d.config.color"
+                     [style.--d-glow]="d.config.glowColor">
+                  <div class="dxp-top">
+                    <span class="dxp-emoji">{{ d.config.emoji }}</span>
+                    <div class="dxp-info">
+                      <div class="dxp-label">{{ d.config.label }}</div>
+                      <div class="dxp-level">LV {{ d.level }}</div>
+                    </div>
+                    <div class="dxp-xp-total">{{ d.xp }} XP</div>
+                  </div>
+                  <div class="dxp-bar-track">
+                    <div class="dxp-bar-fill" [style.width.%]="d.percent"></div>
+                  </div>
+                  <div class="dxp-progress-label">{{ d.current }} / {{ d.needed }} XP to LV {{ d.level + 1 }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Heatmap Calendar -->
             <mat-card class="aesthetic-card calendar-card arcane-card" [@staggerFadeUp]="animationKey">
-              <div class="card-header text-section">Monthly Calendar</div>
               <mat-card-content class="card-body">
-                <div class="calendar-grid">
-                  <div class="calendar-weekday" *ngFor="let label of weekDayLabels">{{ label }}</div>
-                  <ng-container *ngFor="let cell of calendarCells; trackBy: trackByCalendarCell">
-                    <button
-                      *ngIf="cell.dayNumber"
-                      type="button"
-                      class="calendar-cell glass-btn glass-btn--ghost {{ cell.intensityClass }}"
-                      [class.is-selected]="cell.isSelected"
-                      [class.is-perfect]="cell.isPerfect"
-                      [class.perfect-day]="cell.isPerfect"
-                      (click)="selectDay(cell)"
-                      [attr.aria-label]="'Select ' + cell.dayNumber">
-                      <span class="cell-date">
-                        {{ cell.dayNumber }}
-                        <span class="today-dot" *ngIf="cell.isToday"></span>
-                      </span>
-                      <span class="cell-metric">{{ cell.done }}/{{ cell.goal }}</span>
-                    </button>
-                    <div *ngIf="!cell.dayNumber" class="calendar-cell is-empty"></div>
-                  </ng-container>
+                <div class="heatmap-section">
+                  <div class="section-kicker">ACTIVITY — {{ selectedMonthLabel }}</div>
+                  <div class="heatmap-dow-labels">
+                    <span *ngFor="let d of ['M','T','W','T','F','S','S']">{{ d }}</span>
+                  </div>
+                  <div class="heatmap-grid">
+                    <div class="heatmap-cell heatmap-cell--empty" *ngFor="let _ of firstWeekOffset"></div>
+                    <div class="heatmap-cell"
+                         *ngFor="let cell of heatmapCells; trackBy: trackByCalendarCell"
+                         [class.heatmap-cell--perfect]="cell.isPerfect"
+                         [class.heatmap-cell--today]="cell.isToday"
+                         [class.heatmap-cell--selected]="cell.isSelected"
+                         [style.--intensity]="cell.percent / 100"
+                         [title]="cell.done + '/' + cell.goal + ' habits'"
+                         (click)="selectDay(cell)">
+                    </div>
+                  </div>
+                  <div class="heatmap-legend">
+                    <span class="legend-label">Less</span>
+                    <div class="legend-cell" style="--intensity: 0"></div>
+                    <div class="legend-cell" style="--intensity: 0.25"></div>
+                    <div class="legend-cell" style="--intensity: 0.5"></div>
+                    <div class="legend-cell" style="--intensity: 0.75"></div>
+                    <div class="legend-cell" style="--intensity: 1"></div>
+                    <span class="legend-label">More</span>
+                  </div>
                 </div>
               </mat-card-content>
             </mat-card>
@@ -303,6 +336,14 @@ export class OverviewComponent implements OnInit, OnDestroy {
   private latestCompletions: Record<string, Record<string, boolean>> = {};
   ready$!: Observable<boolean>;
   selectedDateHabits$!: Observable<SelectedDateHabits>;
+  domainStats: Array<{
+    config: DomainConfig;
+    xp: number;
+    level: number;
+    percent: number;
+    current: number;
+    needed: number;
+  }> = [];
 
   private subscription: Subscription = new Subscription();
 
@@ -314,6 +355,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
     private weeklyReportShareService: WeeklyReportShareService,
     private weeklyReportService: WeeklyReportService,
     private gamification: GamificationService,
+    private domainService: DomainService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private platformId: object
@@ -339,6 +381,12 @@ export class OverviewComponent implements OnInit, OnDestroy {
         this.levelStats = levelStats;
         this.latestHabits = habits;
         this.latestCompletions = completions;
+        const domainXP = this.domainService.computeDomainXP(habits, completions as HabitCompletion);
+        this.domainStats = DOMAINS.map(config => {
+          const xp = domainXP[config.id] ?? 0;
+          const progress = this.domainService.getDomainProgress(xp);
+          return { config, xp, ...progress };
+        }).filter(d => d.xp > 0 || habits.some(h => h.domain === d.config.id));
         this.updateData(habits, completions, skips);
       })
     );
@@ -578,6 +626,24 @@ export class OverviewComponent implements OnInit, OnDestroy {
 
   trackByHabitId(index: number, habit: Habit): string {
     return habit.id;
+  }
+
+  get firstWeekOffset(): number[] {
+    if (!this.selectedMonthYear) return [];
+    const { year, month } = this.selectedMonthYear;
+    const firstDay = new Date(year, month, 1).getDay();
+    const offset = (firstDay + 6) % 7; // Monday-first: Mon=0 … Sun=6
+    return Array(offset).fill(0);
+  }
+
+  get selectedMonthLabel(): string {
+    if (!this.selectedMonthYear) return '';
+    const { year, month } = this.selectedMonthYear;
+    return new Date(year, month, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+  }
+
+  get heatmapCells(): CalendarCell[] {
+    return this.calendarCells.filter(c => c.dayNumber !== null);
   }
 
   private getIntensityClass(percent: number, isPerfect: boolean): string {

@@ -1175,3 +1175,60 @@
   100%
     transform: scale(1)
     box-shadow: 0 0 0 color-mix(in oklab, var(--theme-warning) 20%, transparent)
+
+// ── Domain grouping ───────────────────────────────────────────────────────────
+
+.domain-section
+  margin-bottom: 4px
+
+.domain-header
+  display: flex
+  align-items: center
+  gap: 8px
+  padding: 7px 12px 5px
+  margin-bottom: 6px
+  border-radius: 10px
+  background: color-mix(in oklab, var(--domain-color, #3d7fff) 6%, transparent)
+  border-left: 3px solid var(--domain-color, #3d7fff)
+
+.domain-emoji
+  font-size: 1rem
+  line-height: 1
+
+.domain-label
+  font-size: 0.7rem
+  font-weight: 700
+  letter-spacing: 0.1em
+  text-transform: uppercase
+  color: var(--domain-color, #3d7fff)
+  flex: 1
+
+.domain-progress-mini
+  display: flex
+  align-items: center
+  gap: 6px
+  margin-left: auto
+
+.domain-count
+  font-size: 0.7rem
+  font-family: "Consolas", "SFMono-Regular", monospace
+  color: rgba(150,190,255,0.55)
+
+.domain-bar-track
+  width: 44px
+  height: 3px
+  background: rgba(255,255,255,0.07)
+  border-radius: 2px
+  overflow: hidden
+
+.domain-bar-fill
+  height: 100%
+  background: var(--domain-color, #3d7fff)
+  border-radius: 2px
+  transition: width 300ms ease
+  box-shadow: 0 0 5px var(--domain-color, #3d7fff)
+
+.domain-habits
+  display: flex
+  flex-direction: column
+  gap: 6px

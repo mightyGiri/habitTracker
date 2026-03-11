@@ -505,3 +505,167 @@
   font-size: 0.92rem
   color: rgba(255,255,255,0.88)
   font-weight: 700
+
+// ── Domain XP Cards ───────────────────────────────────────────────────────────
+
+.domain-xp-section
+  margin: 4px 0 16px
+
+.section-kicker
+  font-family: "Consolas", "SFMono-Regular", monospace
+  font-size: 0.68rem
+  letter-spacing: 0.18em
+  text-transform: uppercase
+  color: rgba(61,127,255,0.7)
+  margin-bottom: 12px
+
+.domain-xp-grid
+  display: flex
+  flex-direction: column
+  gap: 10px
+
+.domain-xp-card
+  background: linear-gradient(135deg, rgba(8,12,35,0.95), rgba(5,8,22,0.98))
+  border: 1px solid rgba(61,127,255,0.12)
+  border-radius: 14px
+  padding: 14px 16px
+  position: relative
+  overflow: hidden
+  transition: border-color 160ms ease, box-shadow 160ms ease
+
+  &::before
+    content: ''
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    height: 2px
+    background: linear-gradient(90deg, transparent, var(--d-color, #3d7fff), transparent)
+    pointer-events: none
+
+  &:hover
+    border-color: color-mix(in oklab, var(--d-color, #3d7fff) 30%, transparent)
+    box-shadow: 0 0 20px var(--d-glow, rgba(61,127,255,0.2))
+
+.dxp-top
+  display: flex
+  align-items: center
+  gap: 10px
+  margin-bottom: 10px
+
+.dxp-emoji
+  font-size: 1.4rem
+  width: 32px
+  flex-shrink: 0
+
+.dxp-info
+  flex: 1
+
+.dxp-label
+  font-size: 0.8rem
+  font-weight: 600
+  color: rgba(200,220,255,0.9)
+
+.dxp-level
+  font-size: 0.7rem
+  font-family: "Consolas", "SFMono-Regular", monospace
+  color: var(--d-color, #3d7fff)
+  letter-spacing: 0.08em
+
+.dxp-xp-total
+  font-family: "Consolas", "SFMono-Regular", monospace
+  font-size: 0.75rem
+  color: rgba(150,190,255,0.6)
+
+.dxp-bar-track
+  height: 4px
+  background: rgba(255,255,255,0.06)
+  border-radius: 2px
+  overflow: hidden
+  margin-bottom: 6px
+
+.dxp-bar-fill
+  height: 100%
+  background: var(--d-color, #3d7fff)
+  border-radius: 2px
+  transition: width 600ms ease
+  box-shadow: 0 0 8px var(--d-color, #3d7fff)
+
+.dxp-progress-label
+  font-size: 0.68rem
+  font-family: "Consolas", "SFMono-Regular", monospace
+  color: rgba(100,140,200,0.5)
+  letter-spacing: 0.04em
+
+// ── Heatmap Calendar ──────────────────────────────────────────────────────────
+
+.heatmap-section
+  margin: 4px 0
+
+.heatmap-dow-labels
+  display: grid
+  grid-template-columns: repeat(7, 1fr)
+  gap: 3px
+  margin-bottom: 4px
+
+  span
+    text-align: center
+    font-size: 0.62rem
+    font-family: "Consolas", "SFMono-Regular", monospace
+    color: rgba(100,140,200,0.45)
+    letter-spacing: 0.08em
+
+.heatmap-grid
+  display: grid
+  grid-template-columns: repeat(7, 1fr)
+  gap: 3px
+
+.heatmap-cell
+  aspect-ratio: 1
+  border-radius: 4px
+  background: rgba(61,127,255, calc(0.06 + var(--intensity, 0) * 0.55))
+  border: 1px solid rgba(61,127,255, calc(0.06 + var(--intensity, 0) * 0.28))
+  cursor: pointer
+  transition: transform 100ms ease, box-shadow 100ms ease
+  position: relative
+
+  &--empty
+    background: rgba(255,255,255,0.02)
+    border-color: transparent
+    cursor: default
+    pointer-events: none
+
+  &--perfect
+    background: rgba(255,215,0,0.3)
+    border-color: rgba(255,215,0,0.5)
+    box-shadow: 0 0 8px rgba(255,215,0,0.25)
+
+  &--today
+    box-shadow: 0 0 0 2px rgba(61,127,255,0.8)
+
+  &--selected
+    box-shadow: 0 0 0 2px #3d7fff, 0 0 12px rgba(61,127,255,0.4)
+
+  &:hover:not(.heatmap-cell--empty)
+    transform: scale(1.2)
+    z-index: 2
+    box-shadow: 0 0 10px rgba(61,127,255,0.35)
+
+.heatmap-legend
+  display: flex
+  align-items: center
+  gap: 4px
+  margin-top: 10px
+  justify-content: flex-end
+
+.legend-cell
+  width: 12px
+  height: 12px
+  border-radius: 2px
+  background: rgba(61,127,255, calc(0.06 + var(--intensity, 0) * 0.55))
+  border: 1px solid rgba(61,127,255, calc(0.06 + var(--intensity, 0) * 0.28))
+
+.legend-label
+  font-size: 0.62rem
+  color: rgba(100,140,200,0.45)
+  font-family: "Consolas", "SFMono-Regular", monospace

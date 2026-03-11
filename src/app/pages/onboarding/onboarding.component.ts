@@ -293,7 +293,6 @@ export class OnboardingComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.themeService.setTheme('dark');
     this.subscriptions.add(
       this.themeService.getReducedMotion().subscribe(r => { this.reduceMotion = r; })
     );
@@ -355,7 +354,6 @@ export class OnboardingComponent implements OnInit, OnDestroy {
   }
 
   skipSetup(): void {
-    this.themeService.setTheme('dark');
     this.habitStore.skipOnboarding();
     void this.router.navigate(['/today']);
   }

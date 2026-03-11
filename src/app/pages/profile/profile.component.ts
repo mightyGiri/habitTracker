@@ -23,7 +23,7 @@ import { HabitStoreService } from '../../services/habit-store.service';
 
 import { SettingsService, FontSizePx, AccentId, AccentSetting, FontFamilyId } from '../../services/settings.service';
 
-import { ThemeService } from '../../services/theme.service';
+import { ThemeService, AppTheme } from '../../services/theme.service';
 
 import { staggerFadeUp, noopAnimation } from '../../shared/list-animations';
 
@@ -220,6 +220,33 @@ type BeforeInstallPromptEvent = Event & {
             </mat-form-field>
           </div> -->
 
+          <div class=\"theme-section\">
+            <div class=\"compact-label text-label\">Theme</div>
+            <div class=\"theme-picker\">
+              <button class=\"theme-btn\" type=\"button\"
+                      [class.active]=\"currentTheme === 'system'\"
+                      (click)=\"setTheme('system')\">
+                <span class=\"theme-preview system-preview\"></span>
+                <span class=\"theme-name\">System</span>
+                <span class=\"theme-desc\">Solo Leveling</span>
+              </button>
+              <button class=\"theme-btn\" type=\"button\"
+                      [class.active]=\"currentTheme === 'professional'\"
+                      (click)=\"setTheme('professional')\">
+                <span class=\"theme-preview professional-preview\"></span>
+                <span class=\"theme-name\">Pro</span>
+                <span class=\"theme-desc\">Clean dark</span>
+              </button>
+              <button class=\"theme-btn\" type=\"button\"
+                      [class.active]=\"currentTheme === 'minimal'\"
+                      (click)=\"setTheme('minimal')\">
+                <span class=\"theme-preview minimal-preview\"></span>
+                <span class=\"theme-name\">Minimal</span>
+                <span class=\"theme-desc\">Monochrome</span>
+              </button>
+            </div>
+          </div>
+
           <div class=\"accent-row\">
             <div class=\"text-body\">Accent</div>
             <div class=\"accent-swatches\">
@@ -337,6 +364,14 @@ export class ProfileComponent implements OnInit, OnDestroy {
   dataOpen = false;
 
   personalizationOpen = false;
+
+  get currentTheme(): AppTheme {
+    return this.themeService.getThemeSync();
+  }
+
+  setTheme(theme: AppTheme): void {
+    this.themeService.setTheme(theme);
+  }
   helpOpen = false;
   showImportModal = false;
   private pendingBackupRaw: string | null = null;
